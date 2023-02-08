@@ -1,6 +1,8 @@
 """Console script for infrahouse_toolkit."""
 import sys
+
 import click
+from click import BaseCommand
 
 
 @click.command()

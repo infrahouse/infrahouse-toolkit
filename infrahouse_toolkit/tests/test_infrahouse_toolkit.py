@@ -3,11 +3,9 @@
 """Tests for `infrahouse_toolkit` package."""
 
 import pytest
-
 from click.testing import CliRunner
 
-from infrahouse_toolkit import infrahouse_toolkit
-from infrahouse_toolkit import cli
+from infrahouse_toolkit import cli, infrahouse_toolkit
 
 
 @pytest.fixture
