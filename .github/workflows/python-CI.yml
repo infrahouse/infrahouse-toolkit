@@ -1,8 +1,9 @@
+---
 name: Python Continuous Integration
 
-on:
+on:  # yamllint disable-line rule:truthy
     pull_request:
-        branches: [ "main" ]
+        branches: ["main"]
 
 jobs:
     check:
@@ -25,4 +26,3 @@ jobs:
             - name: Unit tests
               run: |
                   make test
-
