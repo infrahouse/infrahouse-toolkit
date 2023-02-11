@@ -22,11 +22,25 @@ jobs:
                   python-version: '3.x'
             - name: Install dependencies
               run: |
-                pip install build
+                make bootstrap
+
+            - name: Check if version was bumped
+              run: |
+                  published=$(curl -s https://pypi.org/pypi/infrahouse-toolkit/json | jq -r .info.version)
+                  current=$(python -c "from infrahouse_toolkit import __version__; print(__version__)")
+                  if [[ "$published" != "$current" ]]
+                  then
+                    echo "::set-env name=PUBLISH::yes"
+                  else
+                    echo "::set-env name=PUBLISH::no"
+                  fi
 
             - name: Build package
+              if: env.PUBLISH == 'yes'
               run: python -m build
+
             - name: Publish package
+              if: env.PUBLISH == 'yes'
               uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
               with:
                   user: __token__
