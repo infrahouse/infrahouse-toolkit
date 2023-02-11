@@ -78,16 +78,29 @@ clean-test:
 black: ## reformat code with black
 	black infrahouse_toolkit
 
-.PHONY: lint/pylint
-lint/pylint: ## check style with flake8
-	pylint infrahouse_toolkit tests
+.PHONY: isort
+isort: ## reformat imports
+	isort infrahouse_toolkit
+
+.PHONY: lint
+lint: lint/yaml lint/black lint/isort lint/pylint ## check style
+
+.PHONY: lint/yaml
+lint/yaml: ## check style with yamllint
+	yamllint infrahouse_toolkit .github
 
 .PHONY: lint/black
 lint/black: ## check style with black
 	black --check infrahouse_toolkit
 
-.PHONY: lint
-lint: lint/black lint/pylint ## check style
+.PHONY: lint/isort
+lint/isort: ## check imports formatting
+	isort --check-only infrahouse_toolkit
+
+.PHONY: lint/pylint
+lint/pylint: ## check style with pylint
+	pylint infrahouse_toolkit
+
 
 .PHONY: test
 test: ## run tests quickly with the default Python
