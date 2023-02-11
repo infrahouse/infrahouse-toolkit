@@ -45,19 +45,19 @@ setup(
     description="A collection of tools for building infrastructure.",
     entry_points={
         "console_scripts": [
-            "infrahouse_toolkit=infrahouse_toolkit.cli:main",
+            "infrahouse-toolkit=infrahouse_toolkit.cli:main",
         ],
     },
     install_requires=requirements,
     license="Apache Software License 2.0",
     long_description=readme + "\n\n" + history,
     include_package_data=True,
-    keywords="infrahouse_toolkit",
-    name="infrahouse_toolkit",
+    keywords="infrahouse-toolkit",
+    name="infrahouse-toolkit",
     packages=find_packages(include=["infrahouse_toolkit", "infrahouse_toolkit.*"]),
     test_suite="tests",
     tests_require=test_requirements,
-    url="https://github.com/infrahouse/infrahouse_toolkit",
+    url="https://github.com/infrahouse/infrahouse-toolkit",
     version="0.2.0",
     zip_safe=False,
 )
