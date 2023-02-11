@@ -30,9 +30,9 @@ jobs:
                   current=$(python -c "from infrahouse_toolkit import __version__; print(__version__)")
                   if [[ "$published" != "$current" ]]
                   then
-                    echo "::set-env name=PUBLISH::yes"
+                    echo "PUBLISH=yes" >> $GITHUB_ENV
                   else
-                    echo "::set-env name=PUBLISH::no"
+                    echo "PUBLISH=no" >> $GITHUB_ENV
                   fi
 
             - name: Build package
