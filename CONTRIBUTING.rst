@@ -103,4 +103,4 @@ Tips
 
 To run a subset of tests::
 
-$ pytest -xvvs infrahouse_toolkit/cli/ih_plan/tests/test_get_bucket.py
+$ pytest -xvvs infrahouse_toolkit/cli/tests/test_get_bucket.py
