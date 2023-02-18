@@ -1,0 +1,5 @@
+[MAIN]
+load-plugins=pylint.extensions.docparams
+
+[FORMAT]
+max-line-length=120

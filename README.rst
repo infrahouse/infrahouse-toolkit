@@ -21,7 +21,7 @@ A collection of tools for building infrastructure.
 Features
 --------
 
-* TODO
+* ``ih-plan``: A helper tool to upload/download a Terraform plan.
 
 Credits
 -------

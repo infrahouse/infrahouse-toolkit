@@ -45,7 +45,7 @@ setup(
     description="A collection of tools for building infrastructure.",
     entry_points={
         "console_scripts": [
-            "infrahouse-toolkit=infrahouse_toolkit.cli:main",
+            "ih-plan=infrahouse_toolkit.cli.ih_plan:ih_plan",
         ],
     },
     install_requires=requirements,
@@ -58,6 +58,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/infrahouse/infrahouse-toolkit",
-    version="0.2.0",
+    version="1.0.0",
     zip_safe=False,
 )

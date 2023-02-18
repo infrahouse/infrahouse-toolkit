@@ -68,7 +68,7 @@ Ready to contribute? Here's how to set up `infrahouse-toolkit` for local develop
 
     $ mkvirtualenv -p python3.9 infrahouse_toolkit
     $ cd infrahouse-toolkit/
-    $ make bootstrao
+    $ make bootstrap
 
 4. Create a branch for local development::
 
@@ -103,10 +103,4 @@ Tips
 
 To run a subset of tests::
 
-$ pytest -xvvs infrahouse_toolkit/tests/test_infrahouse_toolkit.py
-
-
-Deploying
----------
-
-TODO
+$ pytest -xvvs infrahouse_toolkit/cli/ih_plan/tests/test_get_bucket.py

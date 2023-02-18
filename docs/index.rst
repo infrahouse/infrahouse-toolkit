@@ -1,5 +1,5 @@
 Welcome to InfraHouse Toolkit's documentation!
-======================================
+==============================================
 
 .. toctree::
    :maxdepth: 2

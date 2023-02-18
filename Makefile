@@ -5,7 +5,7 @@ import os, webbrowser, sys
 
 from urllib.request import pathname2url
 
-webbrowser.open("file://" + pathname2url(os.path.abspath(sys.argv[1])))
+webbrowser.open("docs/_build/html/index.html")
 endef
 export BROWSER_PYSCRIPT
 
@@ -43,8 +43,11 @@ upgrade-requirements: pip-tools ## Upgrade requirements
 	pip-compile --upgrade --verbose --output-file requirements.txt requirements.in
 	pip-compile --upgrade --verbose --output-file requirements_dev.txt requirements_dev.in
 
+.PHONY: hooks
+hooks:
+	test -f .git/hooks/pre-commit || cp hooks/pre-commit .git/hooks/pre-commit
 .PHONY: bootstrap
-bootstrap: pip setuptools ## bootstrap the development environment
+bootstrap: hooks pip setuptools ## bootstrap the development environment
 	pip install -r requirements.txt -r requirements_dev.txt
 	pip install --editable .
 
@@ -116,8 +119,6 @@ test: ## run tests quickly with the default Python
 
 .PHONY: docs
 docs: ## generate Sphinx HTML documentation, including API docs
-	rm -f docs/infrahouse_toolkit.rst
-	rm -f docs/modules.rst
 	sphinx-apidoc -o docs/ infrahouse_toolkit
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
