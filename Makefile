@@ -116,8 +116,6 @@ test: ## run tests quickly with the default Python
 
 .PHONY: docs
 docs: ## generate Sphinx HTML documentation, including API docs
-	#rm -f docs/infrahouse_toolkit.rst
-	#rm -f docs/modules.rst
 	sphinx-apidoc -o docs/ infrahouse_toolkit
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
