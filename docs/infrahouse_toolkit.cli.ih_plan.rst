@@ -10,7 +10,6 @@ Subpackages
    infrahouse_toolkit.cli.ih_plan.cmd_download
    infrahouse_toolkit.cli.ih_plan.cmd_remove
    infrahouse_toolkit.cli.ih_plan.cmd_upload
-   infrahouse_toolkit.cli.ih_plan.tests
 
 Module contents
 ---------------
