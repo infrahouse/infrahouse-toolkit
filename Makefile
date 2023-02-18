@@ -44,8 +44,8 @@ upgrade-requirements: pip-tools ## Upgrade requirements
 	pip-compile --upgrade --verbose --output-file requirements_dev.txt requirements_dev.in
 
 .PHONY: bootstrap
-bootstrap: pip pip-tools setuptools ## bootstrap the development environment
-	pip-sync requirements.txt requirements_dev.txt
+bootstrap: pip setuptools ## bootstrap the development environment
+	pip install -r requirements.txt -r requirements_dev.txt
 	pip install --editable .
 
 
@@ -82,8 +82,12 @@ black: ## reformat code with black
 isort: ## reformat imports
 	isort infrahouse_toolkit
 
+.PHONY: reqsort
+reqsort: ## sort requirements files
+	for f in requirements.txt requirements_dev.txt; do tmp_file=$$(tempfile) && sort $$f > "$$tmp_file" && mv "$$tmp_file" $$f; done
+
 .PHONY: lint
-lint: lint/yaml lint/black lint/isort lint/pylint ## check style
+lint: lint/yaml lint/black lint/isort lint/reqsort lint/pylint ## check style
 
 .PHONY: lint/yaml
 lint/yaml: ## check style with yamllint
@@ -96,6 +100,10 @@ lint/black: ## check style with black
 .PHONY: lint/isort
 lint/isort: ## check imports formatting
 	isort --check-only infrahouse_toolkit
+
+.PHONY: lint/reqsort
+lint/reqsort: ## check requirements sorting order
+	@for f in requirements.txt requirements_dev.txt; do test "$$(sort $$f)" = "$$(cat $$f)" || (echo "$$f is not sorted, run make reqsort" ; exit 1); done
 
 .PHONY: lint/pylint
 lint/pylint: ## check style with pylint
