@@ -45,7 +45,7 @@ setup(
     description="A collection of tools for building infrastructure.",
     entry_points={
         "console_scripts": [
-            "infrahouse-toolkit=infrahouse_toolkit.cli:main",
+            "ih-plan=infrahouse_toolkit.cli.ih_plan:ih_plan",
         ],
     },
     install_requires=requirements,
