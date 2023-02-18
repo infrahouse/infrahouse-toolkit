@@ -1,7 +1,7 @@
+"""Auxiliary functions for command line tools."""
 import hcl
 
 from infrahouse_toolkit import DEFAULT_OPEN_ENCODING
-
 
 DEFAULT_TF_BACKEND_FILE = "terraform.tf"
 

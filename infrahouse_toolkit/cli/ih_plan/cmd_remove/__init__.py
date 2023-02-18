@@ -1,11 +1,19 @@
+"""
+.. topic:: ``ih-plan remove``
+
+    A ``ih-plan remove`` subcommand.
+
+    See ``ih-plan remove --help`` for more details.
+"""
+
 import boto3
 import click
-
 
 from infrahouse_toolkit.cli.lib import get_bucket
 
 
-def validate_key_name(ctx, param, value):
+def validate_key_name(ctx, param, value):  # pylint: disable=unused-argument
+    """Check if passed value ends with a ".state"."""
     bad_ending = ".state"
     if value.endswith(bad_ending):
         raise click.BadParameter(f"The file cannot end with a {bad_ending}")

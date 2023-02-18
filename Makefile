@@ -43,8 +43,11 @@ upgrade-requirements: pip-tools ## Upgrade requirements
 	pip-compile --upgrade --verbose --output-file requirements.txt requirements.in
 	pip-compile --upgrade --verbose --output-file requirements_dev.txt requirements_dev.in
 
+.PHONY: hooks
+hooks:
+	test -f .git/hooks/pre-commit || cp hooks/pre-commit .git/hooks/pre-commit
 .PHONY: bootstrap
-bootstrap: pip setuptools ## bootstrap the development environment
+bootstrap: hooks pip setuptools ## bootstrap the development environment
 	pip install -r requirements.txt -r requirements_dev.txt
 	pip install --editable .
 

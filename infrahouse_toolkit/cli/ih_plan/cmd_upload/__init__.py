@@ -1,7 +1,15 @@
-import boto3
-import click
+"""
+.. topic:: ``ih-plan upload``
+
+    A ``ih-plan upload`` subcommand.
+
+    See ``ih-plan upload --help`` for more details.
+"""
 
 from os import path as osp
+
+import boto3
+import click
 
 from infrahouse_toolkit.cli.lib import get_bucket
 
