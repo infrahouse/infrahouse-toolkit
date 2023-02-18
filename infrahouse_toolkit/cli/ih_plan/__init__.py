@@ -32,10 +32,7 @@ from infrahouse_toolkit.cli.lib import DEFAULT_TF_BACKEND_FILE
 @click.pass_context
 def ih_plan(ctx, bucket, tf_backend_file):
     """Terraform plan helpers."""
-    ctx.obj = {
-        "bucket": bucket,
-        "tf_backend_file": tf_backend_file
-    }
+    ctx.obj = {"bucket": bucket, "tf_backend_file": tf_backend_file}
 
 
 for cmd in [cmd_upload, cmd_download, cmd_remove]:
