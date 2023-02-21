@@ -25,7 +25,7 @@ from infrahouse_toolkit.terraform.githubpr import GitHubPR
 @click.argument("tf_plan_stdout", type=click.Path(exists=True))
 @click.argument("tf_plan_stderr", type=click.Path(exists=True))
 @click.pass_context
-def cmd_publish(**kwargs):
+def cmd_publish(*args, **kwargs):
     """
     Publish Terraform plan to GitHub pull request.
 
@@ -42,7 +42,8 @@ def cmd_publish(**kwargs):
         * ``plan.stderr`` - file with ``terraform plan`` error output.
 
     """
-    # ctx, repo, pull_request_number, github_token, tf_exit_code, tf_plan_stdout, tf_plan_stderr
+    ctx = args[0]
+
     with open(kwargs["tf_plan_stdout"], encoding=DEFAULT_OPEN_ENCODING) as fp_stdout, open(
         kwargs["tf_plan_stderr"], encoding=DEFAULT_OPEN_ENCODING
     ) as fp_stderr:
@@ -51,8 +52,8 @@ def cmd_publish(**kwargs):
 
         counts, resources = parse_plan(stdout)
         backend = TFS3Backend(
-            kwargs["ctx"].obj["bucket"] or get_bucket(kwargs["ctx"].obj["tf_backend_file"]),
-            get_backend_key(kwargs["ctx"].obj["tf_backend_file"]),
+            ctx.obj["bucket"] or get_bucket(ctx.obj["tf_backend_file"]),
+            get_backend_key(ctx.obj["tf_backend_file"]),
         )
         status = TFStatus(
             backend,
