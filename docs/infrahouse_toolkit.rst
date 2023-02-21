@@ -16,3 +16,4 @@ Subpackages
    :maxdepth: 1
 
    infrahouse_toolkit.cli
+   infrahouse_toolkit.terraform

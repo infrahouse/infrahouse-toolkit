@@ -1,5 +1,6 @@
 [MAIN]
 load-plugins=pylint.extensions.docparams
+ignore-paths=.*/tests/.*
 
 [FORMAT]
 max-line-length=120
