@@ -1,3 +1,5 @@
+PyGithub ~= 1.58
 boto3 ~= 1.26
 click ~= 8.0
 pyhcl ~= 0.4
+tabulate ~= 0.9

@@ -9,6 +9,7 @@
 import click
 
 from infrahouse_toolkit.cli.ih_plan.cmd_download import cmd_download
+from infrahouse_toolkit.cli.ih_plan.cmd_publish import cmd_publish
 from infrahouse_toolkit.cli.ih_plan.cmd_remove import cmd_remove
 from infrahouse_toolkit.cli.ih_plan.cmd_upload import cmd_upload
 from infrahouse_toolkit.cli.lib import DEFAULT_TF_BACKEND_FILE
@@ -35,6 +36,6 @@ def ih_plan(ctx, bucket, tf_backend_file):
     ctx.obj = {"bucket": bucket, "tf_backend_file": tf_backend_file}
 
 
-for cmd in [cmd_upload, cmd_download, cmd_remove]:
+for cmd in [cmd_upload, cmd_download, cmd_remove, cmd_publish]:
     # noinspection PyTypeChecker
     ih_plan.add_command(cmd)

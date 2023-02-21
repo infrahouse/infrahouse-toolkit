@@ -1,0 +1,173 @@
+terraform init
+[0m[1mInitializing modules...[0m
+
+[0m[1mInitializing the backend...[0m
+
+[0m[1mInitializing provider plugins...[0m
+- Reusing previous version of hashicorp/aws from the dependency lock file
+- Reusing previous version of integrations/github from the dependency lock file
+- Using previously-installed hashicorp/aws v4.54.0
+- Using previously-installed integrations/github v5.17.0
+
+[0m[1m[32mTerraform has been successfully initialized![0m[32m[0m
+[0m[32m
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.[0m
+terraform plan -var-file=configuration.tfvars --out=tf.plan
+[0m[1maws_secretsmanager_secret.pypi_api_token: Refreshing state... [id=arn:aws:secretsmanager:us-west-1:990466748045:secret:_github_control__PYPI_API_TOKEN-dhII9P][0m
+[0m[1mdata.aws_secretsmanager_secret_version.pypi_api_token: Reading...[0m[0m
+[0m[1mgithub_membership.infrahouse["akuzminsky"]: Refreshing state... [id=infrahouse:akuzminsky][0m
+[0m[1mgithub_team.dev: Refreshing state... [id=7332815][0m
+[0m[1mgithub_organization_settings.infrahouse: Refreshing state... [id=121984263][0m
+[0m[1mdata.aws_secretsmanager_secret_version.pypi_api_token: Read complete after 0s [id=arn:aws:secretsmanager:us-west-1:990466748045:secret:_github_control__PYPI_API_TOKEN-dhII9P|AWSCURRENT][0m
+[0m[1mgithub_actions_secret.pypi_api_token["infrahouse-toolkit"]: Refreshing state... [id=infrahouse-toolkit:PYPI_API_TOKEN][0m
+[0m[1mmodule.repos["infrahouse-toolkit"].github_repository.repo: Refreshing state... [id=infrahouse-toolkit][0m
+[0m[1mmodule.repos["cookiecutter-github-control"].github_repository.repo: Refreshing state... [id=cookiecutter-github-control][0m
+[0m[1mgithub_team_members.dev: Refreshing state... [id=7332815][0m
+[0m[1mmodule.repos["infrahouse-toolkit"].github_team_repository.dev: Refreshing state... [id=7332815:infrahouse-toolkit][0m
+[0m[1mmodule.repos["cookiecutter-github-control"].github_team_repository.dev: Refreshing state... [id=7332815:cookiecutter-github-control][0m
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [32m+[0m create
+  [33m~[0m update in-place
+  [31m-[0m destroy
+[0m
+Terraform will perform the following actions:
+
+[1m  # module.repos["cookiecutter-github-control"].github_repository.repo[0m will be [1m[31mdestroyed[0m
+  # (because module.repos["cookiecutter-github-control"] is not in configuration)[0m
+[0m  [31m-[0m[0m resource "github_repository" "repo" {
+      [31m-[0m [0m[1m[0mallow_auto_merge[0m[0m            = false [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mallow_merge_commit[0m[0m          = true [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mallow_rebase_merge[0m[0m          = true [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mallow_squash_merge[0m[0m          = true [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mallow_update_branch[0m[0m         = false [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0marchived[0m[0m                    = false [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mdefault_branch[0m[0m              = "main" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mdelete_branch_on_merge[0m[0m      = false [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mdescription[0m[0m                 = "Template for a GitHub Control repository" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0metag[0m[0m                        = "W/\"8b4a792bc1474d381caaa63b76668993b4adc42ae76ed53d6886d8562ebb0c67\"" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mfull_name[0m[0m                   = "infrahouse/cookiecutter-github-control" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mgit_clone_url[0m[0m               = "git://github.com/infrahouse/cookiecutter-github-control.git" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mhas_discussions[0m[0m             = false [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mhas_downloads[0m[0m               = false [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mhas_issues[0m[0m                  = true [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mhas_projects[0m[0m                = false [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mhas_wiki[0m[0m                    = false [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mhtml_url[0m[0m                    = "https://github.com/infrahouse/cookiecutter-github-control" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mhttp_clone_url[0m[0m              = "https://github.com/infrahouse/cookiecutter-github-control.git" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mid[0m[0m                          = "cookiecutter-github-control" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mis_template[0m[0m                 = false [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mmerge_commit_message[0m[0m        = "PR_TITLE" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mmerge_commit_title[0m[0m          = "MERGE_MESSAGE" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mname[0m[0m                        = "cookiecutter-github-control" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mnode_id[0m[0m                     = "R_kgDOI528zg" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mprivate[0m[0m                     = false [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mrepo_id[0m[0m                     = 597540046 [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0msquash_merge_commit_message[0m[0m = "COMMIT_MESSAGES" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0msquash_merge_commit_title[0m[0m   = "COMMIT_OR_PR_TITLE" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mssh_clone_url[0m[0m               = "git@github.com:infrahouse/cookiecutter-github-control.git" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0msvn_url[0m[0m                     = "https://github.com/infrahouse/cookiecutter-github-control" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mtopics[0m[0m                      = [] [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mvisibility[0m[0m                  = "public" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mvulnerability_alerts[0m[0m        = false [90m->[0m [0m[90mnull[0m[0m
+
+      [31m-[0m [0msecurity_and_analysis {
+
+          [31m-[0m [0msecret_scanning {
+              [31m-[0m [0m[1m[0mstatus[0m[0m = "disabled" [90m->[0m [0m[90mnull[0m[0m
+            }
+
+          [31m-[0m [0msecret_scanning_push_protection {
+              [31m-[0m [0m[1m[0mstatus[0m[0m = "disabled" [90m->[0m [0m[90mnull[0m[0m
+            }
+        }
+    }
+
+[1m  # module.repos["cookiecutter-github-control"].github_team_repository.dev[0m will be [1m[31mdestroyed[0m
+  # (because module.repos["cookiecutter-github-control"] is not in configuration)[0m
+[0m  [31m-[0m[0m resource "github_team_repository" "dev" {
+      [31m-[0m [0m[1m[0metag[0m[0m       = "W/\"8043f81b19693f6c1a72d21bb8dc03859c98bf78bfbe79782bfe13fa813992ca\"" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mid[0m[0m         = "7332815:cookiecutter-github-control" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mpermission[0m[0m = "push" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mrepository[0m[0m = "cookiecutter-github-control" [90m->[0m [0m[90mnull[0m[0m
+      [31m-[0m [0m[1m[0mteam_id[0m[0m    = "7332815" [90m->[0m [0m[90mnull[0m[0m
+    }
+
+[1m  # module.repos["infrahouse-toolkit"].github_repository.repo[0m will be updated in-place[0m[0m
+[0m  [33m~[0m[0m resource "github_repository" "repo" {
+      [33m~[0m [0m[1m[0mdescription[0m[0m                 = "InfraHouse Toolkit" [33m->[0m [0m"InfraHouse Toolkit1"
+        [1m[0mid[0m[0m                          = "infrahouse-toolkit"
+        [1m[0mname[0m[0m                        = "infrahouse-toolkit"
+        [90m# (31 unchanged attributes hidden)[0m[0m
+
+        [90m# (1 unchanged block hidden)[0m[0m
+    }
+
+[1m  # module.repos["test"].github_repository.repo[0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "github_repository" "repo" {
+      [32m+[0m [0m[1m[0mallow_auto_merge[0m[0m            = false
+      [32m+[0m [0m[1m[0mallow_merge_commit[0m[0m          = true
+      [32m+[0m [0m[1m[0mallow_rebase_merge[0m[0m          = true
+      [32m+[0m [0m[1m[0mallow_squash_merge[0m[0m          = true
+      [32m+[0m [0m[1m[0marchived[0m[0m                    = false
+      [32m+[0m [0m[1m[0mdefault_branch[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mdelete_branch_on_merge[0m[0m      = false
+      [32m+[0m [0m[1m[0mdescription[0m[0m                 = "Template for a GitHub Control repository"
+      [32m+[0m [0m[1m[0metag[0m[0m                        = (known after apply)
+      [32m+[0m [0m[1m[0mfull_name[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0mgit_clone_url[0m[0m               = (known after apply)
+      [32m+[0m [0m[1m[0mhas_issues[0m[0m                  = true
+      [32m+[0m [0m[1m[0mhtml_url[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mhttp_clone_url[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                          = (known after apply)
+      [32m+[0m [0m[1m[0mmerge_commit_message[0m[0m        = "PR_TITLE"
+      [32m+[0m [0m[1m[0mmerge_commit_title[0m[0m          = "MERGE_MESSAGE"
+      [32m+[0m [0m[1m[0mname[0m[0m                        = "test"
+      [32m+[0m [0m[1m[0mnode_id[0m[0m                     = (known after apply)
+      [32m+[0m [0m[1m[0mprivate[0m[0m                     = (known after apply)
+      [32m+[0m [0m[1m[0mrepo_id[0m[0m                     = (known after apply)
+      [32m+[0m [0m[1m[0msquash_merge_commit_message[0m[0m = "COMMIT_MESSAGES"
+      [32m+[0m [0m[1m[0msquash_merge_commit_title[0m[0m   = "COMMIT_OR_PR_TITLE"
+      [32m+[0m [0m[1m[0mssh_clone_url[0m[0m               = (known after apply)
+      [32m+[0m [0m[1m[0msvn_url[0m[0m                     = (known after apply)
+      [32m+[0m [0m[1m[0mvisibility[0m[0m                  = "public"
+
+      [32m+[0m [0msecurity_and_analysis {
+          [32m+[0m [0madvanced_security {
+              [32m+[0m [0m[1m[0mstatus[0m[0m = (known after apply)
+            }
+
+          [32m+[0m [0msecret_scanning {
+              [32m+[0m [0m[1m[0mstatus[0m[0m = (known after apply)
+            }
+
+          [32m+[0m [0msecret_scanning_push_protection {
+              [32m+[0m [0m[1m[0mstatus[0m[0m = (known after apply)
+            }
+        }
+    }
+
+[1m  # module.repos["test"].github_team_repository.dev[0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "github_team_repository" "dev" {
+      [32m+[0m [0m[1m[0metag[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mpermission[0m[0m = "push"
+      [32m+[0m [0m[1m[0mrepository[0m[0m = "test"
+      [32m+[0m [0m[1m[0mteam_id[0m[0m    = "7332815"
+    }
+
+[0m[1mPlan:[0m 2 to add, 1 to change, 2 to destroy.
+[0m[90m
+─────────────────────────────────────────────────────────────────────────────[0m
+
+Saved the plan to: tf.plan
+
+To perform exactly these actions, run the following command to apply:
+    terraform apply "tf.plan"
