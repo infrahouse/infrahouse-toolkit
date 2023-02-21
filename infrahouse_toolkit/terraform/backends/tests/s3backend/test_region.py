@@ -17,6 +17,6 @@ def test_region(aws_default_region, args, expected):
     if aws_default_region:
         # noinspection PyTypeChecker
         environ["AWS_DEFAULT_REGION"] = aws_default_region
-    else:
+    elif "AWS_DEFAULT_REGION" in environ:
         del environ["AWS_DEFAULT_REGION"]
     assert TFS3Backend(*args).region == expected
