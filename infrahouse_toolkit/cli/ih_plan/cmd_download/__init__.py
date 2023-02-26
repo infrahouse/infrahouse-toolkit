@@ -11,7 +11,7 @@ from os import path as osp
 import boto3
 import click
 
-from infrahouse_toolkit.cli.lib import get_bucket
+from infrahouse_toolkit.cli.lib import get_bucket, get_s3_client
 
 
 @click.command(name="download")
@@ -26,7 +26,7 @@ def cmd_download(ctx, key_name, plan_file):
     and saved in <plan_file>. By default, the destination file will be a basename of the <key_name>.
 
     """
-    s3_client = boto3.client("s3")
+    s3_client = get_s3_client(role=ctx.obj["aws_assume_role_arn"])
     bucket = ctx.obj["bucket"] or get_bucket(ctx.obj["tf_backend_file"])
     plan_file = plan_file or osp.basename(key_name)
     with open(plan_file, "wb") as f_desc:
