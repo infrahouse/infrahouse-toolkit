@@ -24,6 +24,11 @@ from infrahouse_toolkit.cli.lib import DEFAULT_TF_BACKEND_FILE
     default=None,
 )
 @click.option(
+    "--aws-assume-role-arn",
+    help="ARN of a role the AWS client should assume.",
+    default=None,
+)
+@click.option(
     "--tf-backend-file",
     help="File with Terraform backend configuration.",
     default=DEFAULT_TF_BACKEND_FILE,
@@ -31,9 +36,9 @@ from infrahouse_toolkit.cli.lib import DEFAULT_TF_BACKEND_FILE
 )
 @click.version_option()
 @click.pass_context
-def ih_plan(ctx, bucket, tf_backend_file):
+def ih_plan(ctx, bucket, aws_assume_role_arn, tf_backend_file):
     """Terraform plan helpers."""
-    ctx.obj = {"bucket": bucket, "tf_backend_file": tf_backend_file}
+    ctx.obj = {"aws_assume_role_arn": aws_assume_role_arn, "bucket": bucket, "tf_backend_file": tf_backend_file}
 
 
 for cmd in [cmd_upload, cmd_download, cmd_remove, cmd_publish]:

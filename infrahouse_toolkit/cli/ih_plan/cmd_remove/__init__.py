@@ -9,7 +9,7 @@
 import boto3
 import click
 
-from infrahouse_toolkit.cli.lib import get_bucket
+from infrahouse_toolkit.cli.lib import get_bucket, get_s3_client
 
 
 def validate_key_name(ctx, param, value):  # pylint: disable=unused-argument
@@ -30,10 +30,11 @@ def cmd_remove(ctx, key_name):
 
     It could be a simple ``aws s3 rm s3://...`` but the command will do two things additionally:
 
+    \b
     - It will parse a Terraform backend configuration to find the bucket name (See ih-plan --help).
     - It will refuse to delete a file if it ends with a ".state".
     """
-    s3_client = boto3.client("s3")
+    s3_client = get_s3_client(role=ctx.obj["aws_assume_role_arn"])
     bucket = ctx.obj["bucket"] or get_bucket(ctx.obj["tf_backend_file"])
     s3_client.delete_object(Bucket=bucket, Key=key_name)
     print(f"Successfully removed s3://{bucket}/{key_name}.")
