@@ -6,7 +6,6 @@
     See ``ih-plan remove --help`` for more details.
 """
 
-import boto3
 import click
 
 from infrahouse_toolkit.cli.lib import get_bucket, get_s3_client

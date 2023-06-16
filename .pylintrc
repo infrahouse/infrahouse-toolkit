@@ -4,3 +4,6 @@ ignore-paths=.*/tests/.*
 
 [FORMAT]
 max-line-length=120
+
+[VARIABLES]
+init-import=yes
