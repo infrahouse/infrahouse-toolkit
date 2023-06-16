@@ -2,12 +2,14 @@
 
 """The setup script."""
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
-with open("README.rst") as readme_file:
+CODEC = "utf-8"
+
+with open("README.rst", encoding=CODEC) as readme_file:
     readme = readme_file.read()
 
-history = "See git log"
+HISTORY = "See git log"
 
 
 def parse_requirements(req_file):
@@ -20,7 +22,7 @@ def parse_requirements(req_file):
     :return: Dictionary with requirements.
     :rtype: dict
     """
-    with open(req_file) as f_descr:
+    with open(req_file, encoding=CODEC) as f_descr:
         reqs = f_descr.read().strip().split("\n")
     return [x for x in reqs if x and not x.strip().startswith("#")]
 
@@ -50,7 +52,7 @@ setup(
     },
     install_requires=requirements,
     license="Apache Software License 2.0",
-    long_description=readme + "\n\n" + history,
+    long_description=readme + "\n\n" + HISTORY,
     include_package_data=True,
     keywords="infrahouse-toolkit",
     name="infrahouse-toolkit",
