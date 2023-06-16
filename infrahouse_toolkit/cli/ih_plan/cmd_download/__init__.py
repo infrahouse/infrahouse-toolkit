@@ -8,7 +8,6 @@
 
 from os import path as osp
 
-import boto3
 import click
 
 from infrahouse_toolkit.cli.lib import get_bucket, get_s3_client
