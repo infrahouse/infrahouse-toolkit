@@ -84,8 +84,12 @@ isort: ## reformat imports
 reqsort: ## sort requirements files
 	for f in requirements.txt requirements_dev.txt; do tmp_file=$$(tempfile) && sort $$f > "$$tmp_file" && mv "$$tmp_file" $$f; done
 
+.PHONY: mdformat
+mdformat: ## format markdown files
+	mdformat .github
+
 .PHONY: lint
-lint: lint/yaml lint/black lint/isort lint/reqsort lint/pylint ## check style
+lint: lint/yaml lint/black lint/isort lint/mdformat lint/reqsort lint/pylint ## check style
 
 .PHONY: lint/yaml
 lint/yaml: ## check style with yamllint
@@ -98,6 +102,10 @@ lint/black: ## check style with black
 .PHONY: lint/isort
 lint/isort: ## check imports formatting
 	isort --check-only infrahouse_toolkit setup.py
+
+.PHONY: lint/mdformat
+lint/mdformat:
+	mdformat --check .github
 
 .PHONY: lint/reqsort
 lint/reqsort: ## check requirements sorting order
