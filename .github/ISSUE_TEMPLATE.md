@@ -1,6 +1,6 @@
-* InfraHouse Toolkit version:
-* Python version:
-* Operating System:
+- InfraHouse Toolkit version:
+- Python version:
+- Operating System:
 
 ### Description
 
