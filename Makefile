@@ -38,11 +38,6 @@ pip-tools: pip
 setuptools: pip
 	pip install -U "setuptools ~= 62.3.2"
 
-.PHONY: upgrade-requirements
-upgrade-requirements: pip-tools ## Upgrade requirements
-	pip-compile --upgrade --verbose --output-file requirements.txt requirements.in
-	pip-compile --upgrade --verbose --output-file requirements_dev.txt requirements_dev.in
-
 .PHONY: hooks
 hooks:
 	test -f .git/hooks/pre-commit || cp hooks/pre-commit .git/hooks/pre-commit
@@ -79,11 +74,11 @@ clean-test:
 
 .PHONY: black
 black: ## reformat code with black
-	black infrahouse_toolkit
+	black infrahouse_toolkit setup.py
 
 .PHONY: isort
 isort: ## reformat imports
-	isort infrahouse_toolkit
+	isort infrahouse_toolkit setup.py
 
 .PHONY: reqsort
 reqsort: ## sort requirements files
@@ -98,11 +93,11 @@ lint/yaml: ## check style with yamllint
 
 .PHONY: lint/black
 lint/black: ## check style with black
-	black --check infrahouse_toolkit
+	black --check infrahouse_toolkit setup.py
 
 .PHONY: lint/isort
 lint/isort: ## check imports formatting
-	isort --check-only infrahouse_toolkit
+	isort --check-only infrahouse_toolkit setup.py
 
 .PHONY: lint/reqsort
 lint/reqsort: ## check requirements sorting order
@@ -110,7 +105,7 @@ lint/reqsort: ## check requirements sorting order
 
 .PHONY: lint/pylint
 lint/pylint: ## check style with pylint
-	pylint infrahouse_toolkit
+	pylint infrahouse_toolkit setup.py
 
 
 .PHONY: test
