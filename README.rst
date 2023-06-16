@@ -10,6 +10,8 @@ InfraHouse Toolkit
         :target: https://infrahouse-toolkit.readthedocs.io/en/latest/?version=latest
         :alt: Documentation Status
 
+.. image:: https://app.codacy.com/project/badge/Grade/26f8863a19434e3fb578bfa254328e9d
+    :target: https://app.codacy.com/gh/infrahouse/infrahouse-toolkit/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade
 
 A collection of tools for building infrastructure.
 
