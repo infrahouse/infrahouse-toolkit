@@ -148,7 +148,7 @@ def terraform_apply(
         [
             "terraform",
             "apply",
-            f"-var-file='{var_file}'",
+            f"-var-file={var_file}",
             "-input=false",
             "-auto-approve",
         ],
@@ -174,7 +174,7 @@ def terraform_apply(
                 [
                     "terraform",
                     "destroy",
-                    f"-var-file='{var_file}'",
+                    f"-var-file={var_file}",
                     "-input=false",
                     "-auto-approve",
                 ],
