@@ -148,12 +148,12 @@ def terraform_apply(
         [
             "terraform",
             "apply",
-            f"-var-file={var_file}",
+            f"-var-file='{var_file}'",
             "-input=false",
             "-auto-approve",
         ],
     ]
-    env = os.environ
+    env = dict(os.environ)
     if enable_trace:
         env["TF_LOG"] = "JSON"
     try:
@@ -174,7 +174,7 @@ def terraform_apply(
                 [
                     "terraform",
                     "destroy",
-                    f"-var-file={var_file}",
+                    f"-var-file='{var_file}'",
                     "-input=false",
                     "-auto-approve",
                 ],
