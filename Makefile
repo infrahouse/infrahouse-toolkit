@@ -118,7 +118,9 @@ lint/pylint: ## check style with pylint
 
 .PHONY: test
 test: ## run tests quickly with the default Python
-	pytest -xvvs infrahouse_toolkit
+	pytest --cov \
+		--cov-report=term-missing --cov-report=xml  \
+		-xvvs infrahouse_toolkit
 
 .PHONY: docs
 docs: ## generate Sphinx HTML documentation, including API docs
