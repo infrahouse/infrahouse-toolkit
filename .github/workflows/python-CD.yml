@@ -35,6 +35,10 @@ jobs:
                     echo "PUBLISH=no" >> $GITHUB_ENV
                   fi
 
+            - name: Unit tests
+              run: |
+                  make test
+
             - name: Build package
               if: env.PUBLISH == 'yes'
               run: python -m build
@@ -45,3 +49,9 @@ jobs:
               with:
                   user: __token__
                   password: ${{ secrets.PYPI_API_TOKEN }}
+
+            - name: Run codacy-coverage-reporter
+              uses: codacy/codacy-coverage-reporter-action@v1
+              with:
+                  project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+                  coverage-reports: "coverage.xml"
