@@ -3,14 +3,18 @@
 
     Various helper functions.
 """
-
+import json
 import sys
 from contextlib import contextmanager
 from os import getgid, getuid
+from os import path as osp
 from subprocess import CalledProcessError, Popen, check_call
 from tempfile import TemporaryDirectory
+from time import sleep, time
 
-from infrahouse_toolkit import DEFAULT_OPEN_ENCODING
+import boto3
+
+from infrahouse_toolkit import DEFAULT_OPEN_ENCODING, LOG
 from infrahouse_toolkit.cli.ih_s3_reprepro.aws import assume_role
 from infrahouse_toolkit.cli.ih_s3_reprepro.gpg import gpg
 
@@ -28,10 +32,11 @@ def check_dependencies(binaries: list):
     for dep in binaries:
         try:
             with open("/dev/null", "w", encoding=DEFAULT_OPEN_ENCODING) as devnull:
+                LOG.debug("Checking if %s is installed.", dep)
                 check_call([dep, "--help"], stdout=devnull, stderr=devnull)
         except FileNotFoundError:
-            print(f"Looks like {dep} is not installed")
-            print(f"Try installing it by \n\n\tapt-get install {dep}\n")
+            LOG.error("Looks like %s is not installed", dep)
+            LOG.info("Try installing it by \n\n\tapt-get install %s\n", dep)
             sys.exit(1)
 
 
@@ -49,7 +54,18 @@ def mount_s3(bucket: str, path: str, role_arn: str = None):
     cmd = ["s3fs", bucket, path, "-o", f"uid={getuid()}", "-o", f"gid={getgid()}"]
     if role_arn:
         env = assume_role(role_arn)
-    check_call(cmd, env=env)
+        sts = boto3.client(
+            "sts",
+            aws_access_key_id=env["AWS_ACCESS_KEY_ID"],
+            aws_secret_access_key=env["AWS_SECRET_ACCESS_KEY"],
+            aws_session_token=env["AWS_SESSION_TOKEN"],
+        )
+        response = sts.get_caller_identity()
+        LOG.debug("Assumed role: %s", response)
+
+    LOG.debug("To reproduce environment: \n%s", "\n".join([f'export {key}="{value}"' for key, value in env.items()]))
+    LOG.debug("Command to debug: mkdir -p %s; %s -o dbglevel=info -f -o curldbg", path, " ".join(cmd))
+    execute(cmd, env=env)
 
 
 def umount_s3(path: str):
@@ -61,12 +77,13 @@ def umount_s3(path: str):
     """
     try:
         check_call(["umount", path])
-    except CalledProcessError:
+    except CalledProcessError as err:
+        LOG.error(err)
         sys.exit(1)
 
 
 @contextmanager
-def local_s3(bucket, role_arn=None) -> str:
+def local_s3(bucket, role_arn=None, retry_timeout=60) -> str:
     """
     Mount an S3 bucket locally and return a mount point.
 
@@ -74,39 +91,55 @@ def local_s3(bucket, role_arn=None) -> str:
     :type bucket: str
     :param role_arn: Assume role if specified.
     :type role_arn: str
+    :param retry_timeout: How many second to keep trying to mount the bucket.
+    :type retry_timeout: int
     :return: Local filesystem path where the S3 bucket is mounted at.
     """
     with TemporaryDirectory() as mnt_dir:
         try:
-            mount_s3(bucket, mnt_dir, role_arn=role_arn)
+            now = time()
+            timeout = now + retry_timeout
+            while True:
+                mount_s3(bucket, mnt_dir, role_arn=role_arn)
+                if osp.exists(osp.join(mnt_dir, "conf/distributions")):
+                    break
+                LOG.warning("Waiting until s3://%s is mounted at %s", bucket, mnt_dir)
+                sleep(1)
+                if time() > timeout:
+                    raise RuntimeError(f"s3://{bucket} is not mounted after {retry_timeout} seconds")
             yield mnt_dir
 
         except Exception as err:
-            print(type(err), err)
+            LOG.exception(err)
             raise
 
         finally:
             umount_s3(mnt_dir)
 
 
-def execute(cmd: list):
+def execute(cmd: list, env: dict = None):
     """
     Execute a command and exit with 1 if the command raises CalledProcessError.
 
     :param cmd: A command to execute. It's passed to check_call() and therefore must be a list.
     :type cmd: list
+    :param env: Pass a dictionary with environment
+    :type env: dict
     """
     try:
-        with Popen(cmd) as proc:
+        LOG.debug("Executing %s", " ".join(cmd))
+        LOG.debug("Environment: %s", json.dumps(env, indent=4) if env else "None")
+        with Popen(cmd, env=env) as proc:
             try:
                 proc.communicate()
             except KeyboardInterrupt:
-                print("Exiting on <ctrl>+c")
+                LOG.info("Exiting on <ctrl>+c")
                 proc.terminate()
-                print(f"Process {cmd[0]} is terminated. Waiting for it to exit.")
+                LOG.info("Process %s is terminated. Waiting for it to exit.", cmd[0])
                 proc.wait(60)
 
-    except CalledProcessError:
+    except CalledProcessError as err:
+        LOG.exception(err)
         sys.exit(1)
 
 

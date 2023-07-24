@@ -9,7 +9,9 @@ from os import path as osp
 from subprocess import Popen
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
-from infrahouse_toolkit import DEFAULT_ENCODING, DEFAULT_OPEN_ENCODING
+from botocore.exceptions import ClientError
+
+from infrahouse_toolkit import DEFAULT_ENCODING, DEFAULT_OPEN_ENCODING, LOG
 from infrahouse_toolkit.cli.ih_s3_reprepro.aws import get_client
 
 
@@ -19,6 +21,7 @@ def gpg_home() -> str:
     :return: GPG home directory
     """
     with TemporaryDirectory() as path:
+        LOG.debug("GPG home is %s", path)
         yield path
 
 
@@ -49,8 +52,16 @@ def gpg(secret_key=None, role_arn=None, secret_passphrase=None) -> str:
     :rtype: str
     """
     if secret_key:
-        secrets_manager = get_client("secretsmanager", role_arn=role_arn)
-        key = secrets_manager.get_secret_value(SecretId=secret_key)["SecretString"]
+        LOG.debug("Reading GPG key from %s", secret_key)
+        try:
+            secrets_manager = get_client("secretsmanager", role_arn=role_arn)
+            key = secrets_manager.get_secret_value(SecretId=secret_key)["SecretString"]
+        except ClientError as err:
+            LOG.error(err)
+            if err.response["Error"]["Code"] == "ResourceNotFoundException":
+                LOG.error("Make sure that you set a secret value to the key %s:", secret_key)
+                LOG.error("ih-s3-reprepro ... set-secret-value %s /path/to/file/with/%s-value", secret_key, secret_key)
+            raise
 
         with gpg_home() as homedir, NamedTemporaryFile() as gpg_key_desc, NamedTemporaryFile() as gpg_passphrase_desc:
             gpg_key_desc.write(key.encode(DEFAULT_ENCODING))
@@ -59,6 +70,7 @@ def gpg(secret_key=None, role_arn=None, secret_passphrase=None) -> str:
             cmd = ["gpg", "--homedir", homedir]
 
             if secret_passphrase:
+                LOG.debug("Reading GPG key passphrase from %s", secret_passphrase)
                 passphrase = secrets_manager.get_secret_value(SecretId=secret_passphrase)["SecretString"]
                 gpg_passphrase_desc.write(passphrase.encode(DEFAULT_ENCODING))
                 gpg_passphrase_desc.flush()
@@ -68,6 +80,7 @@ def gpg(secret_key=None, role_arn=None, secret_passphrase=None) -> str:
                 )
 
             cmd.extend(["--import", gpg_key_desc.name])
+            LOG.debug("Executing: %s", " ".join(cmd))
             proc = Popen(cmd)
             proc.communicate()
             yield homedir
@@ -84,6 +97,7 @@ def write_gpg_cong(path: str, options: dict):
     :param options: A dictionary with options. For one word options the key value is None.
     :type options: dict
     """
+    LOG.debug("Saving GPG config in %s", path)
     with open(path, "w", encoding=DEFAULT_OPEN_ENCODING) as gpg_conf_desc:
         for key, value in options.items():
             gpg_conf_desc.write(f"{key}")
