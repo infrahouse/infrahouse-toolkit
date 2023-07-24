@@ -21,6 +21,14 @@ infrahouse\_toolkit.terraform.exceptions module
    :undoc-members:
    :show-inheritance:
 
+infrahouse\_toolkit.terraform.githubpr module
+---------------------------------------------
+
+.. automodule:: infrahouse_toolkit.terraform.githubpr
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 infrahouse\_toolkit.terraform.status module
 -------------------------------------------
 

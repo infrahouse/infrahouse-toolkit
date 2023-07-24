@@ -48,6 +48,7 @@ setup(
     entry_points={
         "console_scripts": [
             "ih-plan=infrahouse_toolkit.cli.ih_plan:ih_plan",
+            "ih-s3-reprepro=infrahouse_toolkit.cli.ih_s3_reprepro:ih_s3_reprepro",
         ],
     },
     install_requires=requirements,
@@ -60,6 +61,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/infrahouse/infrahouse-toolkit",
-    version="1.5.0",
+    version="1.6.0",
     zip_safe=False,
 )

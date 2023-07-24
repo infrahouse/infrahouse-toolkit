@@ -8,6 +8,7 @@ Subpackages
    :maxdepth: 4
 
    infrahouse_toolkit.cli.ih_plan
+   infrahouse_toolkit.cli.ih_s3_reprepro
    infrahouse_toolkit.cli.tests
 
 Submodules
