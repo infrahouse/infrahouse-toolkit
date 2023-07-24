@@ -16,7 +16,7 @@ from infrahouse_toolkit.cli.ih_plan.cmd_upload import cmd_upload
 from infrahouse_toolkit.cli.lib import DEFAULT_TF_BACKEND_FILE
 
 
-@click.group(name="it-plan")
+@click.group()
 @click.option(
     "--bucket",
     help="AWS S3 bucket name to upload/download the plan. "

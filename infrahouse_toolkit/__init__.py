@@ -13,4 +13,5 @@ __version__ = "1.5.0"
 from logging import getLogger
 
 DEFAULT_OPEN_ENCODING = "utf8"
+DEFAULT_ENCODING = DEFAULT_OPEN_ENCODING
 LOG = getLogger(__name__)
