@@ -1,4 +1,4 @@
-infrahouse_toolkit
+Code documentation
 ==================
 
 .. toctree::
