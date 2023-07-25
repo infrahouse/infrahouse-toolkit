@@ -19,7 +19,7 @@ def cmd_check(ctx: Context, codenames):
     """Check for all needed files to be registered properly."""
     bucket = ctx.parent.params["bucket"]
     role_arn = ctx.parent.params["role_arn"]
-    with local_s3(bucket, role_arn) as path:
+    with local_s3(bucket, role_arn, region=ctx.parent.params["aws_region"]) as path:
         cmd = [
             "reprepro",
             "-V",

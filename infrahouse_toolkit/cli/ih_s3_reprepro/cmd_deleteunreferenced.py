@@ -18,6 +18,6 @@ def cmd_deleteunreferenced(ctx: Context):
     """Remove all known files (and forget them) in the pool not marked to be needed by anything."""
     bucket = ctx.parent.params["bucket"]
     role_arn = ctx.parent.params["role_arn"]
-    with local_s3(bucket, role_arn) as path:
+    with local_s3(bucket, role_arn, region=ctx.parent.params["aws_region"]) as path:
         cmd = ["reprepro", "-V", "-b", path, "deleteunreferenced"]
         execute(cmd)

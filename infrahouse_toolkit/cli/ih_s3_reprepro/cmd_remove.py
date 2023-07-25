@@ -5,10 +5,13 @@
 
     See ``ih-s3-reprepro remove --help`` for more details.
 """
+import sys
 
 import click
+from botocore.exceptions import BotoCoreError, ClientError
 from click import Context
 
+from infrahouse_toolkit import LOG
 from infrahouse_toolkit.cli.ih_s3_reprepro.utils import execute, repo_env
 
 
@@ -18,10 +21,16 @@ from infrahouse_toolkit.cli.ih_s3_reprepro.utils import execute, repo_env
 @click.pass_context
 def cmd_remove(ctx: Context, codename, package_name):
     """Delete  all packages in the specified distribution, that have package name listed as argument."""
-    with repo_env(
-        ctx.parent.params["bucket"],
-        ctx.parent.params["role_arn"],
-        ctx.parent.params["gpg_key_secret_id"],
-        ctx.parent.params["gpg_passphrase_secret_id"],
-    ) as (path, gpg_home):
-        execute(["reprepro", "-V", "-b", path, "--gnupghome", gpg_home, "remove", codename, package_name])
+    try:
+        with repo_env(
+            ctx.parent.params["bucket"],
+            ctx.parent.params["role_arn"],
+            ctx.parent.params["gpg_key_secret_id"],
+            ctx.parent.params["gpg_passphrase_secret_id"],
+            region=ctx.parent.params["aws_region"],
+        ) as (path, gpg_home):
+            execute(["reprepro", "-V", "-b", path, "--gnupghome", gpg_home, "remove", codename, package_name])
+
+    except (ClientError, BotoCoreError) as err:
+        LOG.error(err)
+        sys.exit(1)
