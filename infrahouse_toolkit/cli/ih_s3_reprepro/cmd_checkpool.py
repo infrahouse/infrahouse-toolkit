@@ -17,5 +17,5 @@ def cmd_checkpool(ctx: Context):
     """Check if all files in the pool are still in proper shape."""
     bucket = ctx.parent.params["bucket"]
     role_arn = ctx.parent.params["role_arn"]
-    with local_s3(bucket, role_arn) as path:
+    with local_s3(bucket, role_arn, region=ctx.parent.params["aws_region"]) as path:
         execute(["reprepro", "-V", "-b", path, "checkpool"])

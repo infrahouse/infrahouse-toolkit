@@ -18,6 +18,6 @@ def cmd_dumpunreferenced(ctx: Context):
     """Print a list of all filed believed to be in the pool, that are not known to be needed."""
     bucket = ctx.parent.params["bucket"]
     role_arn = ctx.parent.params["role_arn"]
-    with local_s3(bucket, role_arn) as path:
+    with local_s3(bucket, role_arn, region=ctx.parent.params["aws_region"]) as path:
         cmd = ["reprepro", "-V", "-b", path, "dumpunreferenced"]
         execute(cmd)

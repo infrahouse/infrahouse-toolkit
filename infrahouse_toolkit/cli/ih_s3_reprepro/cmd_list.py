@@ -20,8 +20,7 @@ def cmd_list(ctx: Context, distribution: str, package_name: str):
     """List all packages by the given name occurring in the given distribution."""
     bucket = ctx.parent.params["bucket"]
     role_arn = ctx.parent.params["role_arn"]
-    with local_s3(bucket, role_arn) as path:
-        # input("press enter")
+    with local_s3(bucket, role_arn, region=ctx.parent.params["aws_region"]) as path:
         cmd = ["reprepro", "-V", "-b", path, "list", distribution]
         cmd.extend(package_name)
         execute(cmd)

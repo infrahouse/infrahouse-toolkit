@@ -26,7 +26,7 @@ def gpg_home() -> str:
 
 
 @contextmanager
-def gpg(secret_key=None, role_arn=None, secret_passphrase=None) -> str:
+def gpg(secret_key=None, role_arn=None, secret_passphrase=None, region: str = None) -> str:
     """
     Prepare GPG keyring and yield path to it.
     If no function arguments are specified, it will return the default path ~/.gnupg.
@@ -48,13 +48,15 @@ def gpg(secret_key=None, role_arn=None, secret_passphrase=None) -> str:
     :type role_arn: str
     :param secret_passphrase: AWS secret id (name or ARN) with a passphrase for the GPG private key.
     :type secret_passphrase: str
+    :param region: AWS region name.
+    :type region: str
     :return: Path to GPG homedir.
     :rtype: str
     """
     if secret_key:
         LOG.debug("Reading GPG key from %s", secret_key)
         try:
-            secrets_manager = get_client("secretsmanager", role_arn=role_arn)
+            secrets_manager = get_client("secretsmanager", role_arn=role_arn, region=region)
             key = secrets_manager.get_secret_value(SecretId=secret_key)["SecretString"]
         except ClientError as err:
             LOG.error(err)

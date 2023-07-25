@@ -15,7 +15,10 @@ from time import sleep, time
 import boto3
 
 from infrahouse_toolkit import DEFAULT_OPEN_ENCODING, LOG
-from infrahouse_toolkit.cli.ih_s3_reprepro.aws import assume_role
+from infrahouse_toolkit.cli.ih_s3_reprepro.aws import (
+    assume_role,
+    get_credentials_from_profile,
+)
 from infrahouse_toolkit.cli.ih_s3_reprepro.gpg import gpg
 
 DEPENDENCIES = ["reprepro", "gpg", "s3fs"]
@@ -40,7 +43,7 @@ def check_dependencies(binaries: list):
             sys.exit(1)
 
 
-def mount_s3(bucket: str, path: str, role_arn: str = None):
+def mount_s3(bucket: str, path: str, role_arn: str = None, region: str = None):
     """
     Mount an S3 bucket at a path.
 
@@ -49,6 +52,8 @@ def mount_s3(bucket: str, path: str, role_arn: str = None):
     :param path: Local filesystem path name.
     :type path: str
     :param role_arn: Assume role if specified.
+    :param region: AWS region name.
+    :type region: str
     """
     env = {}
     cmd = ["s3fs", bucket, path, "-o", f"uid={getuid()}", "-o", f"gid={getgid()}"]
@@ -59,9 +64,12 @@ def mount_s3(bucket: str, path: str, role_arn: str = None):
             aws_access_key_id=env["AWS_ACCESS_KEY_ID"],
             aws_secret_access_key=env["AWS_SECRET_ACCESS_KEY"],
             aws_session_token=env["AWS_SESSION_TOKEN"],
+            region_name=region,
         )
         response = sts.get_caller_identity()
         LOG.debug("Assumed role: %s", response)
+    else:
+        env = get_credentials_from_profile()
 
     LOG.debug("To reproduce environment: \n%s", "\n".join([f'export {key}="{value}"' for key, value in env.items()]))
     LOG.debug("Command to debug: mkdir -p %s; %s -o dbglevel=info -f -o curldbg", path, " ".join(cmd))
@@ -83,7 +91,7 @@ def umount_s3(path: str):
 
 
 @contextmanager
-def local_s3(bucket, role_arn=None, retry_timeout=60) -> str:
+def local_s3(bucket, role_arn=None, retry_timeout=60, region=None) -> str:
     """
     Mount an S3 bucket locally and return a mount point.
 
@@ -93,6 +101,8 @@ def local_s3(bucket, role_arn=None, retry_timeout=60) -> str:
     :type role_arn: str
     :param retry_timeout: How many second to keep trying to mount the bucket.
     :type retry_timeout: int
+    :param region: AWS region name.
+    :type region: str
     :return: Local filesystem path where the S3 bucket is mounted at.
     """
     with TemporaryDirectory() as mnt_dir:
@@ -100,7 +110,7 @@ def local_s3(bucket, role_arn=None, retry_timeout=60) -> str:
             now = time()
             timeout = now + retry_timeout
             while True:
-                mount_s3(bucket, mnt_dir, role_arn=role_arn)
+                mount_s3(bucket, mnt_dir, role_arn=role_arn, region=region)
                 if osp.exists(osp.join(mnt_dir, "conf/distributions")):
                     break
                 LOG.warning("Waiting until s3://%s is mounted at %s", bucket, mnt_dir)
@@ -108,10 +118,6 @@ def local_s3(bucket, role_arn=None, retry_timeout=60) -> str:
                 if time() > timeout:
                     raise RuntimeError(f"s3://{bucket} is not mounted after {retry_timeout} seconds")
             yield mnt_dir
-
-        except Exception as err:
-            LOG.exception(err)
-            raise
 
         finally:
             umount_s3(mnt_dir)
@@ -144,7 +150,7 @@ def execute(cmd: list, env: dict = None):
 
 
 @contextmanager
-def repo_env(bucket, role_arn, gpg_key_secret_id, gpg_passphrase_secret_id):
+def repo_env(bucket, role_arn, gpg_key_secret_id, gpg_passphrase_secret_id, region=None):
     """
     Prepare locally a repo and GPG so "reprepro" can manage it.
 
@@ -158,11 +164,13 @@ def repo_env(bucket, role_arn, gpg_key_secret_id, gpg_passphrase_secret_id):
     :param gpg_passphrase_secret_id: AWS secretsmanager secret (name or ARN) that stores a passphrase for
         the private GPG key. Note, it's not the passphrase itself, it's a secret that stores it.
     :type gpg_passphrase_secret_id: str
+    :param region: AWS region name.
+    :type region: str
     :return: A tuple with two strings: Local filesystem directory with a mounted S3 bucket
         and GPG home directory.
     """
-    with local_s3(bucket, role_arn) as path:
+    with local_s3(bucket, role_arn, region=region) as path:
         with gpg(
-            secret_key=gpg_key_secret_id, role_arn=role_arn, secret_passphrase=gpg_passphrase_secret_id
+            secret_key=gpg_key_secret_id, role_arn=role_arn, secret_passphrase=gpg_passphrase_secret_id, region=region
         ) as gpg_home:
             yield path, gpg_home
