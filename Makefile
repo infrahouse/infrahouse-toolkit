@@ -21,6 +21,9 @@ endef
 export PRINT_HELP_PYSCRIPT
 
 BROWSER := python -c "$$BROWSER_PYSCRIPT"
+OS_VERSION ?= jammy
+
+PWD := $(shell pwd)
 
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
@@ -54,6 +57,7 @@ clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and 
 clean-build:
 	rm -fr build/
 	rm -fr dist/
+	rm -fr omnibus-infrahouse-toolkit/pkg/
 	rm -fr .eggs/
 	find . -name '*.egg-info' -exec rm -fr {} +
 	find . -name '*.egg' -exec rm -f {} +
@@ -130,8 +134,17 @@ docs: ## generate Sphinx HTML documentation, including API docs
 	$(BROWSER) docs/_build/html/index.html
 
 .PHONY: release
-release: dist ## package and upload a release
+release: dist ## Build a Python packager and upload a release to PyPI
 	twine upload dist/*
+
+.PHONY: package
+package:
+	docker run -it \
+	-v ${PWD}:/infrahouse-toolkit \
+	--name infrahouse-toolkit-builder \
+	--rm \
+	"twindb/omnibus-ubuntu:${OS_VERSION}" \
+	bash -l /infrahouse-toolkit/omnibus-infrahouse-toolkit/omnibus_build.sh
 
 .PHONY: dist
 dist: clean ## builds source and wheel package

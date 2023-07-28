@@ -41,9 +41,11 @@ jobs:
 
             - name: Build package
               if: env.PUBLISH == 'yes'
-              run: python -m build
+              run: |
+                python -m build
+                make package
 
-            - name: Publish package
+            - name: Publish python package
               if: env.PUBLISH == 'yes'
               uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
               with:
