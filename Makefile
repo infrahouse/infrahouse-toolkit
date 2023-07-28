@@ -139,7 +139,7 @@ release: dist ## Build a Python packager and upload a release to PyPI
 
 .PHONY: package
 package:
-	docker run -it \
+	docker run \
 	-v ${PWD}:/infrahouse-toolkit \
 	--name infrahouse-toolkit-builder \
 	--rm \
