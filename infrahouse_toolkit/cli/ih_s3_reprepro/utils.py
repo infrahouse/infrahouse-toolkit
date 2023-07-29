@@ -4,6 +4,7 @@
     Various helper functions.
 """
 import json
+import os
 import sys
 from contextlib import contextmanager
 from os import getgid, getuid
@@ -17,6 +18,7 @@ import boto3
 from infrahouse_toolkit import DEFAULT_OPEN_ENCODING, LOG
 from infrahouse_toolkit.cli.ih_s3_reprepro.aws import (
     assume_role,
+    get_credentials_from_environ,
     get_credentials_from_profile,
 )
 from infrahouse_toolkit.cli.ih_s3_reprepro.gpg import gpg
@@ -68,6 +70,8 @@ def mount_s3(bucket: str, path: str, role_arn: str = None, region: str = None):
         )
         response = sts.get_caller_identity()
         LOG.debug("Assumed role: %s", response)
+    elif "AWS_ACCESS_KEY_ID" in os.environ:
+        env = get_credentials_from_environ()
     else:
         env = get_credentials_from_profile()
 
@@ -86,7 +90,7 @@ def umount_s3(path: str):
     try:
         check_call(["umount", path])
     except CalledProcessError as err:
-        LOG.error(err)
+        LOG.exception(err)
         sys.exit(1)
 
 
@@ -118,6 +122,9 @@ def local_s3(bucket, role_arn=None, retry_timeout=60, region=None) -> str:
                 if time() > timeout:
                     raise RuntimeError(f"s3://{bucket} is not mounted after {retry_timeout} seconds")
             yield mnt_dir
+        except Exception as err:
+            LOG.critical(err)
+            raise
 
         finally:
             umount_s3(mnt_dir)
