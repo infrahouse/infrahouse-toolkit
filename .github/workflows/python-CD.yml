@@ -29,6 +29,7 @@ jobs:
             - name: Install dependencies
               run: |
                 make bootstrap
+                apt-get -y install reprepro gpg s3fs
 
             - name: Check if version was bumped
               run: |
