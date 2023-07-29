@@ -75,6 +75,7 @@ jobs:
                     --gpg-key-secret-id packager-key-${{ matrix.codename }} \
                     --gpg-passphrase-secret-id packager-passphrase-${{ matrix.codename }} \
                     includedeb \
+                    ${{ matrix.codename }} \
                     omnibus-infrahouse-toolkit/pkg/infrahouse-toolkit_*.deb
 
             - name: Run codacy-coverage-reporter
