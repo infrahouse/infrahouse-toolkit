@@ -60,6 +60,12 @@ jobs:
                   role-session-name: github-action-infrahouse-toolkit-cd
                   aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
+            - name: "Setup tmate session"
+              uses: "mxschmitt/action-tmate@v3"
+              if: "${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}"
+              with:
+                  limit-access-to-actor: true
+
             - name: Build package
               if: env.PUBLISH == 'yes'
               run: |
@@ -85,12 +91,6 @@ jobs:
                     includedeb \
                     ${{ matrix.codename }} \
                     omnibus-infrahouse-toolkit/pkg/infrahouse-toolkit_*.deb
-
-            - name: "Setup tmate session"
-              uses: "mxschmitt/action-tmate@v3"
-              if: "${{ failure() && github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}"
-              with:
-                  limit-access-to-actor: true
 
             - name: Run codacy-coverage-reporter
               uses: codacy/codacy-coverage-reporter-action@v1
