@@ -2,13 +2,13 @@
 Top-level package for InfraHouse Toolkit.
 
 :Author: Oleksandr Kuzminskyi
-:Version: 2.0.8
+:Version: 2.0.9
 :Email: aleks@infrahouse.com
 """
 
 __author__ = """Oleksandr Kuzminskyi"""
 __email__ = "aleks@infrahouse.com"
-__version__ = "2.0.8"
+__version__ = "2.0.9"
 
 from logging import getLogger
 
