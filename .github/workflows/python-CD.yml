@@ -73,7 +73,7 @@ jobs:
                 OS_VERSION=${{ matrix.codename }} make package
 
             - name: Publish python package
-              if: ${{ env.PUBLISH == 'yes' && $matrix.codename == 'jammy' }}
+              if: ${{ env.PUBLISH == 'yes' && matrix.codename == 'jammy' }}
               uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
               with:
                   user: __token__
