@@ -3,6 +3,7 @@
 
     AWS helper functions.
 """
+from os import environ
 
 import boto3
 import requests
@@ -85,7 +86,27 @@ def get_credentials_from_profile() -> dict:
     """
     url = "http://169.254.169.254/latest/meta-data/iam/security-credentials/"
     profile_name = requests.get(url, timeout=10).text
+    LOG.debug("Profile name %s", profile_name)
     profile_data = requests.get(f"{url}/{profile_name}", timeout=10).json()
     profile_data["SessionToken"] = profile_data["Token"]
 
     return {var: profile_data.get(key) for var, key in VALUE_MAP.items()}
+
+
+def get_credentials_from_environ():
+    """Yet another way to get credentials.
+
+    If environment is already configured for AWS access, simply get the credential from the environment.
+    This is a situation when a user configures AWS_* in their env.
+    Or when a role has been assumed and AWS_* are configured.
+
+    :return: A dictionary with AWS_* variables.
+    """
+    return {
+        "AWS_ACCESS_KEY_ID": environ.get("AWS_ACCESS_KEY_ID"),
+        "AWS_SECRET_ACCESS_KEY": environ.get("AWS_SECRET_ACCESS_KEY"),
+        "AWS_SESSION_TOKEN": environ.get("AWS_SESSION_TOKEN"),
+        "AWSACCESSKEYID": environ.get("AWS_ACCESS_KEY_ID"),
+        "AWSSECRETACCESSKEY": environ.get("AWS_SECRET_ACCESS_KEY"),
+        "AWSSESSIONTOKEN": environ.get("AWS_SESSION_TOKEN"),
+    }
