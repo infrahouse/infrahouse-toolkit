@@ -5,6 +5,13 @@ name: Python Continuous Deployment
 on:  # yamllint disable-line rule:truthy
     push:
         branches: ["main"]
+    workflow_dispatch:
+        inputs:
+            debug_enabled:
+                type: "boolean"
+                description: "Setup a temporary SSH access if a test fails"
+                required: false
+                default: false
 
 permissions:
     id-token: write  # This is required for requesting the JWT
@@ -70,6 +77,7 @@ jobs:
               if: env.PUBLISH == 'yes'
               run: |
                   ih-s3-reprepro \
+                    --debug \
                     --aws-region ${{ secrets.AWS_DEFAULT_REGION }} \
                     --bucket infrahouse-release-${{ matrix.codename }} \
                     --gpg-key-secret-id packager-key-${{ matrix.codename }} \
@@ -77,6 +85,12 @@ jobs:
                     includedeb \
                     ${{ matrix.codename }} \
                     omnibus-infrahouse-toolkit/pkg/infrahouse-toolkit_*.deb
+
+            - name: "Setup tmate session"
+              uses: "mxschmitt/action-tmate@v3"
+              if: "${{ failure() && github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}"
+              with:
+                  limit-access-to-actor: true
 
             - name: Run codacy-coverage-reporter
               uses: codacy/codacy-coverage-reporter-action@v1
