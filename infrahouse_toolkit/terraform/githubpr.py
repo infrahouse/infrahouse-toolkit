@@ -4,9 +4,11 @@ Module for :py:class:`GitHubPR`.
 from os import environ
 from typing import Union
 
-from github import Github
+from github import Github, InputFileContent
+from github.GithubException import GithubException
 from github.IssueComment import IssueComment
 
+from infrahouse_toolkit import LOG
 from infrahouse_toolkit.terraform import IHParseError, parse_comment
 from infrahouse_toolkit.terraform.backends.tfbackend import TFBackend
 
@@ -95,4 +97,22 @@ class GitHubPR:
 
     def publish_comment(self, comment: str):
         """Add the given text as a comment in the pull request."""
-        self.pull_request.create_issue_comment(comment)
+        try:
+            self.pull_request.create_issue_comment(comment)
+        except GithubException as err:
+            LOG.error(err)
+            # https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28#create-an-issue-comment
+            if err.status == 422:  # Validation failed, or the endpoint has been spammed.
+                current_user = self.github.get_user()
+                gist = current_user.create_gist(
+                    public=True,
+                    files={
+                        f"pr-{self._pr_number}-plan": InputFileContent(
+                            content=comment, new_name=f"{self._repo_name}-pr-{self._pr_number}-plan.txt"
+                        )
+                    },
+                )
+                self.pull_request.create_issue_comment(
+                    f"Comment was too big. It's published as a gist at {gist.html_url}."
+                )
+            raise
