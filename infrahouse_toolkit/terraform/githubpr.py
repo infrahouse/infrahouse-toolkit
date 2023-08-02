@@ -108,7 +108,8 @@ class GitHubPR:
                     public=True,
                     files={
                         f"pr-{self._pr_number}-plan": InputFileContent(
-                            content=comment, new_name=f"{self._repo_name}-pr-{self._pr_number}-plan.txt"
+                            content=comment,
+                            new_name=f"{self._repo_name.replace('/','-')}-pr-{self._pr_number}-plan.txt",
                         )
                     },
                 )
