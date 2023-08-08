@@ -28,4 +28,5 @@ build do
   command "#{install_dir}/embedded/bin/pip3 --cert #{install_dir}/embedded/ssl/cert.pem install -I .", env: env
   link "#{install_dir}/embedded/bin/ih-plan", "#{scripts_dir}/ih-plan"
   link "#{install_dir}/embedded/bin/ih-s3-reprepro", "#{scripts_dir}/ih-s3-reprepro"
+  link "#{install_dir}/embedded/bin/ih-puppet", "#{scripts_dir}/ih-puppet"
 end

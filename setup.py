@@ -49,6 +49,7 @@ setup(
         "console_scripts": [
             "ih-plan=infrahouse_toolkit.cli.ih_plan:ih_plan",
             "ih-s3-reprepro=infrahouse_toolkit.cli.ih_s3_reprepro:ih_s3_reprepro",
+            "ih-puppet=infrahouse_toolkit.cli.ih_puppet:ih_puppet",
         ],
     },
     install_requires=requirements,

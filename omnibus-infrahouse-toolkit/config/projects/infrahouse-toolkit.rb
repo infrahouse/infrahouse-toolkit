@@ -30,6 +30,7 @@ runtime_dependency 'puppet-agent'
 scripts_dir = '/usr/local/bin'
 extra_package_file "#{scripts_dir}/ih-plan"
 extra_package_file "#{scripts_dir}/ih-s3-reprepro"
+extra_package_file "#{scripts_dir}/ih-puppet"
 
 exclude "**/.git"
 exclude "**/bundler/git"
