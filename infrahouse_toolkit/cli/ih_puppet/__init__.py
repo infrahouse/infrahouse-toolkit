@@ -48,7 +48,7 @@ from infrahouse_toolkit.logging import setup_logging
 @click.version_option()
 @click.pass_context
 def ih_puppet(ctx, **kwargs):
-    """Terraform plan helpers."""
+    """Puppet wrapper."""
     setup_logging(LOG, debug=kwargs["debug"])
     ctx.obj = {
         "debug": kwargs["debug"],
