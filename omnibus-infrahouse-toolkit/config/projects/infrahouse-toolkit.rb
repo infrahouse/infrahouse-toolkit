@@ -12,7 +12,7 @@ homepage "https://infrahouse.com"
 # and /opt/infrahouse-toolkit on all other platforms
 install_dir "#{default_root}/#{name}"
 
-build_version '2.0.14'
+build_version '2.1.0'
 build_iteration 1
 
 override :openssl, version: '1.1.1t'
@@ -21,8 +21,11 @@ override :openssl, version: '1.1.1t'
 dependency "preparation"
 
 # infrahouse-toolkit dependencies/components
-# dependency "somedep"
 dependency 'infrahouse-toolkit'
+runtime_dependency 'reprepro'
+runtime_dependency 'gpg'
+runtime_dependency 's3fs'
+runtime_dependency 'puppet-agent'
 
 scripts_dir = '/usr/local/bin'
 extra_package_file "#{scripts_dir}/ih-plan"
