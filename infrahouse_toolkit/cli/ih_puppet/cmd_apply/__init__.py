@@ -5,9 +5,9 @@
 
     See ``ih-puppet apply`` for more details.
 """
-
+import sys
 from os import environ
-from subprocess import run
+from subprocess import Popen
 
 import click
 
@@ -46,4 +46,25 @@ def cmd_apply(ctx, manifest):
     with SystemLock("/var/run/ih-puppet-apply.lock"):
         LOG.debug("Executing %s", " ".join(cmd))
         env = {"PATH": f"{environ['PATH']}:/opt/puppetlabs/bin"}
-        run(cmd, check=True, env=env)
+        with Popen(cmd, env=env) as proc:
+            proc.communicate()
+            ret = proc.returncode
+            LOG.debug("Exit code: %d", ret)
+            if ret == 0:
+                LOG.info("The run succeeded with no changes or failures; the system was already in the desired state.")
+                sys.exit(0)
+            elif ret == 1:
+                LOG.error("The run failed.")
+                sys.exit(ret)
+            elif ret == 2:
+                LOG.info("The run succeeded, and some resources were changed.")
+                sys.exit(0)
+            elif ret == 4:
+                LOG.warning("The run succeeded, and some resources failed.")
+                sys.exit(ret)
+            elif ret == 6:
+                LOG.warning("The run succeeded, and included both changes and failures.")
+                sys.exit(ret)
+            else:
+                LOG.error("Unknown run state.")
+                sys.exit(ret)
