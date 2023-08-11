@@ -28,6 +28,3 @@ def test_summary_counts_none():
     assert status.success is True
     print("")
     print(status.summary_counts)
-    # status.success = False
-    # print("")
-    # print(status.summary_counts)

@@ -120,7 +120,14 @@ class TFStatus:
         """
         Produces a string with a table that lists all added/modified/deleted resources.
         """
-        if self.affected_resources:
+        if all(
+            (
+                self.affected_resources,
+                self.affected_resources.add is not None,
+                self.affected_resources.change is not None,
+                self.affected_resources.destroy is not None,
+            )
+        ):
             rows = (
                 [["🟢", f"`{field}`"] for field in self.affected_resources.add]
                 + [["🟡", f"`{field}`"] for field in self.affected_resources.change]
@@ -137,7 +144,7 @@ class TFStatus:
                 else ""
             )
 
-        return None
+        return "No affected resources"
 
     def __eq__(self, other):
         return all(getattr(self, x) == getattr(other, x) for x in self.__dict__ if x != "affected_resources")
