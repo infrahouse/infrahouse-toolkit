@@ -98,18 +98,18 @@ class TFStatus:
         rows = [
             [
                 "✅" if self.success else "❌",
-                self.add if self.success else "❔",
-                self.change if self.success else "❔",
-                self.destroy if self.success else "❔",
+                self.add if self.success and self.add is not None else "❔",
+                self.change if self.success and self.change is not None else "❔",
+                self.destroy if self.success and self.destroy is not None else "❔",
             ]
         ]
         return tabulate(
             rows,
             headers=[
                 "Success",
-                f"{'🟢' if self.success and self.add > 0 else ''} Add",
-                f"{'🟡' if self.success and self.change > 0 else ''} Change",
-                f"{'🔴' if self.success and self.destroy > 0 else ''} Destroy",
+                f"{'🟢' if self.success and self.add is not None and self.add > 0 else ''} Add",
+                f"{'🟡' if self.success and self.change is not None and self.change > 0 else ''} Change",
+                f"{'🔴' if self.success and self.destroy is not None and self.destroy > 0 else ''} Destroy",
             ],
             colalign=("center",),
             tablefmt="pipe",
