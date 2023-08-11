@@ -8,3 +8,15 @@ def test_comment():
     )
     assert isinstance(status.comment, str)
     print(status.comment)
+
+
+def test_comment_none():
+    status = TFStatus(
+        TFS3Backend("foo_backet", "path/to/tf.state"),
+        True,
+        RunResult(None, None, None),
+        RunOutput("no stdout", "no stderr"),
+        affected_resources=RunResult(None, None, None),
+    )
+    assert isinstance(status.comment, str)
+    print(status.comment)
