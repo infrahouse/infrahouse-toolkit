@@ -3,7 +3,7 @@ from textwrap import dedent
 from infrahouse_toolkit.cli.ih_plan.cmd_min_permissions import ActionList
 
 
-def test_parce_trace(tmpdir):
+def test_parse_trace(tmpdir):
     tracefile = tmpdir.join("trace")
     tracefile.write(
         dedent(
