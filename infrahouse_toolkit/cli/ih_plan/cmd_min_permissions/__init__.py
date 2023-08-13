@@ -6,7 +6,6 @@
     See ``ih-plan min-permissions --help`` for more details.
 """
 import json
-from copy import deepcopy
 from json import JSONDecodeError
 
 import click
@@ -37,30 +36,95 @@ def cmd_min_permissions(existing_actions, trace_file):
     ]
 
     """
-    actions = []
+    actions = ActionList()
     if existing_actions:
-        with open(existing_actions, encoding=DEFAULT_OPEN_ENCODING) as f_desc:
-            actions = json.loads(f_desc.read())
+        actions.load_from_file(existing_actions)
 
-    old_actions = deepcopy(actions)
-    initial_count = len(old_actions)
+    print(f"## Existing {actions.count} actions:")
+    print(actions)
 
-    print(f"## Existing {initial_count} actions:")
-    print(json.dumps(sorted(old_actions), indent=4))
+    new_actions = ActionList()
+    new_actions.parse_trace(trace_file, existing=actions.actions)
+    print(f"## {new_actions.count} new action(s):")
+    print(str(new_actions))
 
-    with open(trace_file, encoding=DEFAULT_OPEN_ENCODING) as f_decs:
-        for line in f_decs.readlines():
-            try:
-                operation = json.loads(line)
-                if "aws.operation" in operation:
-                    actions.append(f'{operation["aws.service"].lower()}:{operation["aws.operation"]}')
-            except JSONDecodeError:
-                pass
+    combined_actions = ActionList()
+    for action in actions.actions + new_actions.actions:
+        combined_actions.add(action)
 
-    new_actions = list(set(actions))
-    final_count = len(new_actions)
-    print(f"## {final_count - initial_count} new action(s):")
-    print(json.dumps([x for x in new_actions if x not in old_actions], indent=4))
+    print(f"## Old and new actions together excluding duplicates, {combined_actions.count} in total:")
+    print(str(combined_actions))
 
-    print(f"## Old and new actions together, {final_count} in total:")
-    print(json.dumps(sorted(list(set(actions))), indent=4))
+
+class ActionList:
+    """
+    List of AWS actions. Action here is a string as in AWS's policy e.g. ``ec2:DescribeInstances``.
+
+    """
+
+    SERVICE_NAMING_MAP = {
+        "auto scaling": "autoscaling",
+        "elastic load balancing v2": "elasticloadbalancing",
+        "route 53": "route53",
+    }
+    # Some permissions require additional ones.
+    REQUIRED_EXTRA_PERMISSIONS_MAP = {
+        "autoscaling:CreateAutoScalingGroup": ["iam:PassRole", "iam:CreateServiceLinkedRole"],
+        "autoscaling:UpdateAutoScalingGroup": ["iam:PassRole"],
+        "elasticloadbalancing:CreateLoadBalancer": ["elasticloadbalancing:AddTags"],
+        "iam:AddRoleToInstanceProfile": ["iam:PassRole"],
+        "ec2:CreateLaunchTemplate": ["ec2:CreateTags"],
+        "ec2:ImportKeyPair": ["ec2:CreateTags"],
+        "ec2:RunInstances": ["ec2:CreateTags"],
+    }
+
+    def __init__(self):
+        self._actions = set()
+
+    @property
+    def actions(self) -> list:
+        """List of action strings."""
+        return sorted(list(self._actions))
+
+    @property
+    def count(self) -> int:
+        """Number of actions in the list."""
+        return len(self._actions)
+
+    def add(self, action: str):
+        """Add a new action. Convert service name to the AWS policy format and add dependent actions if any."""
+        norm_action = self._normalize_action(action)
+        self._actions.add(norm_action)
+        for dependency in self.REQUIRED_EXTRA_PERMISSIONS_MAP.get(str(norm_action), []):
+            self._actions.add(dependency)
+
+    def load_from_file(self, file):
+        """Load actions from a file with a JSON. The JSON should be an array of strings."""
+        with open(file, encoding=DEFAULT_OPEN_ENCODING) as f_desc:
+            for action in json.loads(f_desc.read()):
+                self.add(action)
+
+    def parse_trace(self, file, existing=None):
+        """Inspect a Terraform trace file and collect actions"""
+        existing_permissions = existing or []
+        with open(file, encoding=DEFAULT_OPEN_ENCODING) as f_decs:
+            for line in f_decs.readlines():
+                try:
+                    operation = json.loads(line)
+                    if "aws.operation" in operation:
+                        service_name = operation["aws.service"].lower()
+                        permission = self._normalize_action(f'{service_name}:{operation["aws.operation"]}')
+                        if permission not in existing_permissions:
+                            self.add(permission)
+
+                except JSONDecodeError:
+                    pass
+
+    def _normalize_action(self, action):
+        if ":" in action:
+            s_part, a_part = action.split(":")
+            return f"{self.SERVICE_NAMING_MAP.get(s_part, s_part)}:{a_part}"
+        return action
+
+    def __str__(self):
+        return json.dumps(self.actions, indent=4)
