@@ -46,6 +46,11 @@ def cmd_apply(ctx, manifest):
     with SystemLock("/var/run/ih-puppet-apply.lock"):
         LOG.debug("Executing %s", " ".join(cmd))
         env = {"PATH": f"{environ['PATH']}:/opt/puppetlabs/bin"}
+        # First run is to update the puppet code
+        with Popen(cmd, env=env) as proc:
+            proc.communicate()
+
+        # Second run is to apply whatever the new puppet code brings
         with Popen(cmd, env=env) as proc:
             proc.communicate()
             ret = proc.returncode
