@@ -97,7 +97,7 @@ lint: lint/yaml lint/black lint/isort lint/mdformat lint/reqsort lint/pylint ## 
 
 .PHONY: lint/yaml
 lint/yaml: ## check style with yamllint
-	yamllint infrahouse_toolkit .github
+	yamllint infrahouse_toolkit .github .readthedocs.yaml
 
 .PHONY: lint/black
 lint/black: ## check style with black
