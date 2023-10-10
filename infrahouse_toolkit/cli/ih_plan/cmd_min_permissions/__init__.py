@@ -67,6 +67,15 @@ class ActionList:
         "elastic load balancing v2": "elasticloadbalancing",
         "route 53": "route53",
     }
+    PERMISSION_NAMING_MAP = {
+        "HeadBucket": "ListBucket",
+        "GetBucketAccelerateConfiguration": "GetAccelerateConfiguration",
+        "GetBucketEncryption": "GetEncryptionConfiguration",
+        "GetBucketCors": "GetBucketCORS",
+        "GetBucketLifecycleConfiguration": "GetLifecycleConfiguration",
+        "GetBucketReplication": "GetReplicationConfiguration",
+        "GetObjectLockConfiguration": "GetBucketObjectLockConfiguration",
+    }
     # Some permissions require additional ones.
     REQUIRED_EXTRA_PERMISSIONS_MAP = {
         "autoscaling:CreateAutoScalingGroup": ["iam:PassRole", "iam:CreateServiceLinkedRole"],
@@ -123,7 +132,7 @@ class ActionList:
     def _normalize_action(self, action):
         if ":" in action:
             s_part, a_part = action.split(":")
-            return f"{self.SERVICE_NAMING_MAP.get(s_part, s_part)}:{a_part}"
+            return f"{self.SERVICE_NAMING_MAP.get(s_part, s_part)}:{self.PERMISSION_NAMING_MAP.get(a_part, a_part)}"
         return action
 
     def __str__(self):
