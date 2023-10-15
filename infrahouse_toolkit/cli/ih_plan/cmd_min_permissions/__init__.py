@@ -120,9 +120,11 @@ class ActionList:
             for line in f_decs.readlines():
                 try:
                     operation = json.loads(line)
-                    if "aws.operation" in operation:
-                        service_name = operation["aws.service"].lower()
-                        permission = self._normalize_action(f'{service_name}:{operation["aws.operation"]}')
+                    operation_key = "aws.operation" if "aws.operation" in operation else "rpc.method"
+                    service_key = "aws.service" if "aws.service" in operation else "rpc.service"
+                    if all((operation_key in operation, service_key in operation)):
+                        service_name = operation[service_key].lower()
+                        permission = self._normalize_action(f"{service_name}:{operation[operation_key]}")
                         if permission not in existing_permissions:
                             self.add(permission)
 
