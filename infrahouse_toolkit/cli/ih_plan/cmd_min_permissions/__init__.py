@@ -75,6 +75,9 @@ class ActionList:
         "GetBucketLifecycleConfiguration": "GetLifecycleConfiguration",
         "GetBucketReplication": "GetReplicationConfiguration",
         "GetObjectLockConfiguration": "GetBucketObjectLockConfiguration",
+        "DeletePublicAccessBlock": "PutBucketPublicAccessBlock",
+        "GetPublicAccessBlock": "GetBucketPublicAccessBlock",
+        "PutPublicAccessBlock": "PutBucketPublicAccessBlock",
     }
     # Some permissions require additional ones.
     REQUIRED_EXTRA_PERMISSIONS_MAP = {
@@ -127,6 +130,25 @@ class ActionList:
                         permission = self._normalize_action(f"{service_name}:{operation[operation_key]}")
                         if permission not in existing_permissions:
                             self.add(permission)
+                    elif all(
+                        (
+                            operation.get("tf_resource_type") == "aws_s3_bucket_versioning",
+                            operation.get("tf_rpc") == "ApplyResourceChange",
+                        )
+                    ):
+                        permission = "s3:PutBucketVersioning"
+                    elif all(
+                        (
+                            operation.get("tf_resource_type") == "aws_s3_bucket_server_side_encryption_configuration",
+                            operation.get("tf_rpc") == "ApplyResourceChange",
+                        )
+                    ):
+                        permission = "s3:PutEncryptionConfiguration"
+                    else:
+                        continue
+
+                    if permission not in existing_permissions:
+                        self.add(permission)
 
                 except JSONDecodeError:
                     pass
