@@ -2,13 +2,12 @@
 # import os.path
 from os import path as osp
 
-# pylint: disable=line-too-long
-from textwrap import dedent
-
 import pytest
 
 from infrahouse_toolkit.terraform import parse_plan
 from infrahouse_toolkit.terraform.status import RunResult
+
+# pylint: disable=line-too-long
 
 
 @pytest.mark.parametrize(
@@ -61,6 +60,21 @@ from infrahouse_toolkit.terraform.status import RunResult
                 ),
             ),
         ),
+        (
+            open(osp.join(osp.dirname(osp.realpath(__file__)), "plans/plan-3-0-0.stdout")).read(),
+            (
+                RunResult(3, 0, 0),
+                RunResult(
+                    [
+                        'module.repos["terraform-aws-ci-cd"].github_actions_secret.secret["GH_TOKEN"]',
+                        'module.repos["terraform-aws-ci-cd"].github_repository.repo',
+                        'module.repos["terraform-aws-ci-cd"].github_team_repository.dev',
+                    ],
+                    [],
+                    [],
+                ),
+            ),
+        ),
     ],
 )
 def test_parse_plan(output, expected_result):
@@ -72,5 +86,5 @@ def test_parse_plan(output, expected_result):
     """
     result = parse_plan(output)
     assert result == expected_result
-    assert type(result[0]) == RunResult
-    assert type(result[1]) == RunResult
+    assert isinstance(result[0], RunResult)
+    assert isinstance(result[1], RunResult)

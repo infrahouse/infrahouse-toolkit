@@ -95,6 +95,9 @@ def parse_plan(output) -> (RunResult, RunResult):
     try:
         resources = RunResult([], [], [])
         for line in output.splitlines():
+            if line.startswith("::debug::"):
+                continue
+
             if line.startswith("Plan: "):
                 split_line = line.split()
                 # Plan: 4 to add, 11 to change, 7 to destroy.
