@@ -1,0 +1,193 @@
+module.infrahouse8-github-control.module.state-bucket.random_pet.suffix: Refreshing state... [id=infrahouse-github-control-state-polished-lioness]
+data.external.env: Reading...
+data.external.env: Read complete after 0s [id=-]
+module.ih_8_repos["github-control"].github_repository.repo: Refreshing state... [id=github-control]
+module.ih8_tf_template.github_repository.repo: Refreshing state... [id=terraform-template]
+github_membership.infrahouse["akuzminsky"]: Refreshing state... [id=infrahouse:akuzminsky]
+github_team.dev: Refreshing state... [id=7332815]
+github_organization_settings.infrahouse: Refreshing state... [id=121984263]
+module.ih_tf_template.github_repository.repo: Refreshing state... [id=terraform-template]
+module.ih_8_repos["github-control"].github_branch_default.main: Refreshing state... [id=github-control]
+module.ih_8_repos["github-control"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=github-control:GH_TOKEN]
+module.ih_8_repos["github-control"].github_repository_collaborator.collaborators["akuzminsky"]: Refreshing state... [id=github-control:akuzminsky]
+github_team_members.dev: Refreshing state... [id=7332815]
+module.ih_8_repos["github-control"].github_branch_protection.main: Refreshing state... [id=BPR_kwDOI2vu7M4CAici]
+module.ih_tf_template.github_team_repository.dev[0]: Refreshing state... [id=7332815:terraform-template]
+module.infrahouse8-github-control.module.state-bucket.aws_dynamodb_table.terraform_locks: Refreshing state... [id=infrahouse-github-control-state-polished-lioness]
+data.aws_secretsmanager_secrets.gh_secrets: Reading...
+data.aws_ssm_parameter.gh_secrets_namespace: Reading...
+module.infrahouse8-github-control.module.gha-admin.data.aws_iam_policy.admin: Reading...
+module.infrahouse8-github-control.module.gha-admin.data.aws_iam_openid_connect_provider.github: Reading...
+module.infrahouse8-github-control.module.gha-admin.data.aws_iam_openid_connect_provider.github: Read complete after 0s [id=arn:aws:iam::303467602807:oidc-provider/token.actions.githubusercontent.com]
+module.infrahouse8-github-control.module.gha-admin.data.aws_iam_policy_document.github-trust: Reading...
+module.infrahouse8-github-control.module.gha-admin.data.aws_iam_policy_document.github-trust: Read complete after 0s [id=2229426295]
+module.infrahouse8-github-control.module.gha-admin.aws_iam_role.github: Refreshing state... [id=ih-tf-github-control-github]
+module.infrahouse8-github-control.module.gha-admin.module.state-manager.data.aws_iam_policy_document.assume: Reading...
+module.infrahouse8-github-control.module.gha-admin.data.aws_iam_policy_document.admin-trust: Reading...
+module.infrahouse8-github-control.module.gha-admin.data.aws_iam_policy_document.admin-trust: Read complete after 0s [id=91398067]
+module.infrahouse8-github-control.module.gha-admin.aws_iam_role.admin: Refreshing state... [id=ih-tf-github-control-admin]
+module.infrahouse8-github-control.module.gha-admin.module.state-manager.data.aws_iam_policy_document.assume: Read complete after 0s [id=262017685]
+module.infrahouse8-github-control.module.gha-admin.module.state-manager.aws_iam_role.state-manager: Refreshing state... [id=ih-tf-github-control-state-manager]
+data.aws_secretsmanager_secrets.gh_secrets: Read complete after 0s [id=us-west-1]
+module.infrahouse8-github-control.module.gha-admin.data.aws_iam_policy_document.github-permissions: Reading...
+module.infrahouse8-github-control.module.gha-admin.data.aws_iam_policy_document.github-permissions: Read complete after 0s [id=2246898652]
+module.infrahouse8-github-control.module.gha-admin.aws_iam_policy.github: Refreshing state... [id=arn:aws:iam::303467602807:policy/ih-tf-github-control-github20231016152934873800000001]
+data.aws_ssm_parameter.gh_secrets_namespace: Read complete after 0s [id=gh_secrets_namespace]
+aws_secretsmanager_secret.codacy_api_token: Refreshing state... [id=arn:aws:secretsmanager:us-west-1:303467602807:secret:_github_control__CODACY_PROJECT_TOKEN-fhlOS2]
+aws_secretsmanager_secret.pypi_api_token: Refreshing state... [id=arn:aws:secretsmanager:us-west-1:303467602807:secret:_github_control__PYPI_API_TOKEN-5N8UtG]
+module.infrahouse8-github-control.module.state-bucket.aws_s3_bucket.state-bucket: Refreshing state... [id=infrahouse-github-control-state]
+module.infrahouse8-github-control.module.gha-admin.aws_iam_role_policy_attachment.github: Refreshing state... [id=ih-tf-github-control-github-20231016152935026000000003]
+data.aws_secretsmanager_secret_version.pypi_api_token: Reading...
+data.aws_secretsmanager_secret_version.codacy_api_token: Reading...
+module.infrahouse8-github-control.module.gha-admin.data.aws_iam_policy.admin: Read complete after 1s [id=arn:aws:iam::aws:policy/AdministratorAccess]
+module.infrahouse8-github-control.module.gha-admin.aws_iam_role_policy_attachment.admin: Refreshing state... [id=ih-tf-github-control-admin-20231016152934892800000002]
+data.aws_secretsmanager_secret_version.codacy_api_token: Read complete after 0s [id=arn:aws:secretsmanager:us-west-1:303467602807:secret:_github_control__CODACY_PROJECT_TOKEN-fhlOS2|AWSCURRENT]
+data.aws_secretsmanager_secret_version.pypi_api_token: Read complete after 0s [id=arn:aws:secretsmanager:us-west-1:303467602807:secret:_github_control__PYPI_API_TOKEN-5N8UtG|AWSCURRENT]
+module.repos["terraform-aws-instance-profile"].github_repository.repo: Refreshing state... [id=terraform-aws-instance-profile]
+module.repos["aws-control-289256138624"].github_repository.repo: Refreshing state... [id=aws-control-289256138624]
+module.repos["terraform-aws-cloud-init"].github_repository.repo: Refreshing state... [id=terraform-aws-cloud-init]
+module.repos["terraform-aws-gha-admin"].github_repository.repo: Refreshing state... [id=terraform-aws-gha-admin]
+module.repos["terraform-aws-website-pod"].github_repository.repo: Refreshing state... [id=terraform-aws-website-pod]
+module.repos["aws-control"].github_repository.repo: Refreshing state... [id=aws-control]
+module.repos["infrahouse-toolkit"].github_repository.repo: Refreshing state... [id=infrahouse-toolkit]
+module.repos["terraform-aws-service-network"].github_repository.repo: Refreshing state... [id=terraform-aws-service-network]
+module.repos["infrahouse-com"].github_repository.repo: Refreshing state... [id=infrahouse-com]
+module.repos["aws-control-493370826424"].github_repository.repo: Refreshing state... [id=aws-control-493370826424]
+module.repos["aws-control-303467602807"].github_repository.repo: Refreshing state... [id=aws-control-303467602807]
+module.repos["puppet-code"].github_repository.repo: Refreshing state... [id=puppet-code]
+module.repos["terraform-aws-debian-repo"].github_repository.repo: Refreshing state... [id=terraform-aws-debian-repo]
+module.repos["infrahouse-website-infra"].github_repository.repo: Refreshing state... [id=infrahouse-website-infra]
+module.repos["terraform-aws-gh-identity-provider"].github_repository.repo: Refreshing state... [id=terraform-aws-gh-identity-provider]
+module.repos["proxysql-sandbox"].github_repository.repo: Refreshing state... [id=proxysql-sandbox]
+module.repos["terraform-aws-state-manager"].github_repository.repo: Refreshing state... [id=terraform-aws-state-manager]
+module.repos["terraform-aws-state-bucket"].github_repository.repo: Refreshing state... [id=terraform-aws-state-bucket]
+module.repos["cookiecutter-github-control"].github_repository.repo: Refreshing state... [id=cookiecutter-github-control]
+module.infrahouse8-github-control.module.state-bucket.aws_s3_bucket_versioning.enabled: Refreshing state... [id=infrahouse-github-control-state]
+module.infrahouse8-github-control.module.state-bucket.aws_s3_bucket_server_side_encryption_configuration.default: Refreshing state... [id=infrahouse-github-control-state]
+module.infrahouse8-github-control.module.state-bucket.aws_s3_bucket_public_access_block.public_access: Refreshing state... [id=infrahouse-github-control-state]
+module.infrahouse8-github-control.module.gha-admin.module.state-manager.data.aws_iam_policy_document.permissions_ro: Reading...
+module.infrahouse8-github-control.module.gha-admin.module.state-manager.data.aws_iam_policy_document.permissions_ro: Read complete after 0s [id=3098380055]
+module.infrahouse8-github-control.module.gha-admin.module.state-manager.data.aws_iam_policy_document.permissions_rw: Reading...
+module.infrahouse8-github-control.module.gha-admin.module.state-manager.data.aws_iam_policy_document.permissions_rw: Read complete after 0s [id=19153250]
+module.infrahouse8-github-control.module.gha-admin.module.state-manager.aws_iam_policy.permissions_ro: Refreshing state... [id=arn:aws:iam::289256138624:policy/ih-tf-github-control-state-manager-ro20231016152936860000000001]
+module.infrahouse8-github-control.module.gha-admin.module.state-manager.aws_iam_policy.permissions_rw: Refreshing state... [id=arn:aws:iam::289256138624:policy/ih-tf-github-control-state-manager-rw20231016152936864600000002]
+module.infrahouse8-github-control.module.gha-admin.module.state-manager.aws_iam_role_policy_attachment.state-manager-ro: Refreshing state... [id=ih-tf-github-control-state-manager-20231016152936987100000003]
+module.infrahouse8-github-control.module.gha-admin.module.state-manager.aws_iam_role_policy_attachment.state-manager-rw[0]: Refreshing state... [id=ih-tf-github-control-state-manager-20231016152937028600000004]
+module.repos["infrahouse-website-infra"].github_team_repository.dev: Refreshing state... [id=7332815:infrahouse-website-infra]
+module.repos["terraform-aws-website-pod"].github_team_repository.dev: Refreshing state... [id=7332815:terraform-aws-website-pod]
+module.repos["terraform-aws-service-network"].github_team_repository.dev: Refreshing state... [id=7332815:terraform-aws-service-network]
+module.repos["terraform-aws-cloud-init"].github_team_repository.dev: Refreshing state... [id=7332815:terraform-aws-cloud-init]
+module.repos["aws-control-303467602807"].github_team_repository.dev: Refreshing state... [id=7332815:aws-control-303467602807]
+module.repos["terraform-aws-state-manager"].github_team_repository.dev: Refreshing state... [id=7332815:terraform-aws-state-manager]
+module.repos["cookiecutter-github-control"].github_team_repository.dev: Refreshing state... [id=7332815:cookiecutter-github-control]
+module.repos["puppet-code"].github_team_repository.dev: Refreshing state... [id=7332815:puppet-code]
+module.repos["terraform-aws-gha-admin"].github_team_repository.dev: Refreshing state... [id=7332815:terraform-aws-gha-admin]
+module.repos["terraform-aws-state-bucket"].github_team_repository.dev: Refreshing state... [id=7332815:terraform-aws-state-bucket]
+module.repos["aws-control"].github_team_repository.dev: Refreshing state... [id=7332815:aws-control]
+module.repos["terraform-aws-debian-repo"].github_team_repository.dev: Refreshing state... [id=7332815:terraform-aws-debian-repo]
+module.repos["proxysql-sandbox"].github_team_repository.dev: Refreshing state... [id=7332815:proxysql-sandbox]
+module.repos["terraform-aws-gh-identity-provider"].github_team_repository.dev: Refreshing state... [id=7332815:terraform-aws-gh-identity-provider]
+module.repos["terraform-aws-instance-profile"].github_team_repository.dev: Refreshing state... [id=7332815:terraform-aws-instance-profile]
+module.repos["aws-control-493370826424"].github_team_repository.dev: Refreshing state... [id=7332815:aws-control-493370826424]
+module.repos["infrahouse-com"].github_team_repository.dev: Refreshing state... [id=7332815:infrahouse-com]
+module.repos["infrahouse-toolkit"].github_team_repository.dev: Refreshing state... [id=7332815:infrahouse-toolkit]
+module.repos["aws-control-289256138624"].github_team_repository.dev: Refreshing state... [id=7332815:aws-control-289256138624]
+module.repos["proxysql-sandbox"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=proxysql-sandbox:GH_TOKEN]
+module.repos["aws-control-303467602807"].github_actions_secret.secret["AWS_DEFAULT_REGION"]: Refreshing state... [id=aws-control-303467602807:AWS_DEFAULT_REGION]
+module.repos["aws-control-289256138624"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=aws-control-289256138624:GH_TOKEN]
+module.repos["infrahouse-website-infra"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=infrahouse-website-infra:GH_TOKEN]
+module.repos["terraform-aws-debian-repo"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=terraform-aws-debian-repo:GH_TOKEN]
+module.repos["aws-control-493370826424"].github_actions_secret.secret["AWS_DEFAULT_REGION"]: Refreshing state... [id=aws-control-493370826424:AWS_DEFAULT_REGION]
+module.repos["terraform-aws-gha-admin"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=terraform-aws-gha-admin:GH_TOKEN]
+module.repos["aws-control"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=aws-control:GH_TOKEN]
+module.repos["aws-control-493370826424"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=aws-control-493370826424:GH_TOKEN]
+module.repos["terraform-aws-state-manager"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=terraform-aws-state-manager:GH_TOKEN]
+module.repos["infrahouse-toolkit"].github_actions_secret.secret["AWS_DEFAULT_REGION"]: Refreshing state... [id=infrahouse-toolkit:AWS_DEFAULT_REGION]
+module.repos["terraform-aws-service-network"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=terraform-aws-service-network:GH_TOKEN]
+module.repos["puppet-code"].github_actions_secret.secret["AWS_DEFAULT_REGION"]: Refreshing state... [id=puppet-code:AWS_DEFAULT_REGION]
+module.repos["infrahouse-toolkit"].github_actions_secret.secret["CODACY_PROJECT_TOKEN"]: Refreshing state... [id=infrahouse-toolkit:CODACY_PROJECT_TOKEN]
+module.repos["puppet-code"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=puppet-code:GH_TOKEN]
+module.repos["aws-control"].github_actions_secret.secret["AWS_DEFAULT_REGION"]: Refreshing state... [id=aws-control:AWS_DEFAULT_REGION]
+module.repos["aws-control-289256138624"].github_actions_secret.secret["AWS_DEFAULT_REGION"]: Refreshing state... [id=aws-control-289256138624:AWS_DEFAULT_REGION]
+module.repos["infrahouse-website-infra"].github_actions_secret.secret["AWS_DEFAULT_REGION"]: Refreshing state... [id=infrahouse-website-infra:AWS_DEFAULT_REGION]
+module.repos["terraform-aws-website-pod"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=terraform-aws-website-pod:GH_TOKEN]
+module.repos["cookiecutter-github-control"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=cookiecutter-github-control:GH_TOKEN]
+module.repos["infrahouse-toolkit"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=infrahouse-toolkit:GH_TOKEN]
+module.repos["terraform-aws-gh-identity-provider"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=terraform-aws-gh-identity-provider:GH_TOKEN]
+module.repos["infrahouse-toolkit"].github_actions_secret.secret["PYPI_API_TOKEN"]: Refreshing state... [id=infrahouse-toolkit:PYPI_API_TOKEN]
+module.repos["terraform-aws-cloud-init"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=terraform-aws-cloud-init:GH_TOKEN]
+module.repos["infrahouse-com"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=infrahouse-com:GH_TOKEN]
+module.repos["aws-control-303467602807"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=aws-control-303467602807:GH_TOKEN]
+module.repos["terraform-aws-state-bucket"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=terraform-aws-state-bucket:GH_TOKEN]
+module.repos["terraform-aws-instance-profile"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=terraform-aws-instance-profile:GH_TOKEN]
+module.repos["infrahouse-com"].github_actions_secret.secret["AWS_DEFAULT_REGION"]: Refreshing state... [id=infrahouse-com:AWS_DEFAULT_REGION]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # module.repos["terraform-aws-ci-cd"].github_actions_secret.secret["GH_TOKEN"] will be created
+  + resource "github_actions_secret" "secret" {
+      + created_at      = (known after apply)
+      + id              = (known after apply)
+      + plaintext_value = (sensitive value)
+      + repository      = "terraform-aws-ci-cd"
+      + secret_name     = "GH_TOKEN"
+      + updated_at      = (known after apply)
+    }
+
+  # module.repos["terraform-aws-ci-cd"].github_repository.repo will be created
+  + resource "github_repository" "repo" {
+      + allow_auto_merge            = false
+      + allow_merge_commit          = true
+      + allow_rebase_merge          = true
+      + allow_squash_merge          = true
+      + archived                    = false
+      + default_branch              = (known after apply)
+      + delete_branch_on_merge      = false
+      + description                 = "Module that creates roles, state bucket, and dynamodb table for Terraform CI/CD."
+      + etag                        = (known after apply)
+      + full_name                   = (known after apply)
+      + git_clone_url               = (known after apply)
+      + has_issues                  = true
+      + html_url                    = (known after apply)
+      + http_clone_url              = (known after apply)
+      + id                          = (known after apply)
+      + merge_commit_message        = "PR_TITLE"
+      + merge_commit_title          = "MERGE_MESSAGE"
+      + name                        = "terraform-aws-ci-cd"
+      + node_id                     = (known after apply)
+      + primary_language            = (known after apply)
+      + private                     = (known after apply)
+      + repo_id                     = (known after apply)
+      + squash_merge_commit_message = "COMMIT_MESSAGES"
+      + squash_merge_commit_title   = "COMMIT_OR_PR_TITLE"
+      + ssh_clone_url               = (known after apply)
+      + svn_url                     = (known after apply)
+      + topics                      = (known after apply)
+      + visibility                  = "public"
+    }
+
+  # module.repos["terraform-aws-ci-cd"].github_team_repository.dev will be created
+  + resource "github_team_repository" "dev" {
+      + etag       = (known after apply)
+      + id         = (known after apply)
+      + permission = "push"
+      + repository = "terraform-aws-ci-cd"
+      + team_id    = "7332815"
+    }
+
+Plan: 3 to add, 0 to change, 0 to destroy.
+
+─────────────────────────────────────────────────────────────────────────────
+
+Saved the plan to: tf.plan
+
+To perform exactly these actions, run the following command to apply:
+    terraform apply "tf.plan"
+::debug::Terraform exited with code 0.
+::debug::stdout: module.infrahouse8-github-control.module.state-bucket.random_pet.suffix: Refreshing state... [id=infrahouse-github-control-state-polished-lioness]%0Adata.external.env: Reading...%0Adata.external.env: Read complete after 0s [id=-]%0Amodule.ih_8_repos["github-control"].github_repository.repo: Refreshing state... [id=github-control]%0Amodule.ih8_tf_template.github_repository.repo: Refreshing state... [id=terraform-template]%0Agithub_membership.infrahouse["akuzminsky"]: Refreshing state... [id=infrahouse:akuzminsky]%0Agithub_team.dev: Refreshing state... [id=7332815]%0Agithub_organization_settings.infrahouse: Refreshing state... [id=121984263]%0Amodule.ih_tf_template.github_repository.repo: Refreshing state... [id=terraform-template]%0Amodule.ih_8_repos["github-control"].github_branch_default.main: Refreshing state... [id=github-control]%0Amodule.ih_8_repos["github-control"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=github-control:GH_TOKEN]%0Amodule.ih_8_repos["github-control"].github_repository_collaborator.collaborators["akuzminsky"]: Refreshing state... [id=github-control:akuzminsky]%0Agithub_team_members.dev: Refreshing state... [id=7332815]%0Amodule.ih_8_repos["github-control"].github_branch_protection.main: Refreshing state... [id=BPR_kwDOI2vu7M4CAici]%0Amodule.ih_tf_template.github_team_repository.dev[0]: Refreshing state... [id=7332815:terraform-template]%0Amodule.infrahouse8-github-control.module.state-bucket.aws_dynamodb_table.terraform_locks: Refreshing state... [id=infrahouse-github-control-state-polished-lioness]%0Adata.aws_secretsmanager_secrets.gh_secrets: Reading...%0Adata.aws_ssm_parameter.gh_secrets_namespace: Reading...%0Amodule.infrahouse8-github-control.module.gha-admin.data.aws_iam_policy.admin: Reading...%0Amodule.infrahouse8-github-control.module.gha-admin.data.aws_iam_openid_connect_provider.github: Reading...%0Amodule.infrahouse8-github-control.module.gha-admin.data.aws_iam_openid_connect_provider.github: Read complete after 0s [id=arn:aws:iam::303467602807:oidc-provider/token.actions.githubusercontent.com]%0Amodule.infrahouse8-github-control.module.gha-admin.data.aws_iam_policy_document.github-trust: Reading...%0Amodule.infrahouse8-github-control.module.gha-admin.data.aws_iam_policy_document.github-trust: Read complete after 0s [id=2229426295]%0Amodule.infrahouse8-github-control.module.gha-admin.aws_iam_role.github: Refreshing state... [id=ih-tf-github-control-github]%0Amodule.infrahouse8-github-control.module.gha-admin.module.state-manager.data.aws_iam_policy_document.assume: Reading...%0Amodule.infrahouse8-github-control.module.gha-admin.data.aws_iam_policy_document.admin-trust: Reading...%0Amodule.infrahouse8-github-control.module.gha-admin.data.aws_iam_policy_document.admin-trust: Read complete after 0s [id=91398067]%0Amodule.infrahouse8-github-control.module.gha-admin.aws_iam_role.admin: Refreshing state... [id=ih-tf-github-control-admin]%0Amodule.infrahouse8-github-control.module.gha-admin.module.state-manager.data.aws_iam_policy_document.assume: Read complete after 0s [id=262017685]%0Amodule.infrahouse8-github-control.module.gha-admin.module.state-manager.aws_iam_role.state-manager: Refreshing state... [id=ih-tf-github-control-state-manager]%0Adata.aws_secretsmanager_secrets.gh_secrets: Read complete after 0s [id=us-west-1]%0Amodule.infrahouse8-github-control.module.gha-admin.data.aws_iam_policy_document.github-permissions: Reading...%0Amodule.infrahouse8-github-control.module.gha-admin.data.aws_iam_policy_document.github-permissions: Read complete after 0s [id=2246898652]%0Amodule.infrahouse8-github-control.module.gha-admin.aws_iam_policy.github: Refreshing state... [id=arn:aws:iam::303467602807:policy/ih-tf-github-control-github20231016152934873800000001]%0Adata.aws_ssm_parameter.gh_secrets_namespace: Read complete after 0s [id=gh_secrets_namespace]%0Aaws_secretsmanager_secret.codacy_api_token: Refreshing state... [id=arn:aws:secretsmanager:us-west-1:303467602807:secret:_github_control__CODACY_PROJECT_TOKEN-fhlOS2]%0Aaws_secretsmanager_secret.pypi_api_token: Refreshing state... [id=arn:aws:secretsmanager:us-west-1:303467602807:secret:_github_control__PYPI_API_TOKEN-5N8UtG]%0Amodule.infrahouse8-github-control.module.state-bucket.aws_s3_bucket.state-bucket: Refreshing state... [id=infrahouse-github-control-state]%0Amodule.infrahouse8-github-control.module.gha-admin.aws_iam_role_policy_attachment.github: Refreshing state... [id=ih-tf-github-control-github-20231016152935026000000003]%0Adata.aws_secretsmanager_secret_version.pypi_api_token: Reading...%0Adata.aws_secretsmanager_secret_version.codacy_api_token: Reading...%0Amodule.infrahouse8-github-control.module.gha-admin.data.aws_iam_policy.admin: Read complete after 1s [id=arn:aws:iam::aws:policy/AdministratorAccess]%0Amodule.infrahouse8-github-control.module.gha-admin.aws_iam_role_policy_attachment.admin: Refreshing state... [id=ih-tf-github-control-admin-20231016152934892800000002]%0Adata.aws_secretsmanager_secret_version.codacy_api_token: Read complete after 0s [id=arn:aws:secretsmanager:us-west-1:303467602807:secret:_github_control__CODACY_PROJECT_TOKEN-fhlOS2|AWSCURRENT]%0Adata.aws_secretsmanager_secret_version.pypi_api_token: Read complete after 0s [id=arn:aws:secretsmanager:us-west-1:303467602807:secret:_github_control__PYPI_API_TOKEN-5N8UtG|AWSCURRENT]%0Amodule.repos["terraform-aws-instance-profile"].github_repository.repo: Refreshing state... [id=terraform-aws-instance-profile]%0Amodule.repos["aws-control-289256138624"].github_repository.repo: Refreshing state... [id=aws-control-289256138624]%0Amodule.repos["terraform-aws-cloud-init"].github_repository.repo: Refreshing state... [id=terraform-aws-cloud-init]%0Amodule.repos["terraform-aws-gha-admin"].github_repository.repo: Refreshing state... [id=terraform-aws-gha-admin]%0Amodule.repos["terraform-aws-website-pod"].github_repository.repo: Refreshing state... [id=terraform-aws-website-pod]%0Amodule.repos["aws-control"].github_repository.repo: Refreshing state... [id=aws-control]%0Amodule.repos["infrahouse-toolkit"].github_repository.repo: Refreshing state... [id=infrahouse-toolkit]%0Amodule.repos["terraform-aws-service-network"].github_repository.repo: Refreshing state... [id=terraform-aws-service-network]%0Amodule.repos["infrahouse-com"].github_repository.repo: Refreshing state... [id=infrahouse-com]%0Amodule.repos["aws-control-493370826424"].github_repository.repo: Refreshing state... [id=aws-control-493370826424]%0Amodule.repos["aws-control-303467602807"].github_repository.repo: Refreshing state... [id=aws-control-303467602807]%0Amodule.repos["puppet-code"].github_repository.repo: Refreshing state... [id=puppet-code]%0Amodule.repos["terraform-aws-debian-repo"].github_repository.repo: Refreshing state... [id=terraform-aws-debian-repo]%0Amodule.repos["infrahouse-website-infra"].github_repository.repo: Refreshing state... [id=infrahouse-website-infra]%0Amodule.repos["terraform-aws-gh-identity-provider"].github_repository.repo: Refreshing state... [id=terraform-aws-gh-identity-provider]%0Amodule.repos["proxysql-sandbox"].github_repository.repo: Refreshing state... [id=proxysql-sandbox]%0Amodule.repos["terraform-aws-state-manager"].github_repository.repo: Refreshing state... [id=terraform-aws-state-manager]%0Amodule.repos["terraform-aws-state-bucket"].github_repository.repo: Refreshing state... [id=terraform-aws-state-bucket]%0Amodule.repos["cookiecutter-github-control"].github_repository.repo: Refreshing state... [id=cookiecutter-github-control]%0Amodule.infrahouse8-github-control.module.state-bucket.aws_s3_bucket_versioning.enabled: Refreshing state... [id=infrahouse-github-control-state]%0Amodule.infrahouse8-github-control.module.state-bucket.aws_s3_bucket_server_side_encryption_configuration.default: Refreshing state... [id=infrahouse-github-control-state]%0Amodule.infrahouse8-github-control.module.state-bucket.aws_s3_bucket_public_access_block.public_access: Refreshing state... [id=infrahouse-github-control-state]%0Amodule.infrahouse8-github-control.module.gha-admin.module.state-manager.data.aws_iam_policy_document.permissions_ro: Reading...%0Amodule.infrahouse8-github-control.module.gha-admin.module.state-manager.data.aws_iam_policy_document.permissions_ro: Read complete after 0s [id=3098380055]%0Amodule.infrahouse8-github-control.module.gha-admin.module.state-manager.data.aws_iam_policy_document.permissions_rw: Reading...%0Amodule.infrahouse8-github-control.module.gha-admin.module.state-manager.data.aws_iam_policy_document.permissions_rw: Read complete after 0s [id=19153250]%0Amodule.infrahouse8-github-control.module.gha-admin.module.state-manager.aws_iam_policy.permissions_ro: Refreshing state... [id=arn:aws:iam::289256138624:policy/ih-tf-github-control-state-manager-ro20231016152936860000000001]%0Amodule.infrahouse8-github-control.module.gha-admin.module.state-manager.aws_iam_policy.permissions_rw: Refreshing state... [id=arn:aws:iam::289256138624:policy/ih-tf-github-control-state-manager-rw20231016152936864600000002]%0Amodule.infrahouse8-github-control.module.gha-admin.module.state-manager.aws_iam_role_policy_attachment.state-manager-ro: Refreshing state... [id=ih-tf-github-control-state-manager-20231016152936987100000003]%0Amodule.infrahouse8-github-control.module.gha-admin.module.state-manager.aws_iam_role_policy_attachment.state-manager-rw[0]: Refreshing state... [id=ih-tf-github-control-state-manager-20231016152937028600000004]%0Amodule.repos["infrahouse-website-infra"].github_team_repository.dev: Refreshing state... [id=7332815:infrahouse-website-infra]%0Amodule.repos["terraform-aws-website-pod"].github_team_repository.dev: Refreshing state... [id=7332815:terraform-aws-website-pod]%0Amodule.repos["terraform-aws-service-network"].github_team_repository.dev: Refreshing state... [id=7332815:terraform-aws-service-network]%0Amodule.repos["terraform-aws-cloud-init"].github_team_repository.dev: Refreshing state... [id=7332815:terraform-aws-cloud-init]%0Amodule.repos["aws-control-303467602807"].github_team_repository.dev: Refreshing state... [id=7332815:aws-control-303467602807]%0Amodule.repos["terraform-aws-state-manager"].github_team_repository.dev: Refreshing state... [id=7332815:terraform-aws-state-manager]%0Amodule.repos["cookiecutter-github-control"].github_team_repository.dev: Refreshing state... [id=7332815:cookiecutter-github-control]%0Amodule.repos["puppet-code"].github_team_repository.dev: Refreshing state... [id=7332815:puppet-code]%0Amodule.repos["terraform-aws-gha-admin"].github_team_repository.dev: Refreshing state... [id=7332815:terraform-aws-gha-admin]%0Amodule.repos["terraform-aws-state-bucket"].github_team_repository.dev: Refreshing state... [id=7332815:terraform-aws-state-bucket]%0Amodule.repos["aws-control"].github_team_repository.dev: Refreshing state... [id=7332815:aws-control]%0Amodule.repos["terraform-aws-debian-repo"].github_team_repository.dev: Refreshing state... [id=7332815:terraform-aws-debian-repo]%0Amodule.repos["proxysql-sandbox"].github_team_repository.dev: Refreshing state... [id=7332815:proxysql-sandbox]%0Amodule.repos["terraform-aws-gh-identity-provider"].github_team_repository.dev: Refreshing state... [id=7332815:terraform-aws-gh-identity-provider]%0Amodule.repos["terraform-aws-instance-profile"].github_team_repository.dev: Refreshing state... [id=7332815:terraform-aws-instance-profile]%0Amodule.repos["aws-control-493370826424"].github_team_repository.dev: Refreshing state... [id=7332815:aws-control-493370826424]%0Amodule.repos["infrahouse-com"].github_team_repository.dev: Refreshing state... [id=7332815:infrahouse-com]%0Amodule.repos["infrahouse-toolkit"].github_team_repository.dev: Refreshing state... [id=7332815:infrahouse-toolkit]%0Amodule.repos["aws-control-289256138624"].github_team_repository.dev: Refreshing state... [id=7332815:aws-control-289256138624]%0Amodule.repos["proxysql-sandbox"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=proxysql-sandbox:GH_TOKEN]%0Amodule.repos["aws-control-303467602807"].github_actions_secret.secret["AWS_DEFAULT_REGION"]: Refreshing state... [id=aws-control-303467602807:AWS_DEFAULT_REGION]%0Amodule.repos["aws-control-289256138624"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=aws-control-289256138624:GH_TOKEN]%0Amodule.repos["infrahouse-website-infra"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=infrahouse-website-infra:GH_TOKEN]%0Amodule.repos["terraform-aws-debian-repo"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=terraform-aws-debian-repo:GH_TOKEN]%0Amodule.repos["aws-control-493370826424"].github_actions_secret.secret["AWS_DEFAULT_REGION"]: Refreshing state... [id=aws-control-493370826424:AWS_DEFAULT_REGION]%0Amodule.repos["terraform-aws-gha-admin"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=terraform-aws-gha-admin:GH_TOKEN]%0Amodule.repos["aws-control"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=aws-control:GH_TOKEN]%0Amodule.repos["aws-control-493370826424"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=aws-control-493370826424:GH_TOKEN]%0Amodule.repos["terraform-aws-state-manager"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=terraform-aws-state-manager:GH_TOKEN]%0Amodule.repos["infrahouse-toolkit"].github_actions_secret.secret["AWS_DEFAULT_REGION"]: Refreshing state... [id=infrahouse-toolkit:AWS_DEFAULT_REGION]%0Amodule.repos["terraform-aws-service-network"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=terraform-aws-service-network:GH_TOKEN]%0Amodule.repos["puppet-code"].github_actions_secret.secret["AWS_DEFAULT_REGION"]: Refreshing state... [id=puppet-code:AWS_DEFAULT_REGION]%0Amodule.repos["infrahouse-toolkit"].github_actions_secret.secret["CODACY_PROJECT_TOKEN"]: Refreshing state... [id=infrahouse-toolkit:CODACY_PROJECT_TOKEN]%0Amodule.repos["puppet-code"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=puppet-code:GH_TOKEN]%0Amodule.repos["aws-control"].github_actions_secret.secret["AWS_DEFAULT_REGION"]: Refreshing state... [id=aws-control:AWS_DEFAULT_REGION]%0Amodule.repos["aws-control-289256138624"].github_actions_secret.secret["AWS_DEFAULT_REGION"]: Refreshing state... [id=aws-control-289256138624:AWS_DEFAULT_REGION]%0Amodule.repos["infrahouse-website-infra"].github_actions_secret.secret["AWS_DEFAULT_REGION"]: Refreshing state... [id=infrahouse-website-infra:AWS_DEFAULT_REGION]%0Amodule.repos["terraform-aws-website-pod"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=terraform-aws-website-pod:GH_TOKEN]%0Amodule.repos["cookiecutter-github-control"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=cookiecutter-github-control:GH_TOKEN]%0Amodule.repos["infrahouse-toolkit"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=infrahouse-toolkit:GH_TOKEN]%0Amodule.repos["terraform-aws-gh-identity-provider"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=terraform-aws-gh-identity-provider:GH_TOKEN]%0Amodule.repos["infrahouse-toolkit"].github_actions_secret.secret["PYPI_API_TOKEN"]: Refreshing state... [id=infrahouse-toolkit:PYPI_API_TOKEN]%0Amodule.repos["terraform-aws-cloud-init"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=terraform-aws-cloud-init:GH_TOKEN]%0Amodule.repos["infrahouse-com"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=infrahouse-com:GH_TOKEN]%0Amodule.repos["aws-control-303467602807"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=aws-control-303467602807:GH_TOKEN]%0Amodule.repos["terraform-aws-state-bucket"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=terraform-aws-state-bucket:GH_TOKEN]%0Amodule.repos["terraform-aws-instance-profile"].github_actions_secret.secret["GH_TOKEN"]: Refreshing state... [id=terraform-aws-instance-profile:GH_TOKEN]%0Amodule.repos["infrahouse-com"].github_actions_secret.secret["AWS_DEFAULT_REGION"]: Refreshing state... [id=infrahouse-com:AWS_DEFAULT_REGION]%0A%0ATerraform used the selected providers to generate the following execution%0Aplan. Resource actions are indicated with the following symbols:%0A  + create%0A%0ATerraform will perform the following actions:%0A%0A  # module.repos["terraform-aws-ci-cd"].github_actions_secret.secret["GH_TOKEN"] will be created%0A  + resource "github_actions_secret" "secret" {%0A      + created_at      = (known after apply)%0A      + id              = (known after apply)%0A      + plaintext_value = (sensitive value)%0A      + repository      = "terraform-aws-ci-cd"%0A      + secret_name     = "GH_TOKEN"%0A      + updated_at      = (known after apply)%0A    }%0A%0A  # module.repos["terraform-aws-ci-cd"].github_repository.repo will be created%0A  + resource "github_repository" "repo" {%0A      + allow_auto_merge            = false%0A      + allow_merge_commit          = true%0A      + allow_rebase_merge          = true%0A      + allow_squash_merge          = true%0A      + archived                    = false%0A      + default_branch              = (known after apply)%0A      + delete_branch_on_merge      = false%0A      + description                 = "Module that creates roles, state bucket, and dynamodb table for Terraform CI/CD."%0A      + etag                        = (known after apply)%0A      + full_name                   = (known after apply)%0A      + git_clone_url               = (known after apply)%0A      + has_issues                  = true%0A      + html_url                    = (known after apply)%0A      + http_clone_url              = (known after apply)%0A      + id                          = (known after apply)%0A      + merge_commit_message        = "PR_TITLE"%0A      + merge_commit_title          = "MERGE_MESSAGE"%0A      + name                        = "terraform-aws-ci-cd"%0A      + node_id                     = (known after apply)%0A      + primary_language            = (known after apply)%0A      + private                     = (known after apply)%0A      + repo_id                     = (known after apply)%0A      + squash_merge_commit_message = "COMMIT_MESSAGES"%0A      + squash_merge_commit_title   = "COMMIT_OR_PR_TITLE"%0A      + ssh_clone_url               = (known after apply)%0A      + svn_url                     = (known after apply)%0A      + topics                      = (known after apply)%0A      + visibility                  = "public"%0A    }%0A%0A  # module.repos["terraform-aws-ci-cd"].github_team_repository.dev will be created%0A  + resource "github_team_repository" "dev" {%0A      + etag       = (known after apply)%0A      + id         = (known after apply)%0A      + permission = "push"%0A      + repository = "terraform-aws-ci-cd"%0A      + team_id    = "7332815"%0A    }%0A%0APlan: 3 to add, 0 to change, 0 to destroy.%0A%0A─────────────────────────────────────────────────────────────────────────────%0A%0ASaved the plan to: tf.plan%0A%0ATo perform exactly these actions, run the following command to apply:%0A    terraform apply "tf.plan"%0A
+::debug::stderr:
+::debug::exitcode: 0
