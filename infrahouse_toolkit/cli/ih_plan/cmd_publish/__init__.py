@@ -20,6 +20,13 @@ from infrahouse_toolkit.terraform.githubpr import GitHubPR
 @click.option(
     "--tf-exit-code", help="With what code number the terraform plan command exited.", default=0, show_default=True
 )
+@click.option(
+    "--private-gist/--public-gist",
+    help="When the comment is too large and the tool needs to publish the comment as a gist,"
+    "should it be private or public.",
+    default=True,
+    show_default=True,
+)
 @click.argument("repo")
 @click.argument("pull_request_number")
 @click.argument("tf_plan_stdout", type=click.Path(exists=True))
@@ -67,4 +74,4 @@ def cmd_publish(*args, **kwargs):
         if comment:
             comment.edit(status.comment)
         else:
-            pull_request.publish_comment(status.comment)
+            pull_request.publish_comment(status.comment, private_gist=kwargs["private_gist"])
