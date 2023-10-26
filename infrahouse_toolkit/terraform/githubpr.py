@@ -95,7 +95,7 @@ class GitHubPR:
                 pass
         return None
 
-    def publish_comment(self, comment: str):
+    def publish_comment(self, comment: str, private_gist: bool = True):
         """Add the given text as a comment in the pull request."""
         try:
             self.pull_request.create_issue_comment(comment)
@@ -107,6 +107,7 @@ class GitHubPR:
                     f"pr-{self._pr_number}-plan",
                     f"{self._repo_name.replace('/', '-')}-pr-{self._pr_number}-plan.txt",
                     comment,
+                    not private_gist,
                 )
                 self.pull_request.create_issue_comment(
                     f"Comment was too big. It's published as a gist at {gist.html_url}."
@@ -114,10 +115,10 @@ class GitHubPR:
             else:
                 raise
 
-    def _publish_gist(self, gist_id, filename, content):
+    def _publish_gist(self, gist_id, filename, content, public):
         current_user = self.github.get_user()
         return current_user.create_gist(
-            public=True,
+            public=public,
             files={
                 gist_id: InputFileContent(
                     content=content,
