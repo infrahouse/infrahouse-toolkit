@@ -5,13 +5,17 @@
 
     See ``ih-puppet apply`` for more details.
 """
+import json
+import os
+import re
 import sys
 from os import environ
-from subprocess import Popen
+from os import path as osp
+from subprocess import PIPE, Popen
 
 import click
 
-from infrahouse_toolkit import LOG
+from infrahouse_toolkit import DEFAULT_OPEN_ENCODING, LOG
 from infrahouse_toolkit.lock.system import SystemLock
 
 
@@ -44,6 +48,7 @@ def cmd_apply(ctx, manifest):
     )
 
     with SystemLock("/var/run/ih-puppet-apply.lock"):
+        install_module_dependencies(module_path=ctx.obj["module_path"])
         LOG.debug("Executing %s", " ".join(cmd))
         env = {"PATH": f"{environ['PATH']}:/opt/puppetlabs/bin"}
         # First run is to update the puppet code
@@ -73,3 +78,68 @@ def cmd_apply(ctx, manifest):
             else:
                 LOG.error("Unknown run state.")
                 sys.exit(ret)
+
+
+def install_module_dependencies(module_path: str):
+    """
+    Assuming each subdirectory in ``module_path`` is a puppet module,
+    read its ``metadata.json`` and install puppet module dependencies
+    in the same directory.
+
+    :param module_path: Path to a directory with puppet modules.
+    :type module_path: str
+    """
+    for module in os.listdir(module_path):
+        LOG.info("Installing %s dependencies", module)
+        try:
+            with open(osp.join(module_path, module, "metadata.json"), encoding=DEFAULT_OPEN_ENCODING) as f_desc:
+                deps = json.loads(f_desc.read())["dependencies"]
+                for dep in deps:
+                    cmd = [
+                        "puppet",
+                        "module",
+                        "--render-as",
+                        "json",
+                        "--modulepath",
+                        module_path,
+                        "install",
+                        dep["name"],
+                        "-v",
+                        dep["version_requirement"],
+                    ]
+                    with Popen(cmd, stdout=PIPE, stderr=PIPE) as proc:
+                        cout, cerr = proc.communicate()
+                        LOG.info("STDOUT: \n%s", strip_colors(cout.decode()))
+                        ret = proc.returncode
+                        LOG.debug("Exit code: %d", ret)
+                        if ret != 0:
+                            LOG.error("Command '%s' exited with %d.", " ".join(cmd), ret)
+                            LOG.error("STDERR:\n%s", strip_colors(cerr.decode()))
+                            sys.exit(1)
+        except NotADirectoryError:
+            LOG.info("%s isn't a puppet module")
+
+
+def strip_colors(text: str) -> str:
+    """
+    Credit:
+    https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python
+
+    :param text: ANSI colored text
+    :return: The input text w/o colors.
+    """
+    ansi_escape = re.compile(
+        r"""
+    \x1B  # ESC
+    (?:   # 7-bit C1 Fe (except CSI)
+        [@-Z\\-_]
+    |     # or [ for CSI, followed by a control sequence
+        \[
+        [0-?]*  # Parameter bytes
+        [ -/]*  # Intermediate bytes
+        [@-~]   # Final byte
+    )
+""",
+        re.VERBOSE,
+    )
+    return ansi_escape.sub("", text)
