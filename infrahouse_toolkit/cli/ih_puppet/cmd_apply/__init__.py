@@ -48,9 +48,9 @@ def cmd_apply(ctx, manifest):
     )
 
     with SystemLock("/var/run/ih-puppet-apply.lock"):
-        install_module_dependencies(module_path=ctx.obj["module_path"])
-        LOG.debug("Executing %s", " ".join(cmd))
         env = {"PATH": f"{environ['PATH']}:/opt/puppetlabs/bin"}
+        install_module_dependencies(module_path=ctx.obj["module_path"], env=env)
+        LOG.debug("Executing %s", " ".join(cmd))
         # First run is to update the puppet code
         with Popen(cmd, env=env) as proc:
             proc.communicate()
@@ -80,7 +80,7 @@ def cmd_apply(ctx, manifest):
                 sys.exit(ret)
 
 
-def install_module_dependencies(module_path: str):
+def install_module_dependencies(module_path: str, env: dict = None):
     """
     Assuming each subdirectory in ``module_path`` is a puppet module,
     read its ``metadata.json`` and install puppet module dependencies
@@ -88,6 +88,8 @@ def install_module_dependencies(module_path: str):
 
     :param module_path: Path to a directory with puppet modules.
     :type module_path: str
+    :param env: Environment variables for the puppet command.
+    :type env: dict
     """
     for module in os.listdir(module_path):
         LOG.info("Installing %s dependencies", module)
@@ -107,7 +109,11 @@ def install_module_dependencies(module_path: str):
                         "-v",
                         dep["version_requirement"],
                     ]
-                    with Popen(cmd, stdout=PIPE, stderr=PIPE) as proc:
+                    kwargs = {"stdout": PIPE, "stderr": PIPE}
+                    if env:
+                        kwargs["env"] = env
+
+                    with Popen(cmd, **kwargs) as proc:
                         cout, cerr = proc.communicate()
                         LOG.info("STDOUT: \n%s", strip_colors(cout.decode()))
                         ret = proc.returncode
