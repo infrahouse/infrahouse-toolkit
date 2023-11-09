@@ -66,6 +66,7 @@ class ActionList:
         "auto scaling": "autoscaling",
         "elastic load balancing v2": "elasticloadbalancing",
         "route 53": "route53",
+        "secrets manager": "secretsmanager",
     }
     PERMISSION_NAMING_MAP = {
         "HeadBucket": "ListBucket",
