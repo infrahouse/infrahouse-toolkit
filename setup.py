@@ -47,9 +47,10 @@ setup(
     description="A collection of tools for building infrastructure.",
     entry_points={
         "console_scripts": [
+            "ih-ec2=infrahouse_toolkit.cli.ih_ec2:ih_ec2",
             "ih-plan=infrahouse_toolkit.cli.ih_plan:ih_plan",
-            "ih-s3-reprepro=infrahouse_toolkit.cli.ih_s3_reprepro:ih_s3_reprepro",
             "ih-puppet=infrahouse_toolkit.cli.ih_puppet:ih_puppet",
+            "ih-s3-reprepro=infrahouse_toolkit.cli.ih_s3_reprepro:ih_s3_reprepro",
         ],
     },
     install_requires=requirements,
@@ -62,6 +63,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/infrahouse/infrahouse-toolkit",
-    version="2.6.2",
+    version="2.7.0",
     zip_safe=False,
 )
