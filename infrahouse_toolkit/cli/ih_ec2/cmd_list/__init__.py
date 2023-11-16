@@ -6,6 +6,7 @@
     See ``ih-ec2 list`` for more details.
 """
 import sys
+from pprint import pformat
 
 import click
 from botocore.exceptions import ClientError
@@ -19,12 +20,13 @@ def list_ec2_instances(ec2_client):
     Print a summary about EC2 instances in a region.
     """
     response = ec2_client.describe_instances()
+    LOG.debug("describe_instances() = %s", pformat(response, indent=4))
     instances = []
     header = ["InstanceId", "InstanceType", "PublicDnsName", "PublicIpAddress", "PrivateIpAddress"]
     for reservation in response["Reservations"]:
         for instance in reservation["Instances"]:
             name = None
-            for tag in instance["Tags"]:
+            for tag in instance.get("Tags") or []:
                 if tag["Key"] == "Name":
                     name = tag["Value"]
             row = [name]
