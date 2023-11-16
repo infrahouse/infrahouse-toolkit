@@ -25,6 +25,7 @@ dependency "ncurses"
 dependency "zlib"
 dependency "openssl"
 dependency "bzip2"
+dependency "sqlite3"
 
 if version >= "3.9.0"
   dependency "libffi"
@@ -60,6 +61,7 @@ build do
   command "./configure" \
           " --prefix=#{install_dir}/embedded" \
           " --enable-shared" \
+          " --enable-loadable-sqlite-extensions" \
           " --with-dbmliborder=", env: env
 
   make env: env
@@ -71,16 +73,7 @@ build do
   # There exists no configure flag to tell Python to not compile readline
   delete "#{install_dir}/embedded/lib/python#{major_version}.#{minor_version}/lib-dynload/nis.cpython-*"
 
-  # Ditto for sqlite3
-  delete "#{install_dir}/embedded/lib/python#{major_version}.#{minor_version}/lib-dynload/_sqlite3.*"
-  delete "#{install_dir}/embedded/lib/python#{major_version}.#{minor_version}/sqlite3/"
-
   # Remove unused extension which is known to make healthchecks fail on CentOS 6
   delete "#{install_dir}/embedded/lib/python#{major_version}.#{minor_version}/lib-dynload/_bsddb.*"
 
-  # Remove sqlite3 libraries, if you want to include sqlite, create a new def
-  # in your software project and build it explicitly. This removes the adapter
-  # library from python, which links incorrectly to a system library. Adding
-  # your own sqlite definition will fix this.
-  delete "#{install_dir}/embedded/lib/python#{major_version}.#{minor_version}/lib-dynload/_sqlite3.*"
 end
