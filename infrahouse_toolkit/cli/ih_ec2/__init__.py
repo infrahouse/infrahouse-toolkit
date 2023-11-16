@@ -6,14 +6,19 @@
     See ``ih-ec2 --help`` for more details.
 """
 import sys
-from configparser import ConfigParser
-from os import path as osp
 
 import click
 from boto3 import Session
-from botocore.exceptions import NoCredentialsError
+from botocore.exceptions import (
+    NoCredentialsError,
+    NoRegionError,
+    SSOTokenLoadError,
+    TokenRetrievalError,
+)
 
 from infrahouse_toolkit import LOG
+from infrahouse_toolkit.aws import aws_sso_login
+from infrahouse_toolkit.aws.config import AWSConfig
 from infrahouse_toolkit.cli.ih_ec2.cmd_instance_types import cmd_instance_types
 from infrahouse_toolkit.cli.ih_ec2.cmd_launch import cmd_launch
 from infrahouse_toolkit.cli.ih_ec2.cmd_list import cmd_list
@@ -21,25 +26,6 @@ from infrahouse_toolkit.cli.ih_ec2.cmd_terminate import cmd_terminate
 from infrahouse_toolkit.logging import setup_logging
 
 AWS_DEFAULT_REGION = "us-west-1"
-AWS_DEFAULT_PROIFLE = "default"
-
-
-def get_aws_profiles() -> list:
-    """
-    Parse AWS common configuration files and return a list of known AWS profiles.
-
-    :return: List of configured AWS profiles.
-    :rtype: list
-    """
-    profiles = {AWS_DEFAULT_PROIFLE}
-    for cred_file in ["config", "credentials"]:
-        config = ConfigParser()
-        config.read(osp.expanduser(osp.join("~/.aws", cred_file)))
-        for section in config.sections():
-            if section.startswith("profile"):
-                profiles.add(section.split(" ")[1])
-
-    return list(profiles)
 
 
 def get_aws_regions() -> list:
@@ -84,8 +70,8 @@ def get_aws_regions() -> list:
 @click.option(
     "--aws-profile",
     help="AWS profile name for authentication.",
-    type=click.Choice(get_aws_profiles()),
-    default=AWS_DEFAULT_PROIFLE,
+    type=click.Choice(AWSConfig().profiles),
+    default=None,
     show_default=True,
 )
 @click.option(
@@ -93,27 +79,44 @@ def get_aws_regions() -> list:
     help="AWS region to use.",
     type=click.Choice(get_aws_regions()),
     show_default=True,
-    default=AWS_DEFAULT_REGION,
+    default=None,
 )
 @click.version_option()
 @click.pass_context
 def ih_ec2(ctx, **kwargs):
     """AWS EC2 helpers."""
     setup_logging(LOG, debug=kwargs["debug"])
+    aws_profile = kwargs["aws_profile"]
+    aws_config = AWSConfig()
+    aws_region = kwargs["aws_region"]
+    aws_session = None
     try:
-        response = get_aws_client("sts", kwargs["aws_profile"], kwargs["aws_region"]).get_caller_identity()
+        response = get_aws_client("sts", aws_profile, aws_region).get_caller_identity()
 
         LOG.info("Connected to AWS as %s", response["Arn"])
     except NoCredentialsError as err:
         LOG.error(err)
         LOG.info("Try to run ih-ec2 with --aws-profile option.")
-        LOG.info("Available profiles:\n\t%s", "\n\t".join(get_aws_profiles()))
+        LOG.info("Available profiles:\n\t%s", "\n\t".join(aws_config.profiles))
         sys.exit(1)
 
-    ctx.obj = {
-        "debug": kwargs["debug"],
-        "ec2_client": get_aws_client("ec2", kwargs["aws_profile"], kwargs["aws_region"]),
-    }
+    except (SSOTokenLoadError, TokenRetrievalError) as err:
+        if not aws_profile:
+            LOG.info("Try to run ih-ec2 with --aws-profile option.")
+            LOG.info("Available profiles:\n\t%s", "\n\t".join(aws_config.profiles))
+            sys.exit(1)
+        LOG.debug(err)
+        aws_session = aws_sso_login(aws_config, aws_profile)
+
+    try:
+        ctx.obj = {
+            "debug": kwargs["debug"],
+            "ec2_client": get_aws_client("ec2", aws_profile, aws_region, session=aws_session),
+        }
+    except NoRegionError as err:
+        LOG.error(err)
+        LOG.error("Use the --aws-region option to specify the AWS region.")
+        sys.exit(1)
 
 
 for cmd in [cmd_launch, cmd_list, cmd_instance_types, cmd_terminate]:
@@ -121,14 +124,16 @@ for cmd in [cmd_launch, cmd_list, cmd_instance_types, cmd_terminate]:
     ih_ec2.add_command(cmd)
 
 
-def get_aws_client(service_name: str, profile: str, region: str):
+def get_aws_client(service_name: str, profile: str, region: str, session=None):
     """
     Get a client instance for an AWS service.
 
     :param service_name: AWS service e.g. ``ec2``.
     :param profile: AWS profile for authentication.
     :param region: AWS region.
+    :param session: if an AWS session is passed, use it to create a client.
+    :type session: Session
     :return: A client instance.
     """
-    session = Session(region_name=region, profile_name=profile)
+    session = session or Session(region_name=region, profile_name=profile)
     return session.client(service_name)
