@@ -50,18 +50,22 @@ class AWSConfig:
 
     def get_account_id(self, profile_name):
         """Read account id for given profile."""
-        return self.config_parser.get(f"profile {profile_name}", "sso_account_id")
+        return self.config_parser.get(self._get_section(profile_name), "sso_account_id")
 
     def get_region(self, profile_name):
         """Read AWS region for given profile."""
-        sso_session = self.config_parser.get(f"profile {profile_name}", "sso_session")
+        sso_session = self.config_parser.get(self._get_section(profile_name), "sso_session")
         return self.config_parser.get(f"sso-session {sso_session}", "sso_region")
 
     def get_role(self, profile_name):
         """Read AWS IAM role for given profile."""
-        return self.config_parser.get(f"profile {profile_name}", "sso_role_name")
+        return self.config_parser.get(self._get_section(profile_name), "sso_role_name")
 
     def get_start_url(self, profile_name):
         """Read SSO URL for given profile."""
-        sso_session = self.config_parser.get(f"profile {profile_name}", "sso_session")
+        sso_session = self.config_parser.get(self._get_section(profile_name), "sso_session")
         return self.config_parser.get(f"sso-session {sso_session}", "sso_start_url")
+
+    @staticmethod
+    def _get_section(profile_name):
+        return profile_name if profile_name == "default" else f"profile {profile_name}"
