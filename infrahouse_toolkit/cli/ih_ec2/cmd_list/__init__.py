@@ -43,11 +43,14 @@ def list_ec2_instances(ec2_client):
 @click.pass_context
 def cmd_list(ctx):
     """
-    Start EC2 instance.
+    List created EC2 instances.
     """
     ec2_client = ctx.obj["ec2_client"]
+    aws_config = ctx.obj["aws_config"]
     try:
         list_ec2_instances(ec2_client)
     except ClientError as err:
         LOG.exception(err)
+        LOG.info("Try to run ih-ec2 with --aws-profile option.")
+        LOG.info("Available profiles:\n\t%s", "\n\t".join(aws_config.profiles))
         sys.exit(1)

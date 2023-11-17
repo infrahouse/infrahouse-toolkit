@@ -8,9 +8,10 @@
 import sys
 
 import click
-from tabulate import tabulate
 
 from infrahouse_toolkit import LOG
+from infrahouse_toolkit.cli.ih_ec2.cmd_launch_templates import list_launch_templates
+from infrahouse_toolkit.cli.ih_ec2.cmd_subnets import list_subnets
 
 SUPPORTED_UBUNTU_CODENAMES = ["jammy"]
 
@@ -21,65 +22,6 @@ def launch_ec2_instance(ec2_client, kwargs):
     """
     response = ec2_client.run_instances(**kwargs)
     LOG.info("Successfully started instance %s.", response["Instances"][0]["InstanceId"])
-
-
-def get_vpc_name(ec2_client, vpc_id):
-    """
-    Given a vpc_id find out its name.
-    """
-    response = ec2_client.describe_vpcs(
-        VpcIds=[
-            vpc_id,
-        ]
-    )
-    for tag in response["Vpcs"][0]["Tags"]:
-        if tag["Key"] == "Name":
-            return tag["Value"]
-
-    return vpc_id
-
-
-def list_launch_templates(ec2_client):
-    """
-    Find and print information about available instance templates in a region.
-    """
-    response = ec2_client.describe_launch_templates()
-    header = ["LaunchTemplateId", "LaunchTemplateName"]
-    rows = []
-    for launch_template in response["LaunchTemplates"]:
-        rows.append([launch_template["LaunchTemplateId"], launch_template["LaunchTemplateName"]])
-    print(tabulate(sorted(rows, key=lambda x: x[1]), headers=header, tablefmt="outline"))
-
-
-def list_subnets(ec2_client):
-    """
-    Find and print information about available subnets in a region.
-    """
-    response = ec2_client.describe_subnets()
-    header = ["SubnetId", "Name", "Public", "CidrBlock", "VpcId", "VpcName"]
-    rows = []
-    vpc_names = {}
-    for subnet in response["Subnets"]:
-        row = []
-        vpc_id = subnet["VpcId"]
-        for field in header:
-            if field == "Name":
-                value = ""
-                for tag in subnet["Tags"]:
-                    if tag["Key"] == "Name":
-                        value = tag["Value"]
-            elif field == "VpcName":
-                if vpc_id not in vpc_names:
-                    vpc_names[vpc_id] = get_vpc_name(ec2_client, vpc_id)
-                value = vpc_names[vpc_id]
-            elif field == "Public":
-                value = subnet["MapPublicIpOnLaunch"]
-            else:
-                value = subnet[field]
-            row.append(value)
-        rows.append(row)
-
-    print(tabulate(sorted(rows, key=lambda x: x[1]), headers=header, tablefmt="outline"))
 
 
 @click.command(name="launch")
@@ -109,4 +51,8 @@ def cmd_launch(ctx, subnet_id, launch_template):
         launch_ec2_instance(ctx.obj["ec2_client"], kwargs)
 
     else:
+        LOG.error(
+            "A launch template isn't specified. "
+            "Please pick one from the list and pass either the launch template name or id."
+        )
         list_launch_templates(ec2_client)
