@@ -106,7 +106,10 @@ def ih_ec2(ctx, **kwargs):
             LOG.info("Available profiles:\n\t%s", "\n\t".join(aws_config.profiles))
             sys.exit(1)
         LOG.debug(err)
-        aws_session = aws_sso_login(aws_config, aws_profile)
+        aws_session = aws_sso_login(aws_config, aws_profile, region=aws_region)
+        response = get_aws_client("sts", aws_profile, aws_region, session=aws_session).get_caller_identity()
+
+        LOG.info("Connected to AWS as %s", response["Arn"])
 
     try:
         ctx.obj = {

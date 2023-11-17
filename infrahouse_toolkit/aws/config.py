@@ -54,8 +54,7 @@ class AWSConfig:
 
     def get_region(self, profile_name):
         """Read AWS region for given profile."""
-        sso_session = self.config_parser.get(self._get_section(profile_name), "sso_session")
-        return self.config_parser.get(f"sso-session {sso_session}", "sso_region")
+        return self.config_parser.get(self._get_section(profile_name), "region")
 
     def get_role(self, profile_name):
         """Read AWS IAM role for given profile."""
