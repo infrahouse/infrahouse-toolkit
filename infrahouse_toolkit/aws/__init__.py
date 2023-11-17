@@ -15,7 +15,7 @@ from infrahouse_toolkit.aws.config import AWSConfig
 from infrahouse_toolkit.aws.exceptions import IHAWSException
 
 
-def aws_sso_login(aws_config: AWSConfig, profile_name: str):
+def aws_sso_login(aws_config: AWSConfig, profile_name: str, region: str = None):
     """
     Login into AWS using SSO.
 
@@ -33,7 +33,7 @@ def aws_sso_login(aws_config: AWSConfig, profile_name: str):
             )
 
     return Session(
-        region_name=aws_config.get_region(profile_name),
+        region_name=region or aws_config.get_region(profile_name),
         aws_access_key_id=credentials["accessKeyId"],
         aws_secret_access_key=credentials["secretAccessKey"],
         aws_session_token=credentials["sessionToken"],
