@@ -27,6 +27,12 @@ from infrahouse_toolkit.logging import setup_logging
     show_default=True,
 )
 @click.option(
+    "--environmentpath",
+    help="A path for directory environments.",
+    default="{root_directory}/environments",
+    show_default=True,
+)
+@click.option(
     "--root-directory",
     help="Path where the puppet code is hosted. "
     "The directory must include subdirectories ``environments``, ``modules``.",
@@ -58,6 +64,7 @@ def ih_puppet(ctx, **kwargs):
             root_directory=kwargs["root_directory"],
             environment=kwargs["environment"],
         ),
+        "environmentpath": kwargs["environmentpath"].format(root_directory=kwargs["root_directory"]),
         "module_path": kwargs["module_path"].format(
             root_directory=kwargs["root_directory"],
         ),
