@@ -36,8 +36,8 @@ def cmd_apply(ctx, manifest):
         [
             "--environment",
             ctx.obj["environment"],
-            "--hiera_config",
-            ctx.obj["hiera_config"],
+            "--environmentpath",
+            ctx.obj["environmentpath"],
             "--hiera_config",
             ctx.obj["hiera_config"],
             f"--modulepath={ctx.obj['module_path']}",
