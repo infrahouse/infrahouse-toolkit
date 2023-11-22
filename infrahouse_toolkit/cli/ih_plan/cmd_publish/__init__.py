@@ -72,6 +72,6 @@ def cmd_publish(*args, **kwargs):
         pull_request = GitHubPR(kwargs["repo"], int(kwargs["pull_request_number"]), github_token=kwargs["github_token"])
         comment = pull_request.find_comment_by_backend(backend)
         if comment:
-            comment.edit(status.comment)
+            pull_request.edit_comment(comment, status.comment, private_gist=kwargs["private_gist"])
         else:
             pull_request.publish_comment(status.comment, private_gist=kwargs["private_gist"])

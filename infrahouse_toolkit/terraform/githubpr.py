@@ -95,6 +95,27 @@ class GitHubPR:
                 pass
         return None
 
+    def edit_comment(self, comment: IssueComment, new_text: str, private_gist: bool = True):
+        """
+        Modify existing comment. If the new comment is too big,
+        publish it as a gist.
+        """
+        try:
+            comment.edit(new_text)
+        except GithubException as err:
+            LOG.error(err)
+            # https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28#create-an-issue-comment
+            if err.status == 422:  # Validation failed, or the endpoint has been spammed.
+                gist = self._publish_gist(
+                    f"pr-{self._pr_number}-plan",
+                    f"{self._repo_name.replace('/', '-')}-pr-{self._pr_number}-plan.txt",
+                    comment,
+                    not private_gist,
+                )
+                comment.edit(f"Comment was too big. It's published as a gist at {gist.html_url}.")
+            else:
+                raise
+
     def publish_comment(self, comment: str, private_gist: bool = True):
         """Add the given text as a comment in the pull request."""
         try:
