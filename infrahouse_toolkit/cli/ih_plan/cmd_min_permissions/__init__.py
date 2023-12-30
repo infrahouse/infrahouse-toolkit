@@ -88,7 +88,12 @@ class ActionList:
     }
     # Some permissions require additional ones.
     REQUIRED_EXTRA_PERMISSIONS_MAP = {
-        "autoscaling:CreateAutoScalingGroup": ["iam:PassRole", "iam:CreateServiceLinkedRole"],
+        "autoscaling:CreateAutoScalingGroup": [
+            "iam:PassRole",
+            "iam:CreateServiceLinkedRole",
+            "ec2:CreateTags",
+            "ec2:RunInstances",
+        ],
         "autoscaling:UpdateAutoScalingGroup": ["iam:PassRole"],
         "elasticloadbalancing:CreateLoadBalancer": ["elasticloadbalancing:AddTags"],
         "iam:AddRoleToInstanceProfile": ["iam:PassRole"],

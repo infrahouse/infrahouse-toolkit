@@ -35,6 +35,8 @@ def test_add_with_dependency():
     assert "autoscaling:CreateAutoScalingGroup" in actions.actions
     assert "iam:PassRole" in actions.actions
     assert "iam:CreateServiceLinkedRole" in actions.actions
+    assert "ec2:CreateTags" in actions.actions
+    assert "ec2:RunInstances" in actions.actions
 
 
 def test_add_with_rewrite():
