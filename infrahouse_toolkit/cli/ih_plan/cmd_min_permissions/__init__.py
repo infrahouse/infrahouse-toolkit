@@ -67,9 +67,11 @@ class ActionList:
         "elastic load balancing v2": "elasticloadbalancing",
         "route 53": "route53",
         "secrets manager": "secretsmanager",
+        "cloudwatch logs": "logs",
     }
     PERMISSION_NAMING_MAP = {
         "HeadBucket": "ListBucket",
+        "HeadObject": "GetObject",
         "GetBucketAccelerateConfiguration": "GetAccelerateConfiguration",
         "GetBucketEncryption": "GetEncryptionConfiguration",
         "GetBucketCors": "GetBucketCORS",

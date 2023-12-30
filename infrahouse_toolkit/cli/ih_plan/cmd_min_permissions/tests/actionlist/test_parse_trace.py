@@ -12,6 +12,7 @@ def test_parse_trace(tmpdir):
             """
             {"aws.operation": "PutScalingPolicy","aws.service": "Auto Scaling"}
             {"aws.operation": "DescribePolicies","aws.service": "Auto Scaling"}
+            {  "rpc.method": "DescribeLogGroups", "rpc.service": "CloudWatch Logs"}
             """
         )
     )
@@ -20,6 +21,7 @@ def test_parse_trace(tmpdir):
     assert actions.actions == [
         "autoscaling:DescribePolicies",
         "autoscaling:PutScalingPolicy",
+        "logs:DescribeLogGroups",
     ]
 
 
@@ -30,6 +32,7 @@ def test_parse_trace(tmpdir):
             dedent(
                 """
                 {"aws.operation": "HeadBucket","aws.service": "S3"}
+                {"rpc.method": "HeadObject", "rpc.service": "S3"}
                 {"aws.operation": "GetBucketAccelerateConfiguration","aws.service": "S3"}
                 {"aws.operation": "GetBucketEncryption","aws.service": "S3"}
                 {"aws.operation": "GetBucketCors","aws.service": "S3"}
@@ -46,6 +49,7 @@ def test_parse_trace(tmpdir):
                 "s3:GetLifecycleConfiguration",
                 "s3:GetReplicationConfiguration",
                 "s3:ListBucket",
+                "s3:GetObject",
             ],
         ),
         (
