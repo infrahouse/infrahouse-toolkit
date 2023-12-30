@@ -68,6 +68,7 @@ class ActionList:
         "route 53": "route53",
         "secrets manager": "secretsmanager",
         "cloudwatch logs": "logs",
+        "eventbridge": "events",
     }
     PERMISSION_NAMING_MAP = {
         "HeadBucket": "ListBucket",

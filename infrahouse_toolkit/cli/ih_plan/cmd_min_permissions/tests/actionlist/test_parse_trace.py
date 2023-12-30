@@ -12,7 +12,8 @@ def test_parse_trace(tmpdir):
             """
             {"aws.operation": "PutScalingPolicy","aws.service": "Auto Scaling"}
             {"aws.operation": "DescribePolicies","aws.service": "Auto Scaling"}
-            {  "rpc.method": "DescribeLogGroups", "rpc.service": "CloudWatch Logs"}
+            {"rpc.method": "DescribeLogGroups", "rpc.service": "CloudWatch Logs"}
+            {"rpc.method": "ListTargetsByRule", "rpc.service": "EventBridge"}
             """
         )
     )
@@ -21,6 +22,7 @@ def test_parse_trace(tmpdir):
     assert actions.actions == [
         "autoscaling:DescribePolicies",
         "autoscaling:PutScalingPolicy",
+        "events:ListTargetsByRule",
         "logs:DescribeLogGroups",
     ]
 
