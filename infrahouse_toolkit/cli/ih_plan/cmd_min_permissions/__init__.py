@@ -73,6 +73,9 @@ class ActionList:
     PERMISSION_NAMING_MAP = {
         "HeadBucket": "ListBucket",
         "HeadObject": "GetObject",
+        "CreateMultipartUpload": "PutObject",
+        "UploadPart": "PutObject",
+        "CompleteMultipartUpload": "PutObject",
         "GetBucketAccelerateConfiguration": "GetAccelerateConfiguration",
         "GetBucketEncryption": "GetEncryptionConfiguration",
         "GetBucketCors": "GetBucketCORS",

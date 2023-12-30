@@ -14,6 +14,9 @@ def test_parse_trace(tmpdir):
             {"aws.operation": "DescribePolicies","aws.service": "Auto Scaling"}
             {"rpc.method": "DescribeLogGroups", "rpc.service": "CloudWatch Logs"}
             {"rpc.method": "ListTargetsByRule", "rpc.service": "EventBridge"}
+            {"rpc.method": "CreateMultipartUpload", "rpc.service": "s3"}
+            {"rpc.method": "UploadPart", "rpc.service": "s3"}
+            {"rpc.method": "CompleteMultipartUpload", "rpc.service": "s3"}
             """
         )
     )
@@ -24,6 +27,7 @@ def test_parse_trace(tmpdir):
         "autoscaling:PutScalingPolicy",
         "events:ListTargetsByRule",
         "logs:DescribeLogGroups",
+        "s3:PutObject",
     ]
 
 
