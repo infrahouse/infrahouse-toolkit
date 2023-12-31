@@ -97,9 +97,25 @@ class ActionList:
         "autoscaling:UpdateAutoScalingGroup": ["iam:PassRole"],
         "elasticloadbalancing:CreateLoadBalancer": ["elasticloadbalancing:AddTags"],
         "iam:AddRoleToInstanceProfile": ["iam:PassRole"],
+        "iam:CreateInstanceProfile": ["iam:TagInstanceProfile"],
         "ec2:CreateLaunchTemplate": ["ec2:CreateTags"],
         "ec2:ImportKeyPair": ["ec2:CreateTags"],
         "ec2:RunInstances": ["ec2:CreateTags"],
+        "logs:CreateLogGroup": ["logs:TagResource"],
+        "lambda:CreateFunction": ["lambda:TagResource"],
+        "s3:CreateBucket": ["s3:PutBucketTagging"],
+        "s3:PutObject": [
+            "kms:Decrypt",
+            "kms:CreateGrant",
+            "kms:DescribeKey",
+            "kms:Encrypt",
+            "s3:AbortMultipartUpload",
+            "s3:GetObject",
+            "s3:ListMultipartUploadParts",
+            "s3:PutObjectTagging",
+        ],
+        "events:PutRule": ["events:TagResource"],
+        "events:PutTargets": ["events:TagResource"],
     }
 
     def __init__(self):
