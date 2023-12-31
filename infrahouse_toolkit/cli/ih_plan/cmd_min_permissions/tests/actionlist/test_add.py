@@ -1,3 +1,5 @@
+import pytest
+
 from infrahouse_toolkit.cli.ih_plan.cmd_min_permissions import ActionList
 
 
@@ -28,15 +30,90 @@ def test_add():
     assert "foo" in actions.actions
 
 
-def test_add_with_dependency():
+@pytest.mark.parametrize(
+    "action, dependent_actions",
+    [
+        (
+            "autoscaling:CreateAutoScalingGroup",
+            [
+                "autoscaling:CreateAutoScalingGroup",
+                "iam:PassRole",
+                "iam:CreateServiceLinkedRole",
+                "ec2:CreateTags",
+                "ec2:RunInstances",
+            ],
+        ),
+        (
+            "logs:CreateLogGroup",
+            [
+                "logs:CreateLogGroup",
+                "logs:TagResource",
+            ],
+        ),
+        (
+            "lambda:CreateFunction",
+            [
+                "lambda:CreateFunction",
+                "lambda:TagResource",
+            ],
+        ),
+        (
+            "s3:PutObject",
+            [
+                "kms:Decrypt",
+                "kms:CreateGrant",
+                "kms:DescribeKey",
+                "kms:Encrypt",
+                "s3:PutObject",
+                "s3:PutObjectTagging",
+                "s3:AbortMultipartUpload",
+                "s3:GetObject",
+                "s3:ListMultipartUploadParts",
+            ],
+        ),
+        (
+            "events:PutRule",
+            [
+                "events:PutRule",
+                "events:TagResource",
+            ],
+        ),
+        (
+            "events:PutTargets",
+            [
+                "events:PutTargets",
+                "events:TagResource",
+            ],
+        ),
+        (
+            "iam:CreateInstanceProfile",
+            [
+                "iam:CreateInstanceProfile",
+                "iam:TagInstanceProfile",
+            ],
+        ),
+        (
+            "iam:CreateInstanceProfile",
+            [
+                "iam:CreateInstanceProfile",
+                "iam:TagInstanceProfile",
+            ],
+        ),
+        (
+            "s3:CreateBucket",
+            [
+                "s3:CreateBucket",
+                "s3:PutBucketTagging",
+            ],
+        ),
+    ],
+)
+def test_add_with_dependency(action, dependent_actions):
     actions = ActionList()
-    actions.add("autoscaling:CreateAutoScalingGroup")
+    actions.add(action)
 
-    assert "autoscaling:CreateAutoScalingGroup" in actions.actions
-    assert "iam:PassRole" in actions.actions
-    assert "iam:CreateServiceLinkedRole" in actions.actions
-    assert "ec2:CreateTags" in actions.actions
-    assert "ec2:RunInstances" in actions.actions
+    for dependency in dependent_actions:
+        assert dependency in actions.actions
 
 
 def test_add_with_rewrite():
