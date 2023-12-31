@@ -5,30 +5,69 @@ import pytest
 from infrahouse_toolkit.cli.ih_plan.cmd_min_permissions import ActionList
 
 
-def test_parse_trace(tmpdir):
+@pytest.mark.parametrize(
+    "trace, expected_actions",
+    [
+        (
+            '{"aws.operation": "PutScalingPolicy","aws.service": "Auto Scaling"}',
+            [
+                "autoscaling:PutScalingPolicy",
+            ],
+        ),
+        (
+            '{"aws.operation": "DescribePolicies","aws.service": "Auto Scaling"}',
+            [
+                "autoscaling:DescribePolicies",
+            ],
+        ),
+        (
+            '{"rpc.method": "DescribeLogGroups", "rpc.service": "CloudWatch Logs"}',
+            [
+                "logs:DescribeLogGroups",
+            ],
+        ),
+        (
+            '{"rpc.method": "ListTargetsByRule", "rpc.service": "EventBridge"}',
+            [
+                "events:ListTargetsByRule",
+            ],
+        ),
+        (
+            '{"rpc.method": "CompleteMultipartUpload", "rpc.service": "s3"}',
+            [
+                "kms:CreateGrant",
+                "kms:Decrypt",
+                "kms:DescribeKey",
+                "kms:Encrypt",
+                "s3:AbortMultipartUpload",
+                "s3:GetObject",
+                "s3:ListMultipartUploadParts",
+                "s3:PutObject",
+                "s3:PutObjectTagging",
+            ],
+        ),
+        (
+            '{"rpc.method": "UploadPart", "rpc.service": "s3"}',
+            [
+                "kms:CreateGrant",
+                "kms:Decrypt",
+                "kms:DescribeKey",
+                "kms:Encrypt",
+                "s3:AbortMultipartUpload",
+                "s3:GetObject",
+                "s3:ListMultipartUploadParts",
+                "s3:PutObject",
+                "s3:PutObjectTagging",
+            ],
+        ),
+    ],
+)
+def test_parse_trace(trace, expected_actions, tmpdir):
     tracefile = tmpdir.join("trace")
-    tracefile.write(
-        dedent(
-            """
-            {"aws.operation": "PutScalingPolicy","aws.service": "Auto Scaling"}
-            {"aws.operation": "DescribePolicies","aws.service": "Auto Scaling"}
-            {"rpc.method": "DescribeLogGroups", "rpc.service": "CloudWatch Logs"}
-            {"rpc.method": "ListTargetsByRule", "rpc.service": "EventBridge"}
-            {"rpc.method": "CreateMultipartUpload", "rpc.service": "s3"}
-            {"rpc.method": "UploadPart", "rpc.service": "s3"}
-            {"rpc.method": "CompleteMultipartUpload", "rpc.service": "s3"}
-            """
-        )
-    )
+    tracefile.write(trace)
     actions = ActionList()
     actions.parse_trace(str(tracefile))
-    assert actions.actions == [
-        "autoscaling:DescribePolicies",
-        "autoscaling:PutScalingPolicy",
-        "events:ListTargetsByRule",
-        "logs:DescribeLogGroups",
-        "s3:PutObject",
-    ]
+    assert actions.actions == expected_actions
 
 
 @pytest.mark.parametrize(
@@ -65,7 +104,7 @@ def test_parse_trace(tmpdir):
                 {"rpc.method": "CreateTable", "rpc.service": "DynamoDB"}
                 """
             ),
-            ["s3:CreateBucket", "dynamodb:CreateTable"],
+            ["s3:CreateBucket", "dynamodb:CreateTable", "s3:PutBucketTagging"],
         ),
         (
             dedent(
