@@ -148,6 +148,8 @@ class TFStatus:
 
     @property
     def _short_stdout(self):
+        if self.stdout is None:
+            return None
         output = decolor(self.stdout).splitlines()
         result_lines = []
         trigger_lines = [
@@ -157,10 +159,7 @@ class TFStatus:
 
         def _match(candidate):
             for trigger in trigger_lines:
-                # print(f"{trigger = }")
-                # print(f"{candidate = }")
                 if candidate.startswith(trigger):
-                    # print("match")
                     return True
             return False
 
@@ -171,13 +170,11 @@ class TFStatus:
                 break
             idx += 1
 
-        # print(f"Match at {idx = }")
         # Save the rest of output
         while idx < len(output):
             result_lines.append(output[idx])
             idx += 1
 
-        # print(f"{result_lines = }")
         if result_lines:
             return "\n".join(result_lines)
         return "\n".join(output)
