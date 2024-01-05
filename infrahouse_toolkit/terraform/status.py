@@ -74,7 +74,7 @@ class TFStatus:
             f"\n# State **`{self.backend.id}`**\n"
             + f"## Affected resources counts\n\n{self.summary_counts}\n"
             + (f"## Affected resources by action\n\n{self.summary_resources}\n" if self.affected_resources else "")
-            + f"""<details>\n<summary>STDOUT</summary>\n\n```{decolor(self.stdout) or "no output"}```\n</details>\n"""
+            + f"""<details>\n<summary>STDOUT</summary>\n\n```\n{self._short_stdout or "no output"}\n```\n</details>\n"""
             + f"""<details>\n<summary>STDERR</summary>\n\n```{decolor(self.stderr) or "no output"}```\n</details>\n"""
             + f"""<details><summary><i>metadata</i></summary>\n<p>\n```{self.metadata}```\n</p></details>"""
         )
@@ -146,6 +146,39 @@ class TFStatus:
 
         return "No affected resources"
 
+    @property
+    def _short_stdout(self):
+        if self.stdout is None:
+            return None
+        output = decolor(self.stdout).splitlines()
+        result_lines = []
+        trigger_lines = [
+            "Terraform has compared your real infrastructure against your configuration",
+            "Terraform used the selected providers to generate the following execution",
+        ]
+
+        def _match(candidate):
+            for trigger in trigger_lines:
+                if candidate.startswith(trigger):
+                    return True
+            return False
+
+        idx = 0
+        # Find beginning of output we want to preserve
+        while idx < len(output):
+            if _match(output[idx]):
+                break
+            idx += 1
+
+        # Save the rest of output
+        while idx < len(output):
+            result_lines.append(output[idx])
+            idx += 1
+
+        if result_lines:
+            return "\n".join(result_lines)
+        return "\n".join(output)
+
     def __eq__(self, other):
         return all(getattr(self, x) == getattr(other, x) for x in self.__dict__ if x != "affected_resources")
 
@@ -154,7 +187,7 @@ class TFStatus:
             {
                 self.backend.id: {
                     "success": self.success,
-                    "stdout": self.stdout,
+                    "stdout": self._short_stdout,
                     "stderr": self.stderr,
                     "add": self.add,
                     "change": self.change,
