@@ -49,7 +49,8 @@ def cmd_apply(ctx, manifest):
 
     with SystemLock("/var/run/ih-puppet-apply.lock"):
         env = {"PATH": f"{environ['PATH']}:/opt/puppetlabs/bin"}
-        install_module_dependencies(module_path=ctx.obj["module_path"], env=env)
+        for path in ctx.obj["module_path"].split(":"):
+            install_module_dependencies(module_path=path, env=env)
         LOG.debug("Executing %s", " ".join(cmd))
         # First run is to update the puppet code
         with Popen(cmd, env=env) as proc:
