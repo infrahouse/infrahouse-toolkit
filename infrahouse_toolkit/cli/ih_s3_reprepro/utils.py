@@ -7,6 +7,7 @@ import json
 import os
 import sys
 from contextlib import contextmanager
+from logging import getLogger
 from os import getgid, getuid
 from os import path as osp
 from subprocess import CalledProcessError, Popen, check_call
@@ -15,7 +16,7 @@ from time import sleep, time
 
 import boto3
 
-from infrahouse_toolkit import DEFAULT_OPEN_ENCODING, LOG
+from infrahouse_toolkit import DEFAULT_OPEN_ENCODING
 from infrahouse_toolkit.cli.ih_s3_reprepro.aws import (
     assume_role,
     get_credentials_from_environ,
@@ -24,6 +25,7 @@ from infrahouse_toolkit.cli.ih_s3_reprepro.aws import (
 from infrahouse_toolkit.cli.ih_s3_reprepro.gpg import gpg
 
 DEPENDENCIES = ["reprepro", "gpg", "s3fs"]
+LOG = getLogger()
 
 
 def check_dependencies(binaries: list):

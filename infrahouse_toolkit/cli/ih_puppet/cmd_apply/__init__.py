@@ -9,14 +9,17 @@ import json
 import os
 import re
 import sys
+from logging import getLogger
 from os import environ
 from os import path as osp
 from subprocess import PIPE, Popen
 
 import click
 
-from infrahouse_toolkit import DEFAULT_OPEN_ENCODING, LOG
+from infrahouse_toolkit import DEFAULT_OPEN_ENCODING
 from infrahouse_toolkit.lock.system import SystemLock
+
+LOG = getLogger()
 
 
 @click.command(name="apply")

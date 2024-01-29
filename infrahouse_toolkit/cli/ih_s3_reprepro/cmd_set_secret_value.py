@@ -6,13 +6,16 @@
     See ``ih-s3-reprepro set-secret-value --help`` for more details.
 """
 import sys
+from logging import getLogger
 
 import click
 from botocore.exceptions import BotoCoreError, ClientError
 from click import Context
 
-from infrahouse_toolkit import DEFAULT_OPEN_ENCODING, LOG
+from infrahouse_toolkit import DEFAULT_OPEN_ENCODING
 from infrahouse_toolkit.cli.ih_s3_reprepro.aws import get_client
+
+LOG = getLogger()
 
 
 @click.command(name="set-secret-value")

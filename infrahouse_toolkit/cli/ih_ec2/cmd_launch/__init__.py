@@ -6,13 +6,14 @@
     See ``ih-ec2 launch`` for more details.
 """
 import sys
+from logging import getLogger
 
 import click
 
-from infrahouse_toolkit import LOG
 from infrahouse_toolkit.cli.ih_ec2.cmd_launch_templates import list_launch_templates
 from infrahouse_toolkit.cli.ih_ec2.cmd_subnets import list_subnets
 
+LOG = getLogger()
 SUPPORTED_UBUNTU_CODENAMES = ["jammy"]
 
 

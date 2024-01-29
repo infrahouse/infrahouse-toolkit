@@ -6,12 +6,13 @@
     See ``ih-ec2 instance-types`` for more details.
 """
 import sys
+from logging import getLogger
 
 import click
 from botocore.exceptions import ClientError
 from tabulate import tabulate
 
-from infrahouse_toolkit import LOG
+LOG = getLogger()
 
 
 def list_instance_types(ec2_client):

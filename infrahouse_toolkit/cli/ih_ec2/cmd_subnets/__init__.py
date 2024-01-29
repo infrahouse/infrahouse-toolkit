@@ -6,12 +6,13 @@
     See ``ih-ec2 subnets`` for more details.
 """
 import sys
+from logging import getLogger
 
 import click
 from botocore.exceptions import ClientError
 from tabulate import tabulate
 
-from infrahouse_toolkit import LOG
+LOG = getLogger()
 
 
 def get_vpc_name(ec2_client, vpc_id):
