@@ -3,6 +3,7 @@ AWS classes.
 """
 import time
 import webbrowser
+from logging import getLogger
 from os import path as osp
 from pprint import pformat
 from time import sleep
@@ -10,9 +11,10 @@ from time import sleep
 from boto3 import Session
 from diskcache import Cache
 
-from infrahouse_toolkit import LOG
 from infrahouse_toolkit.aws.config import AWSConfig
 from infrahouse_toolkit.aws.exceptions import IHAWSException
+
+LOG = getLogger()
 
 
 def aws_sso_login(aws_config: AWSConfig, profile_name: str, region: str = None):

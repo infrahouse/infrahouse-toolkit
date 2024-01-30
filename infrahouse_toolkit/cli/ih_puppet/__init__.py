@@ -5,11 +5,14 @@
 
     See ``ih-puppet --help`` for more details.
 """
+from logging import getLogger
+
 import click
 
-from infrahouse_toolkit import LOG
 from infrahouse_toolkit.cli.ih_puppet.cmd_apply import cmd_apply
 from infrahouse_toolkit.logging import setup_logging
+
+LOG = getLogger()
 
 
 @click.group()
@@ -55,7 +58,7 @@ from infrahouse_toolkit.logging import setup_logging
 @click.pass_context
 def ih_puppet(ctx, **kwargs):
     """Puppet wrapper."""
-    setup_logging(LOG, debug=kwargs["debug"])
+    setup_logging(debug=kwargs["debug"])
     ctx.obj = {
         "debug": kwargs["debug"],
         "environment": kwargs["environment"],

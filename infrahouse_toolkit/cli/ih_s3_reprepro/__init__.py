@@ -5,10 +5,10 @@
 
     See ``ih-s3-reprepro --help`` for more details.
 """
+from logging import getLogger
 
 import click
 
-from infrahouse_toolkit import LOG
 from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_check import cmd_check
 from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_checkpool import cmd_checkpool
 from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_deleteunreferenced import (
@@ -28,6 +28,8 @@ from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_set_secret_value import (
 )
 from infrahouse_toolkit.cli.ih_s3_reprepro.utils import DEPENDENCIES, check_dependencies
 from infrahouse_toolkit.logging import setup_logging
+
+LOG = getLogger()
 
 
 @click.group()
@@ -89,7 +91,7 @@ def ih_s3_reprepro(*args, **kwargs):  # pylint: disable=unused-argument
     """
     Tool to manage deb packages to a Debian repository hosted in an S3 bucket.
     """
-    setup_logging(LOG, debug=kwargs["debug"])
+    setup_logging(debug=kwargs["debug"])
     check_dependencies(DEPENDENCIES)
 
 

@@ -3,14 +3,14 @@
 
     AWS helper functions.
 """
+from logging import getLogger
 from os import environ
 
 import boto3
 import requests
 from botocore.exceptions import ClientError
 
-from infrahouse_toolkit import LOG
-
+LOG = getLogger()
 VALUE_MAP = {
     "AWS_ACCESS_KEY_ID": "AccessKeyId",
     "AWS_SECRET_ACCESS_KEY": "SecretAccessKey",

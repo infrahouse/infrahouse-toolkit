@@ -1,6 +1,7 @@
 """
 Module for :py:class:`GitHubPR`.
 """
+from logging import getLogger
 from os import environ
 from typing import Union
 
@@ -8,9 +9,10 @@ from github import Github, InputFileContent
 from github.GithubException import GithubException
 from github.IssueComment import IssueComment
 
-from infrahouse_toolkit import LOG
 from infrahouse_toolkit.terraform import IHParseError, parse_comment
 from infrahouse_toolkit.terraform.backends.tfbackend import TFBackend
+
+LOG = getLogger()
 
 
 class GitHubPR:

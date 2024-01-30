@@ -6,11 +6,13 @@
     See ``ih-ec2 terminate`` for more details.
 """
 import sys
+from logging import getLogger
 
 import click
 
-from infrahouse_toolkit import LOG
 from infrahouse_toolkit.cli.ih_ec2.cmd_list import list_ec2_instances
+
+LOG = getLogger()
 
 
 def terminate_ec2_instance(ec2_client, instance_id):

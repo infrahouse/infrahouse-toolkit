@@ -6,12 +6,13 @@
     See ``ih-ec2 launch-templates`` for more details.
 """
 import sys
+from logging import getLogger
 
 import click
 from botocore.exceptions import ClientError
 from tabulate import tabulate
 
-from infrahouse_toolkit import LOG
+LOG = getLogger()
 
 
 def list_launch_templates(ec2_client):

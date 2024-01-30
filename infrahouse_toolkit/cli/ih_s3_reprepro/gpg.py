@@ -5,14 +5,17 @@
 """
 
 from contextlib import contextmanager
+from logging import getLogger
 from os import path as osp
 from subprocess import Popen
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 from botocore.exceptions import ClientError
 
-from infrahouse_toolkit import DEFAULT_ENCODING, DEFAULT_OPEN_ENCODING, LOG
+from infrahouse_toolkit import DEFAULT_ENCODING, DEFAULT_OPEN_ENCODING
 from infrahouse_toolkit.cli.ih_s3_reprepro.aws import get_client
+
+LOG = getLogger()
 
 
 @contextmanager

@@ -6,6 +6,7 @@
     See ``ih-ec2 --help`` for more details.
 """
 import sys
+from logging import getLogger
 
 import click
 from boto3 import Session
@@ -16,7 +17,6 @@ from botocore.exceptions import (
     TokenRetrievalError,
 )
 
-from infrahouse_toolkit import LOG
 from infrahouse_toolkit.aws import aws_sso_login
 from infrahouse_toolkit.aws.config import AWSConfig
 from infrahouse_toolkit.cli.ih_ec2.cmd_instance_types import cmd_instance_types
@@ -28,6 +28,7 @@ from infrahouse_toolkit.cli.ih_ec2.cmd_terminate import cmd_terminate
 from infrahouse_toolkit.logging import setup_logging
 
 AWS_DEFAULT_REGION = "us-west-1"
+LOG = getLogger(__name__)
 
 
 def get_aws_regions() -> list:
@@ -87,7 +88,7 @@ def get_aws_regions() -> list:
 @click.pass_context
 def ih_ec2(ctx, **kwargs):
     """AWS EC2 helpers."""
-    setup_logging(LOG, debug=kwargs["debug"])
+    setup_logging(debug=kwargs["debug"])
     aws_profile = kwargs["aws_profile"]
     aws_config = AWSConfig()
     aws_region = kwargs["aws_region"]

@@ -6,13 +6,15 @@
     See ``ih-s3-reprepro remove --help`` for more details.
 """
 import sys
+from logging import getLogger
 
 import click
 from botocore.exceptions import BotoCoreError, ClientError
 from click import Context
 
-from infrahouse_toolkit import LOG
 from infrahouse_toolkit.cli.ih_s3_reprepro.utils import execute, repo_env
+
+LOG = getLogger()
 
 
 @click.command(name="remove")

@@ -6,13 +6,14 @@
     See ``ih-ec2 list`` for more details.
 """
 import sys
+from logging import getLogger
 from pprint import pformat
 
 import click
 from botocore.exceptions import ClientError
 from tabulate import tabulate
 
-from infrahouse_toolkit import LOG
+LOG = getLogger(__name__)
 
 
 def list_ec2_instances(ec2_client):

@@ -7,14 +7,16 @@ import os
 import time
 from base64 import b64decode
 from contextlib import contextmanager
+from logging import getLogger
 from subprocess import PIPE, CalledProcessError, Popen
 
-from infrahouse_toolkit import DEFAULT_OPEN_ENCODING, LOG
+from infrahouse_toolkit import DEFAULT_OPEN_ENCODING
 from infrahouse_toolkit.terraform.backends import get_backend
 from infrahouse_toolkit.terraform.exceptions import IHParseError
 from infrahouse_toolkit.terraform.status import RunOutput, RunResult, TFStatus, decolor
 
 DEFAULT_PROGRESS_INTERVAL = 10
+LOG = getLogger()
 
 
 def parse_comment(comment_text: str) -> TFStatus:
