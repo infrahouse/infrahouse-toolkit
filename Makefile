@@ -153,3 +153,10 @@ dist: clean ## builds source and wheel package
 	python setup.py sdist
 	python setup.py bdist_wheel
 	ls -l dist
+
+.PHONY: docker
+docker:  ## Run a docker container with Ubuntu for local development.
+	docker run -it --rm \
+	-v $(PWD):/infrahouse-toolkit \
+	-w /infrahouse-toolkit \
+	python:3.11 bash -l
