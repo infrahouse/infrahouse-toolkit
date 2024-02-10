@@ -51,6 +51,7 @@ setup(
             "ih-plan=infrahouse_toolkit.cli.ih_plan:ih_plan",
             "ih-puppet=infrahouse_toolkit.cli.ih_puppet:ih_puppet",
             "ih-s3-reprepro=infrahouse_toolkit.cli.ih_s3_reprepro:ih_s3_reprepro",
+            "ih-certbot=infrahouse_toolkit.cli.ih_certbot:ih_certbot",
         ],
     },
     install_requires=requirements,

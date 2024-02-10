@@ -28,6 +28,7 @@ runtime_dependency 's3fs'
 runtime_dependency 'puppet-agent'
 
 scripts_dir = '/usr/local/bin'
+extra_package_file "#{scripts_dir}/ih-certbot"
 extra_package_file "#{scripts_dir}/ih-ec2"
 extra_package_file "#{scripts_dir}/ih-plan"
 extra_package_file "#{scripts_dir}/ih-s3-reprepro"

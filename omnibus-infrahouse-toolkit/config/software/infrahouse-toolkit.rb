@@ -26,6 +26,7 @@ build do
   env = with_standard_compiler_flags(with_embedded_path)
 
   command "#{install_dir}/embedded/bin/pip3 --cert #{install_dir}/embedded/ssl/cert.pem install -I .", env: env
+  link "#{install_dir}/embedded/bin/ih-certbot", "#{scripts_dir}/ih-certbot"
   link "#{install_dir}/embedded/bin/ih-ec2", "#{scripts_dir}/ih-ec2"
   link "#{install_dir}/embedded/bin/ih-plan", "#{scripts_dir}/ih-plan"
   link "#{install_dir}/embedded/bin/ih-s3-reprepro", "#{scripts_dir}/ih-s3-reprepro"

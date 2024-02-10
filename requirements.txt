@@ -1,7 +1,9 @@
 PyGithub ~= 1.58
 boto3 ~= 1.26
 botocore ~= 1.29
-click ~= 8.0
+certbot ~= 2.9
+certbot-dns-route53 ~= 2.9
+click ~= 8.1
 diskcache ~= 5.6
 pyhcl ~= 0.4
 requests ~= 2.31
