@@ -160,3 +160,10 @@ docker:  ## Run a docker container with Ubuntu for local development.
 	-v $(PWD):/infrahouse-toolkit \
 	-w /infrahouse-toolkit \
 	python:3.11 bash -l
+
+.PHONY: venv
+venv: ## Create local python virtual environment
+	python3 -m venv .venv
+	@echo "To activate run"
+	@echo ""
+	@echo ". .venv/bin/activate"
