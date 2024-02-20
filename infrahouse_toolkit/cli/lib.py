@@ -1,4 +1,6 @@
 """Auxiliary functions for command line tools."""
+import json
+
 import boto3
 import hcl
 
@@ -53,3 +55,25 @@ def get_s3_client(role: str = None):
         session = boto3.Session()
 
     return session.client("s3")
+
+
+def get_elastic_password(secret_key="elastic_secret"):
+    """
+    Try to extract the password for user elastic from AWS secretsmanager.
+
+    If the code runs on an elasticsearch node, there is a secret-id with the password in the custom facts.
+    Try to extract that secret and return the password.
+
+    :param secret_key: A key in the puppet facts map facts["elasticsearch"][<secret_key>].
+        ``elastic_secret`` or ``kibana_system_secret`` are the only supported values.
+    :type secret_key: str
+    """
+    try:
+        with open("/etc/puppetlabs/facter/facts.d/custom.json", encoding=DEFAULT_OPEN_ENCODING) as f_custom_facts:
+            custom_facts = json.load(f_custom_facts)
+            client = boto3.client("secretsmanager")
+            response = client.get_secret_value(SecretId=custom_facts["elasticsearch"][secret_key])
+            return response["SecretString"]
+
+    except FileNotFoundError:
+        return None

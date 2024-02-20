@@ -43,6 +43,7 @@ setuptools: pip
 
 .PHONY: hooks
 hooks:
+	mkdir -p .git/hooks
 	test -f .git/hooks/pre-commit || cp hooks/pre-commit .git/hooks/pre-commit
 	chmod 755 .git/hooks/pre-commit
 
