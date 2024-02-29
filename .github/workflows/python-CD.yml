@@ -18,7 +18,7 @@ permissions:
     contents: read
 
 env:
-    ROLE_ARN: "arn:aws:iam::493370826424:role/infrahouse-toolkit-github"
+    ROLE_ARN: "arn:aws:iam::493370826424:role/ih-tf-infrahouse-toolkit-github"
 
 jobs:
     deploy:
