@@ -37,34 +37,27 @@ def cmd_run(ctx, *args, **kwargs):
     cmd = ctx.args
     comment = None
     pull_request = GitHubPR(kwargs["repo"], kwargs["pull_request_number"], github_token=kwargs["github_token"])
-
+    proc = None
     try:
         proc = run(cmd, capture_output=True, check=True)
-        comment = f"""
-Command `{" ".join(cmd)}` exited with code {proc.returncode}.
+        sys.exit(proc.returncode)
 
-**Standard output**:
-```
-{proc.stdout.decode() or "No output"}
-```
-**Standard error**:
-```
-{proc.stderr.decode() or "No output"}
-```
-"""
-        sys.stdout.write(proc.stdout.decode())
-        sys.stderr.write(proc.stderr.decode())
-
-    except (CalledProcessError, FileNotFoundError) as err:
+    except FileNotFoundError as err:
         LOG.exception(err)
-        comment = f"""
-Command `{" ".join(cmd)}` failed to start.
+        comment = f"Command `{' '.join(cmd)}` failed to start.\n"
+        comment += f"Stack trace:\n```\n{traceback.format_exc()}\n```\n"
+        sys.exit(1)
 
-Stack trace:
-```
-{traceback.format_exc()}
-```
-"""
+    except CalledProcessError as err:
+        LOG.exception(err)
+        sys.exit(1)
 
     finally:
-        pull_request.publish_comment(comment)
+        if proc:
+            sys.stdout.write(proc.stdout.decode())
+            sys.stderr.write(proc.stderr.decode())
+            comment = f"Command `{' '.join(cmd)}` exited with code {proc.returncode}.\n"
+            comment += f"**Standard output**:\n```\n{proc.stdout.decode() or 'No output'}\n```\n"
+            comment += f"**Standard error**:\n```\n{proc.stderr.decode() or 'No output'}\n```\n"
+            pull_request.publish_comment(comment)
+            sys.exit(proc.returncode)
