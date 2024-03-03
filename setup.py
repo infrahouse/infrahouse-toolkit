@@ -53,6 +53,7 @@ setup(
             "ih-github=infrahouse_toolkit.cli.ih_github:ih_github",
             "ih-plan=infrahouse_toolkit.cli.ih_plan:ih_plan",
             "ih-puppet=infrahouse_toolkit.cli.ih_puppet:ih_puppet",
+            "ih-registry=infrahouse_toolkit.cli.ih_registry:ih_registry",
             "ih-s3-reprepro=infrahouse_toolkit.cli.ih_s3_reprepro:ih_s3_reprepro",
         ],
     },

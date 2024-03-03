@@ -33,6 +33,7 @@ extra_package_file "#{scripts_dir}/ih-ec2"
 extra_package_file "#{scripts_dir}/ih-elastic"
 extra_package_file "#{scripts_dir}/ih-github"
 extra_package_file "#{scripts_dir}/ih-plan"
+extra_package_file "#{scripts_dir}/ih-registry"
 extra_package_file "#{scripts_dir}/ih-s3-reprepro"
 extra_package_file "#{scripts_dir}/ih-puppet"
 

@@ -31,6 +31,7 @@ build do
   link "#{install_dir}/embedded/bin/ih-elastic", "#{scripts_dir}/ih-elastic"
   link "#{install_dir}/embedded/bin/ih-elastic", "#{scripts_dir}/ih-github"
   link "#{install_dir}/embedded/bin/ih-plan", "#{scripts_dir}/ih-plan"
-  link "#{install_dir}/embedded/bin/ih-s3-reprepro", "#{scripts_dir}/ih-s3-reprepro"
   link "#{install_dir}/embedded/bin/ih-puppet", "#{scripts_dir}/ih-puppet"
+  link "#{install_dir}/embedded/bin/ih-registry", "#{scripts_dir}/ih-registry"
+  link "#{install_dir}/embedded/bin/ih-s3-reprepro", "#{scripts_dir}/ih-s3-reprepro"
 end
