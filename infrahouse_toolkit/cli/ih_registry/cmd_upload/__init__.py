@@ -80,7 +80,7 @@ def cmd_upload(**kwargs):
     url = f"{kwargs['registry_url']}/terraform/modules/v1/{module_name}/{module_version}"
     LOG.debug("Uploading to %s", url)
     # 1 / 0
-    api_key = kwargs["deploy_key"] or _detect_api_key(kwargs["dynamodb_table"])
+    api_key = kwargs["deploy_key"] or _detect_api_key(kwargs["dynamodb_table"], module_name)
     with TemporaryDirectory() as tmp_dir:
         LOG.debug("Archiving directory %s into directory %s", module_path, tmp_dir)
         archive_name = make_archive(osp.join(tmp_dir, "module"), "zip", kwargs["module_path"])
@@ -93,13 +93,13 @@ def cmd_upload(**kwargs):
             LOG.info("Server response: code %d, body: %s", response.status_code, response.text or "empty")
 
 
-def _detect_api_key(dynamodb_table: str) -> str:
+def _detect_api_key(dynamodb_table: str, module_name: str) -> str:
     client = boto3.client("dynamodb")
     response = client.get_item(
         TableName=dynamodb_table,
         Key={
             "id": {
-                "S": "infrahouse-cloud-init-aws",
+                "S": "-".join(module_name.split("/")),
             }
         },
     )
