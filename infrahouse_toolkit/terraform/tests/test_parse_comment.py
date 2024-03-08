@@ -64,7 +64,9 @@ def test_parse_comment_raises(comment_text):
 <details><summary><i>metadata</i></summary>\r
 <p>
 
-```eyJzMzovL2Zvb19iYWNrZXQvcGF0aC90by90Zi5zdGF0ZSI6IHsic3VjY2VzcyI6IHRydWUsICJzdGRvdXQiOiAibm8gc3Rkb3V0IiwgInN0ZGVyciI6IG51bGwsICJhZGQiOiAxLCAiY2hhbmdlIjogMSwgImRlc3Ryb3kiOiAxfX0=```
+```
+eyJzMzovL2Zvb19iYWNrZXQvcGF0aC90by90Zi5zdGF0ZSI6IHsic3VjY2VzcyI6IHRydWUsICJzdGRvdXQiOiAibm8gc3Rkb3V0IiwgInN0ZGVyciI6IG51bGwsICJhZGQiOiAxLCAiY2hhbmdlIjogMSwgImRlc3Ryb3kiOiAxfX0=
+```
 
 </p>
 </details>
@@ -81,6 +83,6 @@ def test_parse_comment_raises(comment_text):
 )
 def test_parse_comment(comment_text, status):
     parsed_status = parse_comment(comment_text)
-    print(f"{parsed_status = }")
-    print(f"{status = }")
+    print(f"\n{parsed_status = }")
+    print(f"       {status = }")
     assert parsed_status == status
