@@ -48,7 +48,11 @@ def strip_lines(src: str, pattern: str) -> str:
     :return: Stripped text.
     :rtype: str
     """
-    return "\n".join([x for x in src.splitlines() if not x.startswith(pattern)]) + ("\n" if src[-1] == "\n" else "")
+    return (
+        "\n".join([x for x in src.splitlines() if not x.startswith(pattern)]) + ("\n" if src[-1] == "\n" else "")
+        if src
+        else src
+    )
 
 
 class TFStatus:
