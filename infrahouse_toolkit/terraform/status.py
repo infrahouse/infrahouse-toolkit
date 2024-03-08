@@ -15,7 +15,6 @@ from infrahouse_toolkit.terraform.backends.tfbackend import TFBackend
 RunResult = namedtuple("RunResult", "add change destroy")
 RunOutput = namedtuple("RunOutput", "stdout stderr")
 
-
 RE_NO_COLOR = r"""
     \x1B  # ESC
     (?:   # 7-bit C1 Fe (except CSI)
@@ -36,6 +35,20 @@ def decolor(text: str) -> str:
         return ansi_escape.sub("", text)
 
     return text
+
+
+def strip_lines(src: str, pattern: str) -> str:
+    """
+    Remove lines starting with a string ``pattern``.
+
+    :param src: Input text
+    :type src: str
+    :param pattern: A string. When a line in the input text starts with this string - skip it.
+    :type pattern: str
+    :return: Stripped text.
+    :rtype: str
+    """
+    return "\n".join([x for x in src.splitlines() if not x.startswith(pattern)]) + ("\n" if src[-1] == "\n" else "")
 
 
 class TFStatus:

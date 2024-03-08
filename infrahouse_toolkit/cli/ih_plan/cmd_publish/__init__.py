@@ -13,6 +13,7 @@ from infrahouse_toolkit.cli.lib import get_backend_key, get_bucket
 from infrahouse_toolkit.terraform import RunOutput, TFStatus, parse_plan
 from infrahouse_toolkit.terraform.backends import TFS3Backend
 from infrahouse_toolkit.terraform.githubpr import GitHubPR
+from infrahouse_toolkit.terraform.status import strip_lines
 
 
 @click.command(name="publish")
@@ -54,8 +55,8 @@ def cmd_publish(*args, **kwargs):
     with open(kwargs["tf_plan_stdout"], encoding=DEFAULT_OPEN_ENCODING) as fp_stdout, open(
         kwargs["tf_plan_stderr"], encoding=DEFAULT_OPEN_ENCODING
     ) as fp_stderr:
-        stdout = fp_stdout.read()
-        stderr = fp_stderr.read()
+        stdout = strip_lines(fp_stdout.read(), "::debug::")
+        stderr = strip_lines(fp_stderr.read(), "::debug::")
 
         counts, resources = parse_plan(stdout)
         backend = TFS3Backend(
