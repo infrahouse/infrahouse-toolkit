@@ -9,6 +9,7 @@ from infrahouse_toolkit.terraform.status import strip_lines
     "in_text, pattern, out_text",
     [
         ("foo", "bar", "foo"),
+        ("", "bar", ""),
         (
             dedent(
                 """
