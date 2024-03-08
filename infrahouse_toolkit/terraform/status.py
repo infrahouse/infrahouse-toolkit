@@ -75,8 +75,7 @@ class TFStatus:
             + f"## Affected resources counts\n\n{self.summary_counts}\n"
             + (f"## Affected resources by action\n\n{self.summary_resources}\n" if self.affected_resources else "")
             + f"""<details>\n<summary>STDOUT</summary>\n\n```\n{self._short_stdout or "no output"}\n```\n</details>\n"""
-            + f"""<details>\n<summary>STDERR</summary>\n\n```{decolor(self.stderr) or "no output"}```\n</details>\n"""
-            + f"""<details><summary><i>metadata</i></summary>\n<p>\n```{self.metadata}```\n</p></details>"""
+            + f"""<details><summary><i>metadata</i></summary>\n\n```\n{self.metadata}\n```\n</details>"""
         )
 
     @property
@@ -180,15 +179,17 @@ class TFStatus:
         return "\n".join(output)
 
     def __eq__(self, other):
-        return all(getattr(self, x) == getattr(other, x) for x in self.__dict__ if x != "affected_resources")
+        return all(
+            getattr(self, x) == getattr(other, x)
+            for x in self.__dict__
+            if x not in ["affected_resources", "stdout", "stderr"]
+        )
 
     def __repr__(self):
         return json.dumps(
             {
                 self.backend.id: {
                     "success": self.success,
-                    "stdout": self._short_stdout,
-                    "stderr": self.stderr,
                     "add": self.add,
                     "change": self.change,
                     "destroy": self.destroy,

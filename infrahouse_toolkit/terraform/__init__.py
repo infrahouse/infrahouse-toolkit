@@ -40,7 +40,7 @@ def parse_comment(comment_text: str) -> TFStatus:
         metadata_index = comment_as_lines.index("<details><summary><i>metadata</i></summary>")
         for idx in range(metadata_index, len(comment_as_lines)):
             if comment_as_lines[idx].startswith("```"):
-                metadata = json.loads(b64decode(comment_as_lines[idx].strip("`")))
+                metadata = json.loads(b64decode(comment_as_lines[idx + 1].strip("`")))
                 backend_url = list(metadata)[0]
                 return TFStatus(
                     get_backend(backend_url),
@@ -50,10 +50,7 @@ def parse_comment(comment_text: str) -> TFStatus:
                         metadata[backend_url]["change"],
                         metadata[backend_url]["destroy"],
                     ),
-                    run_output=RunOutput(
-                        metadata[backend_url]["stdout"],
-                        metadata[backend_url]["stderr"],
-                    ),
+                    run_output=RunOutput(None, None),
                 )
     except (ValueError, AttributeError) as err:
         raise IHParseError(f"Failed to parse comment: {comment_text}") from err
