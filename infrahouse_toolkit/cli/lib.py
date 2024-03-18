@@ -2,6 +2,7 @@
 import json
 
 import boto3
+import click
 import hcl
 
 from infrahouse_toolkit import DEFAULT_OPEN_ENCODING
@@ -77,3 +78,21 @@ def get_elastic_password(secret_key="elastic_secret"):
 
     except FileNotFoundError:
         return None
+
+
+def read_from_file_or_prompt(file_path: str, prompt_text="Enter a secret value and press ENTER") -> str:
+    """
+    Read a string from a file if it exists. If not, prompt a user to enter the string.
+    Return the string value.
+
+    :param file_path: Path to the file.
+    :type file_path: str
+    :param prompt_text: What text to show a user.
+    :type prompt_text: str
+    :return: The string value whether it was read from the file or entered by teh user.
+    """
+    if file_path:
+        with open(file_path, encoding=DEFAULT_OPEN_ENCODING) as val_desc:
+            return val_desc.read()
+    else:
+        return click.prompt(prompt_text, hide_input=True)

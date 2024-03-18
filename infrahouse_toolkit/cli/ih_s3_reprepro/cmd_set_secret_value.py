@@ -12,8 +12,8 @@ import click
 from botocore.exceptions import BotoCoreError, ClientError
 from click import Context
 
-from infrahouse_toolkit import DEFAULT_OPEN_ENCODING
 from infrahouse_toolkit.cli.ih_s3_reprepro.aws import get_client
+from infrahouse_toolkit.cli.lib import read_from_file_or_prompt
 
 LOG = getLogger()
 
@@ -36,12 +36,7 @@ def cmd_set_secret_value(ctx: Context, secret_id, path):
     role_arn = ctx.parent.params["role_arn"]
     try:
         client = get_client("secretsmanager", role_arn=role_arn, region=ctx.parent.params["aws_region"])
-        if path:
-            with open(path[0], encoding=DEFAULT_OPEN_ENCODING) as secret_value_desc:
-                value = secret_value_desc.read()
-        else:
-            value = click.prompt("Enter a secret value and press ENTER", hide_input=True)
-
+        value = read_from_file_or_prompt(path[0])
         LOG.debug("Secret value: %s", value)
         client.put_secret_value(SecretId=secret_id, SecretString=value)
         LOG.info("Value of %s is successfully set.", secret_id)

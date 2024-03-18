@@ -55,6 +55,7 @@ setup(
             "ih-puppet=infrahouse_toolkit.cli.ih_puppet:ih_puppet",
             "ih-registry=infrahouse_toolkit.cli.ih_registry:ih_registry",
             "ih-s3-reprepro=infrahouse_toolkit.cli.ih_s3_reprepro:ih_s3_reprepro",
+            "ih-secrets=infrahouse_toolkit.cli.ih_secrets:ih_secrets",
         ],
     },
     install_requires=requirements,
