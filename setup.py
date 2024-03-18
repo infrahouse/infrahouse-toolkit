@@ -55,6 +55,7 @@ setup(
             "ih-puppet=infrahouse_toolkit.cli.ih_puppet:ih_puppet",
             "ih-registry=infrahouse_toolkit.cli.ih_registry:ih_registry",
             "ih-s3-reprepro=infrahouse_toolkit.cli.ih_s3_reprepro:ih_s3_reprepro",
+            "ih-secrets=infrahouse_toolkit.cli.ih_secrets:ih_secrets",
         ],
     },
     install_requires=requirements,
@@ -67,6 +68,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/infrahouse/infrahouse-toolkit",
-    version="2.17.2",
+    version="2.18.0",
     zip_safe=False,
 )
