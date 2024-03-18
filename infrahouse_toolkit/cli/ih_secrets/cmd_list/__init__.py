@@ -7,6 +7,7 @@
 """
 import sys
 from logging import getLogger
+from operator import itemgetter
 from pprint import pformat
 
 import click
@@ -20,19 +21,27 @@ def list_secrets(secretsmanager_client, all_fields=False):
     """
     Print a summary about EC2 instances in a region.
     """
-    response = secretsmanager_client.list_secrets()
-    LOG.debug("list_secrets() = %s", pformat(response, indent=4))
     secrets = []
     fields = ["Name", "Description"]
     if all_fields:
         fields.extend(["ARN", "CreatedDate", "LastAccessedDate", "LastChangedDate", "SecretVersionsToStages"])
-    for secret in response["SecretList"]:
-        row = []
-        for field in fields:
-            row.append(secret.get(field))
-        secrets.append(row)
 
-    print(tabulate(secrets, headers=fields, tablefmt="outline"))
+    next_token = None
+    while True:
+        kwargs = {"NextToken": next_token} if next_token else {}
+        response = secretsmanager_client.list_secrets(**kwargs)
+        LOG.debug("list_secrets() = %s", pformat(response, indent=4))
+        for secret in response["SecretList"]:
+            row = []
+            for field in fields:
+                row.append(secret.get(field))
+            secrets.append(row)
+        next_token = response.get("NextToken")
+
+        if next_token is None:
+            break
+
+    print(tabulate(sorted(secrets, key=itemgetter(0)), headers=fields, tablefmt="outline"))
 
 
 @click.command(name="list")
