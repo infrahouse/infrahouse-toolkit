@@ -21,6 +21,7 @@ from infrahouse_toolkit.aws import aws_sso_login
 from infrahouse_toolkit.aws.config import AWSConfig
 from infrahouse_toolkit.cli.ih_secrets.cmd_get import cmd_get
 from infrahouse_toolkit.cli.ih_secrets.cmd_list import cmd_list
+from infrahouse_toolkit.cli.ih_secrets.cmd_set import cmd_set
 from infrahouse_toolkit.logging import setup_logging
 
 AWS_DEFAULT_REGION = "us-west-1"
@@ -91,7 +92,7 @@ def ih_secrets(ctx, **kwargs):
         sys.exit(1)
 
 
-for cmd in [cmd_list, cmd_get]:
+for cmd in [cmd_list, cmd_get, cmd_set]:
     # noinspection PyTypeChecker
     ih_secrets.add_command(cmd)
 
