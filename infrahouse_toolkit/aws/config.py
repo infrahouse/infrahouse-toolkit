@@ -49,7 +49,7 @@ class AWSConfig:
         ]
 
     @property
-    def regions(self) -> list[str]:
+    def regions(self) -> list:
         """Return a list of all AWS regions"""
         return [
             "af-south-1",
