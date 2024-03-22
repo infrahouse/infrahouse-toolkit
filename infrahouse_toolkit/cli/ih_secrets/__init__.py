@@ -54,7 +54,7 @@ LOG = getLogger(__name__)
 @click.pass_context
 def ih_secrets(ctx, **kwargs):
     """AWS EC2 helpers."""
-    setup_logging(debug=kwargs["debug"])
+    setup_logging(debug=kwargs["debug"], quiet=True)
     aws_profile = kwargs["aws_profile"]
     aws_region = kwargs["aws_region"]
     aws_config = AWSConfig()
