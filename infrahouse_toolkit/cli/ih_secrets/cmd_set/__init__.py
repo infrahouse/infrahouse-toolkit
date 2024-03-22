@@ -34,7 +34,7 @@ def cmd_set(ctx, secret, path):
     secretsmanager_client = ctx.obj["secretsmanager_client"]
     aws_config = ctx.obj["aws_config"]
     try:
-        value = read_from_file_or_prompt(path[0])
+        value = read_from_file_or_prompt(path[0] if path else None)
         LOG.debug("Secret value: %s", value)
         secretsmanager_client.put_secret_value(SecretId=secret, SecretString=value)
         LOG.info("Value of %s is successfully set.", secret)

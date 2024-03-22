@@ -17,19 +17,19 @@ class LessThanFilter(logging.Filter):  # pylint: disable=too-few-public-methods
         return 1 if record.levelno < self.max_level else 0
 
 
-def setup_logging(logger=None, debug=False):  # pragma: no cover
+def setup_logging(logger=None, debug=False, quiet=False):  # pragma: no cover
     """Configures logging for the module"""
     logger = logger or logging.getLogger()
     fmt_str = "%(asctime)s: %(levelname)s: %(name)s:%(module)s.%(funcName)s():%(lineno)d: %(message)s"
 
     console_handler = logging.StreamHandler(stream=sys.stdout)
     console_handler.addFilter(LessThanFilter(logging.WARNING))
-    console_handler.setLevel(logging.INFO)
+    console_handler.setLevel(logging.ERROR if quiet else logging.INFO)
     console_handler.setFormatter(logging.Formatter(fmt_str))
 
     # Log errors and warnings to stderr
     console_handler_err = logging.StreamHandler(stream=sys.stderr)
-    console_handler_err.setLevel(logging.WARNING)
+    console_handler_err.setLevel(logging.ERROR if quiet else logging.WARNING)
     console_handler_err.setFormatter(logging.Formatter(fmt_str))
 
     # Log debug to stderr
