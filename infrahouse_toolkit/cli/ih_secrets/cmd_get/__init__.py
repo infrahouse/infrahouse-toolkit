@@ -39,6 +39,6 @@ def cmd_get(ctx, secret):
         print(get_secret(secretsmanager_client, secret))
     except ClientError as err:
         LOG.exception(err)
-        LOG.info("Try to run ih-secrets with --aws-profile option.")
-        LOG.info("Available profiles:\n\t%s", "\n\t".join(aws_config.profiles))
+        LOG.error("Try to run ih-secrets with --aws-profile option.")
+        LOG.error("Available profiles:\n\t%s", "\n\t".join(aws_config.profiles))
         sys.exit(1)
