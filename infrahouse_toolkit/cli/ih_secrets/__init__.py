@@ -37,6 +37,13 @@ LOG = getLogger(__name__)
     show_default=True,
 )
 @click.option(
+    "--verbose",
+    help="Print INFO and WARNING level messages.",
+    is_flag=True,
+    default=False,
+    show_default=True,
+)
+@click.option(
     "--aws-profile",
     help="AWS profile name for authentication.",
     type=click.Choice(AWSConfig().profiles),
@@ -54,7 +61,7 @@ LOG = getLogger(__name__)
 @click.pass_context
 def ih_secrets(ctx, **kwargs):
     """AWS EC2 helpers."""
-    setup_logging(debug=kwargs["debug"], quiet=True)
+    setup_logging(debug=kwargs["debug"], quiet=not kwargs["verbose"])
     aws_profile = kwargs["aws_profile"]
     aws_region = kwargs["aws_region"]
     aws_config = AWSConfig()
@@ -62,7 +69,6 @@ def ih_secrets(ctx, **kwargs):
     try:
         response = get_aws_client("sts", aws_profile, aws_region).get_caller_identity()
 
-        LOG.info("Connected to AWS as %s", response["Arn"])
     except NoCredentialsError as err:
         LOG.error(err)
         LOG.info("Try to run ih-secrets with --aws-profile option.")
@@ -71,14 +77,14 @@ def ih_secrets(ctx, **kwargs):
 
     except (SSOTokenLoadError, TokenRetrievalError) as err:
         if not aws_profile:
-            LOG.info("Try to run ih-secrets with --aws-profile option.")
-            LOG.info("Available profiles:\n\t%s", "\n\t".join(aws_config.profiles))
+            LOG.error("Try to run ih-secrets with --aws-profile option.")
+            LOG.error("Available profiles:\n\t%s", "\n\t".join(aws_config.profiles))
             sys.exit(1)
         LOG.debug(err)
         aws_session = aws_sso_login(aws_config, aws_profile, region=aws_region)
         response = get_aws_client("sts", aws_profile, aws_region, session=aws_session).get_caller_identity()
 
-        LOG.info("Connected to AWS as %s", response["Arn"])
+    LOG.info("Connected to AWS as %s", response["Arn"])
 
     try:
         ctx.obj = {
