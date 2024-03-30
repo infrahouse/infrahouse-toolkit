@@ -9,6 +9,7 @@ import logging
 
 import click
 
+from infrahouse_toolkit.cli.ih_github.cmd_runner.cmd_deregister import cmd_deregister
 from infrahouse_toolkit.cli.ih_github.cmd_runner.cmd_list import cmd_list
 from infrahouse_toolkit.cli.ih_github.cmd_runner.cmd_register import cmd_register
 
@@ -36,6 +37,6 @@ def cmd_runner(ctx, *args, **kwargs):
     ctx.obj = {"github_token": kwargs["github_token"], "org": kwargs["org"]}
 
 
-for cmd in [cmd_list, cmd_register]:
+for cmd in [cmd_list, cmd_register, cmd_deregister]:
     # noinspection PyTypeChecker
     cmd_runner.add_command(cmd)

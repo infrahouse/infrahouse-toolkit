@@ -25,11 +25,16 @@ AR_URL = "https://github.com/actions/runner/releases/download/v2.314.1/actions-r
     show_default=True,
     default="/tmp/actions-runner-linux",
 )
+@click.option(
+    "--label",
+    help="Add a label to the runner.",
+    multiple=True,
+)
 @click.argument("URL")
 @click.pass_context
 def cmd_register(ctx, **kwargs):
     """
-    register a self-hosted runner. A give URL can be either org or a repo address.
+    register a self-hosted runner. A given URL can be either org or a repo address.
 
     """
     github_token = ctx.obj["github_token"]
@@ -45,16 +50,20 @@ def cmd_register(ctx, **kwargs):
     )
     response.raise_for_status()
     token = response.json()["token"]
+    cmd = [
+        osp.join(kwargs["actions_runner_code_path"], "config.sh"),
+        "--url",
+        kwargs["url"],
+        "--token",
+        token,
+        "--unattended",
+        "--disableupdate",
+    ]
+    if kwargs["label"]:
+        cmd.extend(["--labels", ",".join(kwargs["label"])])
+    LOG.debug("Executing %s", " ".join(cmd))
     run(
-        [
-            osp.join(kwargs["actions_runner_code_path"], "config.sh"),
-            "--url",
-            kwargs["url"],
-            "--token",
-            token,
-            "--unattended",
-            "--disableupdate",
-        ],
+        cmd,
         check=True,
         env={
             "RUNNER_ALLOW_RUNASROOT": "microsoft_sux",
