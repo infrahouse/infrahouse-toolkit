@@ -8,6 +8,7 @@
 import logging
 from os import path as osp
 from subprocess import run
+from tempfile import gettempdir
 
 import click
 from requests import post
@@ -23,7 +24,7 @@ AR_URL = "https://github.com/actions/runner/releases/download/v2.314.1/actions-r
     "--actions-runner-code-path",
     help=f"Path to a directory with the actions-runner code. You can download it from {AR_URL}",
     show_default=True,
-    default="/tmp/actions-runner-linux",
+    default=f"{gettempdir()}/actions-runner-linux",
 )
 @click.option(
     "--label",
