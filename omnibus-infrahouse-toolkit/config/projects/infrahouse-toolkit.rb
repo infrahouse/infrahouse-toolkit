@@ -37,6 +37,7 @@ extra_package_file "#{scripts_dir}/ih-registry"
 extra_package_file "#{scripts_dir}/ih-puppet"
 extra_package_file "#{scripts_dir}/ih-s3-reprepro"
 extra_package_file "#{scripts_dir}/ih-secrets"
+extra_package_file "#{scripts_dir}/ih-skeema"
 
 exclude "**/.git"
 exclude "**/bundler/git"

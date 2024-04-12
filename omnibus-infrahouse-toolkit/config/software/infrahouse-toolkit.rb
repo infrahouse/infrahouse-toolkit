@@ -35,4 +35,5 @@ build do
   link "#{install_dir}/embedded/bin/ih-registry", "#{scripts_dir}/ih-registry"
   link "#{install_dir}/embedded/bin/ih-s3-reprepro", "#{scripts_dir}/ih-s3-reprepro"
   link "#{install_dir}/embedded/bin/ih-secrets", "#{scripts_dir}/ih-secrets"
+  link "#{install_dir}/embedded/bin/ih-skeema", "#{scripts_dir}/ih-skeema"
 end
