@@ -5,6 +5,7 @@
 
     See ``ih-secrets --help`` for more details.
 """
+
 import sys
 from logging import getLogger
 
@@ -28,6 +29,20 @@ AWS_DEFAULT_REGION = "us-west-1"
 LOG = getLogger(__name__)
 
 
+def _resolve_aws_profiles():
+    """
+    Get a list of AWS profiles.
+
+    :return: List of AWS profiles.
+    :rtype: list
+    """
+    profiles = AWSConfig().profiles
+    if not profiles:
+        LOG.error("No AWS profiles found. Please configure AWS CLI.")
+        sys.exit(1)
+    return profiles
+
+
 @click.group()
 @click.option(
     "--debug",
@@ -46,8 +61,8 @@ LOG = getLogger(__name__)
 @click.option(
     "--aws-profile",
     help="AWS profile name for authentication.",
-    type=click.Choice(AWSConfig().profiles),
-    default=None,
+    type=click.Choice(_resolve_aws_profiles()),
+    default="default",
     show_default=True,
 )
 @click.option(
