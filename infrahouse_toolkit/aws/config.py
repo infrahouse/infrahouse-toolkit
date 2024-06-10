@@ -96,4 +96,4 @@ class AWSConfig:
 
     @staticmethod
     def _get_section(profile_name):
-        return f"profile {profile_name}"
+        return profile_name if profile_name == "default" else f"profile {profile_name}"

@@ -6,7 +6,7 @@ from infrahouse_toolkit.aws import AWSConfig
 
 CONTENT = dedent(
     """
-    [profile default]
+    [default]
     sso_account_id = 123
 
     [profile foo]
