@@ -29,20 +29,6 @@ AWS_DEFAULT_REGION = "us-west-1"
 LOG = getLogger(__name__)
 
 
-def _resolve_aws_profiles():
-    """
-    Get a list of AWS profiles.
-
-    :return: List of AWS profiles.
-    :rtype: list
-    """
-    profiles = AWSConfig().profiles
-    if not profiles:
-        LOG.error("No AWS profiles found. Please configure AWS CLI.")
-        sys.exit(1)
-    return profiles
-
-
 @click.group()
 @click.option(
     "--debug",
@@ -61,7 +47,7 @@ def _resolve_aws_profiles():
 @click.option(
     "--aws-profile",
     help="AWS profile name for authentication.",
-    type=click.Choice(_resolve_aws_profiles()),
+    type=click.Choice(AWSConfig().profiles),
     default="default",
     show_default=True,
 )
