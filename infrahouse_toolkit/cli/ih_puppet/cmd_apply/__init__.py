@@ -31,6 +31,7 @@ def cmd_apply(ctx, manifest):
     """
     manifest = manifest or f"{ctx.obj['root_directory']}/environments/{ctx.obj['environment']}/manifests/site.pp"
     LOG.info("Applying puppet manifest in %s", manifest)
+    quiet = ctx.obj["quiet"]
     cmd = ["puppet", "apply"]
     if ctx.obj["debug"]:
         cmd.append("-d")
@@ -56,11 +57,15 @@ def cmd_apply(ctx, manifest):
             install_module_dependencies(module_path=path, env=env)
         LOG.debug("Executing %s", " ".join(cmd))
         # First run is to update the puppet code
-        with Popen(cmd, env=env) as proc:
+        with Popen(
+            cmd, env=env, stdout=open("/dev/null", "w", encoding=DEFAULT_OPEN_ENCODING) if quiet else None
+        ) as proc:
             proc.communicate()
 
         # Second run is to apply whatever the new puppet code brings
-        with Popen(cmd, env=env) as proc:
+        with Popen(
+            cmd, env=env, stdout=open("/dev/null", "w", encoding=DEFAULT_OPEN_ENCODING) if quiet else None
+        ) as proc:
             proc.communicate()
             ret = proc.returncode
             LOG.debug("Exit code: %d", ret)
