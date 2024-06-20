@@ -24,6 +24,13 @@ LOG = getLogger()
     show_default=True,
 )
 @click.option(
+    "--quiet",
+    help="Suppress informational messages and output only warnings and errors.",
+    is_flag=True,
+    default=False,
+    show_default=True,
+)
+@click.option(
     "--environment",
     help="Puppet environment",
     default="production",
@@ -58,9 +65,10 @@ LOG = getLogger()
 @click.pass_context
 def ih_puppet(ctx, **kwargs):
     """Puppet wrapper."""
-    setup_logging(debug=kwargs["debug"])
+    setup_logging(debug=kwargs["debug"], quiet=kwargs["quiet"])
     ctx.obj = {
         "debug": kwargs["debug"],
+        "quiet": kwargs["quiet"],
         "environment": kwargs["environment"],
         "root_directory": kwargs["root_directory"],
         "hiera_config": kwargs["hiera_config"].format(
