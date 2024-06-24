@@ -35,6 +35,13 @@ LOG = getLogger()
     show_default=True,
 )
 @click.option(
+    "--quiet",
+    help="Suppress informational messages and output only warnings and errors.",
+    is_flag=True,
+    default=False,
+    show_default=True,
+)
+@click.option(
     "--username",
     help="Username in Elasticsearch cluster.",
     default="elastic",
@@ -60,7 +67,7 @@ def ih_elastic(ctx, **kwargs):  # pylint: disable=unused-argument
     """
     Elasticsearch helper.
     """
-    setup_logging(debug=kwargs["debug"])
+    setup_logging(debug=kwargs["debug"], quiet=kwargs["quiet"])
     client = boto3.client("secretsmanager")
     password = kwargs["password"]
 
