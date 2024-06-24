@@ -27,6 +27,13 @@ LOG = getLogger()
     default=False,
     show_default=True,
 )
+@click.option(
+    "--quiet",
+    help="Suppress informational messages and output only warnings and errors.",
+    is_flag=True,
+    default=False,
+    show_default=True,
+)
 @click.pass_context
 def ih_certbot(ctx, *args, **kwargs):  # pylint: disable=unused-argument
     """
@@ -44,7 +51,7 @@ def ih_certbot(ctx, *args, **kwargs):  # pylint: disable=unused-argument
 
     /opt/infrahouse-toolkit/embedded/bin/certbot
     """
-    setup_logging(debug=kwargs["debug"])
+    setup_logging(debug=kwargs["debug"], quiet=kwargs["quiet"])
     cmd = ["/opt/infrahouse-toolkit/embedded/bin/certbot"]
     cmd.extend(ctx.args)
     print(f"{cmd = }")
