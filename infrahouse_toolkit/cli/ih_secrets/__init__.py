@@ -5,6 +5,7 @@
 
     See ``ih-secrets --help`` for more details.
 """
+
 import sys
 from logging import getLogger
 
@@ -47,7 +48,7 @@ LOG = getLogger(__name__)
     "--aws-profile",
     help="AWS profile name for authentication.",
     type=click.Choice(AWSConfig().profiles),
-    default=None,
+    default="default",
     show_default=True,
 )
 @click.option(

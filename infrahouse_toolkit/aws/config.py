@@ -1,6 +1,7 @@
 """
 Module for AWSConfig class.
 """
+
 from configparser import ConfigParser
 from os import path as osp
 
