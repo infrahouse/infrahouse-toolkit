@@ -34,6 +34,12 @@ LOG = getLogger()
     default=False,
     show_default=True,
 )
+@click.option(
+    "--certbot-command",
+    help="Path to certbot command",
+    default="/opt/infrahouse-toolkit/embedded/bin/certbot",
+    show_default=True,
+)
 @click.pass_context
 def ih_certbot(ctx, *args, **kwargs):  # pylint: disable=unused-argument
     """
@@ -51,12 +57,16 @@ def ih_certbot(ctx, *args, **kwargs):  # pylint: disable=unused-argument
 
     /opt/infrahouse-toolkit/embedded/bin/certbot
     """
+    quiet = kwargs["quiet"]
     setup_logging(debug=kwargs["debug"], quiet=kwargs["quiet"])
-    cmd = ["/opt/infrahouse-toolkit/embedded/bin/certbot"]
+    cmd = [kwargs["certbot_command"]]
+    if quiet:
+        cmd.append("--quiet")
     cmd.extend(ctx.args)
-    print(f"{cmd = }")
+    LOG.debug("cmd = %s", cmd)
     try:
-        check_call(cmd)
+        with open("/dev/null", "wb") as devnull:
+            check_call(cmd, stdout=devnull if quiet else None)
     except CalledProcessError as err:
         LOG.error(err)
         sys.exit(err.returncode)
