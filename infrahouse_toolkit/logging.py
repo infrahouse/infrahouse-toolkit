@@ -1,6 +1,7 @@
 """
 InfraHouse Toolkit Logging.
 """
+
 import logging
 import sys
 
@@ -21,6 +22,8 @@ def setup_logging(logger=None, debug=False, quiet=False):  # pragma: no cover
     """Configures logging for the module"""
     logger = logger or logging.getLogger()
     fmt_str = "%(asctime)s: %(levelname)s: %(name)s:%(module)s.%(funcName)s():%(lineno)d: %(message)s"
+    quiet_fmt_str = "%(levelname)s: %(message)s"
+    fmt_str = quiet_fmt_str if quiet else fmt_str
 
     console_handler = logging.StreamHandler(stream=sys.stdout)
     console_handler.addFilter(LessThanFilter(logging.WARNING))
