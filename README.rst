@@ -1,6 +1,3 @@
-.. toctree::
-    :maxdepth: 4
-
 ==================
 InfraHouse Toolkit
 ==================
