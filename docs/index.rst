@@ -7,7 +7,6 @@ Welcome to InfraHouse Toolkit's documentation!
 
    readme
    installation
-   usage
    modules
    contributing
    authors

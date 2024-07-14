@@ -26,6 +26,7 @@ build do
   env = with_standard_compiler_flags(with_embedded_path)
 
   command "#{install_dir}/embedded/bin/pip3 --cert #{install_dir}/embedded/ssl/cert.pem install -I .", env: env
+  link "#{install_dir}/embedded/bin/ih-aws", "#{scripts_dir}/ih-aws"
   link "#{install_dir}/embedded/bin/ih-certbot", "#{scripts_dir}/ih-certbot"
   link "#{install_dir}/embedded/bin/ih-ec2", "#{scripts_dir}/ih-ec2"
   link "#{install_dir}/embedded/bin/ih-elastic", "#{scripts_dir}/ih-elastic"
@@ -36,4 +37,6 @@ build do
   link "#{install_dir}/embedded/bin/ih-s3-reprepro", "#{scripts_dir}/ih-s3-reprepro"
   link "#{install_dir}/embedded/bin/ih-secrets", "#{scripts_dir}/ih-secrets"
   link "#{install_dir}/embedded/bin/ih-skeema", "#{scripts_dir}/ih-skeema"
+  command "#{install_dir}/embedded/bin/python3 omnibus-infrahouse-toolkit/update_bash_completion.py"
+  copy "/tmp/infrahouse-completion", "/etc/bash_completion.d/infrahouse-completion"
 end

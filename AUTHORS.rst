@@ -5,9 +5,9 @@ Credits
 Development Lead
 ----------------
 
-* Oleksandr Kuzminskyi <aleks@infrahouse.com>
+* `Oleksandr Kuzminskyi <https://github.com/akuzminsky>`_
 
 Contributors
 ------------
 
-None yet. Why not be the first?
+* `Pasha Dudka <https://github.com/paveldudka>`_

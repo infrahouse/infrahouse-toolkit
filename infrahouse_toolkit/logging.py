@@ -47,3 +47,6 @@ def setup_logging(logger=None, debug=False, quiet=False):  # pragma: no cover
         logger.debug_enabled = True
 
     logger.setLevel(logging.DEBUG)
+
+    # botocore prints a lot of logs at INFO and WARNING level that deserve to be only DEBUG.
+    logging.getLogger("botocore").setLevel(logging.DEBUG if debug else logging.ERROR)
