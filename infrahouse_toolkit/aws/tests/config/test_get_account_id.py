@@ -26,6 +26,10 @@ CONTENT = dedent(
             "foo",
             "456",
         ),
+        (
+            None,
+            "123",
+        ),
     ],
 )
 def test_account_id(profile, account_id, tmpdir):

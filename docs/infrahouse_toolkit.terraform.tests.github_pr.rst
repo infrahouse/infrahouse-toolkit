@@ -28,6 +28,14 @@ infrahouse\_toolkit.terraform.tests.github\_pr.test\_publish\_comment module
    :undoc-members:
    :show-inheritance:
 
+infrahouse\_toolkit.terraform.tests.github\_pr.test\_publish\_gist module
+-------------------------------------------------------------------------
+
+.. automodule:: infrahouse_toolkit.terraform.tests.github_pr.test_publish_gist
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

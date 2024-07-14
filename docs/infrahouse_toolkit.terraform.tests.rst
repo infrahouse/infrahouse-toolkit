@@ -29,6 +29,14 @@ infrahouse\_toolkit.terraform.tests.test\_parse\_plan module
    :undoc-members:
    :show-inheritance:
 
+infrahouse\_toolkit.terraform.tests.test\_strip\_lines module
+-------------------------------------------------------------
+
+.. automodule:: infrahouse_toolkit.terraform.tests.test_strip_lines
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

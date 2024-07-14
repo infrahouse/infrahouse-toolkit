@@ -1,7 +1,7 @@
 """
 Module for AWSConfig class.
 """
-from configparser import ConfigParser
+from configparser import ConfigParser, NoOptionError, NoSectionError
 from os import path as osp
 
 
@@ -82,7 +82,13 @@ class AWSConfig:
 
     def get_region(self, profile_name):
         """Read AWS region for given profile."""
-        return self.config_parser.get(self._get_section(profile_name), "region")
+        try:
+            return self.config_parser.get(self._get_section(profile_name), "region")
+        except NoSectionError:
+            return self.config_parser.get("default", "region") if "default" in self.config_parser.sections() else None
+
+        except NoOptionError:
+            return self.config_parser.get("default", "region") if "default" in self.config_parser.sections() else None
 
     def get_role(self, profile_name):
         """Read AWS IAM role for given profile."""
@@ -95,4 +101,4 @@ class AWSConfig:
 
     @staticmethod
     def _get_section(profile_name):
-        return profile_name if profile_name == "default" else f"profile {profile_name}"
+        return "default" if profile_name in ["default", None] else f"profile {profile_name}"

@@ -44,6 +44,14 @@ infrahouse\_toolkit.cli.ih\_s3\_reprepro.cmd\_dumpunreferenced module
    :undoc-members:
    :show-inheritance:
 
+infrahouse\_toolkit.cli.ih\_s3\_reprepro.cmd\_get\_secret\_value module
+-----------------------------------------------------------------------
+
+.. automodule:: infrahouse_toolkit.cli.ih_s3_reprepro.cmd_get_secret_value
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 infrahouse\_toolkit.cli.ih\_s3\_reprepro.cmd\_includedeb module
 ---------------------------------------------------------------
 
@@ -64,6 +72,14 @@ infrahouse\_toolkit.cli.ih\_s3\_reprepro.cmd\_remove module
 -----------------------------------------------------------
 
 .. automodule:: infrahouse_toolkit.cli.ih_s3_reprepro.cmd_remove
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+infrahouse\_toolkit.cli.ih\_s3\_reprepro.cmd\_set\_secret\_value module
+-----------------------------------------------------------------------
+
+.. automodule:: infrahouse_toolkit.cli.ih_s3_reprepro.cmd_set_secret_value
    :members:
    :undoc-members:
    :show-inheritance:

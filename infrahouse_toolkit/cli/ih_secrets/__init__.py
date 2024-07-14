@@ -9,15 +9,9 @@ import sys
 from logging import getLogger
 
 import click
-from boto3 import Session
-from botocore.exceptions import (
-    NoCredentialsError,
-    NoRegionError,
-    SSOTokenLoadError,
-    TokenRetrievalError,
-)
+from botocore.exceptions import NoRegionError
 
-from infrahouse_toolkit.aws import aws_sso_login
+from infrahouse_toolkit.aws import get_aws_client, get_aws_session
 from infrahouse_toolkit.aws.config import AWSConfig
 from infrahouse_toolkit.cli.ih_secrets.cmd_get import cmd_get
 from infrahouse_toolkit.cli.ih_secrets.cmd_list import cmd_list
@@ -65,26 +59,7 @@ def ih_secrets(ctx, **kwargs):
     aws_profile = kwargs["aws_profile"]
     aws_region = kwargs["aws_region"]
     aws_config = AWSConfig()
-    aws_session = None
-    try:
-        response = get_aws_client("sts", aws_profile, aws_region).get_caller_identity()
-
-    except NoCredentialsError as err:
-        LOG.error(err)
-        LOG.info("Try to run ih-secrets with --aws-profile option.")
-        LOG.info("Available profiles:\n\t%s", "\n\t".join(aws_config.profiles))
-        sys.exit(1)
-
-    except (SSOTokenLoadError, TokenRetrievalError) as err:
-        if not aws_profile:
-            LOG.error("Try to run ih-secrets with --aws-profile option.")
-            LOG.error("Available profiles:\n\t%s", "\n\t".join(aws_config.profiles))
-            sys.exit(1)
-        LOG.debug(err)
-        aws_session = aws_sso_login(aws_config, aws_profile, region=aws_region)
-        response = get_aws_client("sts", aws_profile, aws_region, session=aws_session).get_caller_identity()
-
-    LOG.info("Connected to AWS as %s", response["Arn"])
+    aws_session = get_aws_session(aws_config, aws_profile, aws_region)
 
     try:
         ctx.obj = {
@@ -101,18 +76,3 @@ def ih_secrets(ctx, **kwargs):
 for cmd in [cmd_list, cmd_get, cmd_set]:
     # noinspection PyTypeChecker
     ih_secrets.add_command(cmd)
-
-
-def get_aws_client(service_name: str, profile: str, region: str, session=None):
-    """
-    Get a client instance for an AWS service.
-
-    :param service_name: AWS service e.g. ``ec2``.
-    :param profile: AWS profile for authentication.
-    :param region: AWS region.
-    :param session: if an AWS session is passed, use it to create a client.
-    :type session: Session
-    :return: A client instance.
-    """
-    session = session or Session(region_name=region, profile_name=profile)
-    return session.client(service_name)

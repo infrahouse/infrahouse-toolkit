@@ -1,6 +1,7 @@
 """
 AWS classes.
 """
+import sys
 import time
 import webbrowser
 from logging import getLogger
@@ -8,11 +9,18 @@ from os import path as osp
 from pprint import pformat
 from time import sleep
 
+import boto3
 from boto3 import Session
+from botocore.exceptions import (
+    NoCredentialsError,
+    SSOTokenLoadError,
+    TokenRetrievalError,
+)
 from diskcache import Cache
 
 from infrahouse_toolkit.aws.config import AWSConfig
 from infrahouse_toolkit.aws.exceptions import IHAWSException
+from infrahouse_toolkit.fs import ensure_permissions
 
 LOG = getLogger()
 
@@ -34,12 +42,63 @@ def aws_sso_login(aws_config: AWSConfig, profile_name: str, region: str = None):
                 cache_key, credentials, expire=int(int(credentials["expiration"]) / 1000 - int(time.time()))
             )
 
+    ensure_permissions(cache_directory, 0o700)
     return Session(
         region_name=region or aws_config.get_region(profile_name),
         aws_access_key_id=credentials["accessKeyId"],
         aws_secret_access_key=credentials["secretAccessKey"],
         aws_session_token=credentials["sessionToken"],
     )
+
+
+def get_aws_client(service_name: str, profile: str, region: str, session=None):
+    """
+    Get a client instance for an AWS service.
+
+    :param service_name: AWS service e.g. ``ec2``.
+    :param profile: AWS profile for authentication.
+    :param region: AWS region.
+    :param session: if an AWS session is passed, use it to create a client.
+    :type session: Session
+    :return: A client instance.
+    """
+    session = session or Session(region_name=region, profile_name=profile)
+    return session.client(service_name)
+
+
+def get_aws_session(aws_config: AWSConfig, aws_profile: str, aws_region: str) -> Session:
+    """
+
+    :param aws_config:
+    :param aws_profile:
+    :param aws_region:
+    :return: Authenticated AWS session, or None if boto3 can connect to AWS without extra steps.
+    """
+    if aws_profile is None and "default" in aws_config.profiles:
+        aws_profile = "default"
+
+    try:
+        response = get_aws_client("sts", aws_profile, aws_region).get_caller_identity()
+        LOG.info("Connected to AWS as %s", response["Arn"])
+
+    except (SSOTokenLoadError, TokenRetrievalError) as err:
+        if not aws_profile:
+            LOG.error("Try to run ih-aws with --aws-profile option.")
+            LOG.error("Available profiles:\n\t%s", "\n\t".join(aws_config.profiles))
+            sys.exit(1)
+        LOG.debug(err)
+        aws_session = aws_sso_login(aws_config, aws_profile, region=aws_region)
+        response = get_aws_client("sts", aws_profile, aws_region, session=aws_session).get_caller_identity()
+        LOG.info("Connected to AWS as %s", response["Arn"])
+        return aws_session
+
+    except NoCredentialsError as err:
+        LOG.error(err)
+        LOG.info("Try to run ih-aws with --aws-profile option.")
+        LOG.info("Available profiles:\n\t%s", "\n\t".join(aws_config.profiles))
+        sys.exit(1)
+
+    return boto3.Session(region_name=aws_region)
 
 
 def _get_credentials(aws_config: AWSConfig, profile_name: str):
