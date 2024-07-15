@@ -46,7 +46,7 @@ With a ``-e`` option, the tool adds the ``export`` keyword in case you want a ch
 
 .. code-block:: bash
 
-    $ ih-aws credentials
+    $ ih-aws credentials -e
     export AWS_ACCESS_KEY_ID=ASIAXFXZRL24LGX6JZ5A
     export AWS_SECRET_ACCESS_KEY=ILA***********************************GR
     export AWS_DEFAULT_REGION=us-west-1
