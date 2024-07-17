@@ -11,6 +11,7 @@ import boto3
 import click
 
 from infrahouse_toolkit.cli.ih_github.cmd_runner.cmd_deregister import cmd_deregister
+from infrahouse_toolkit.cli.ih_github.cmd_runner.cmd_download import cmd_download
 from infrahouse_toolkit.cli.ih_github.cmd_runner.cmd_is_registered import (
     cmd_is_registered,
 )
@@ -29,7 +30,7 @@ LOG = logging.getLogger()
 @click.option(
     "--org",
     help="GitHub organization",
-    required=True,
+    required=False,
 )
 @click.pass_context
 def cmd_runner(ctx, *args, **kwargs):
@@ -48,6 +49,6 @@ def cmd_runner(ctx, *args, **kwargs):
     ctx.obj = {"github_token": github_token, "org": kwargs["org"]}
 
 
-for cmd in [cmd_list, cmd_register, cmd_deregister, cmd_is_registered]:
+for cmd in [cmd_list, cmd_register, cmd_deregister, cmd_is_registered, cmd_download]:
     # noinspection PyTypeChecker
     cmd_runner.add_command(cmd)

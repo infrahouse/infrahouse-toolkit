@@ -343,11 +343,12 @@ The ``ih-github runner`` command allows to manipulate with self-hosted action ru
     Options:
       --github-token TEXT         Personal access token for GitHub.
       --github-token-secret TEXT  Read GitHub token from AWS secret.
-      --org TEXT                  GitHub organization  [required]
+      --org TEXT                  GitHub organization
       --help                      Show this message and exit.
 
     Commands:
       deregister     deregister a self-hosted runner.
+      download       Download an actions-runner release tar-ball.
       is-registered  Check if a runner with the given name is already...
       list           List self-hosted runners
       register       register a self-hosted runner.
