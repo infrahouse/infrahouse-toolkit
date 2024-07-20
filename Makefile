@@ -24,6 +24,7 @@ BROWSER := python -c "$$BROWSER_PYSCRIPT"
 OS_VERSION ?= jammy
 
 PWD := $(shell pwd)
+ARCH := $(shell uname -m)
 
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
@@ -104,7 +105,7 @@ lint/yaml: ## check style with yamllint
 
 .PHONY: lint/black
 lint/black: ## check style with black
-	black --check infrahouse_toolkit setup.py
+	black --check --diff infrahouse_toolkit setup.py
 
 .PHONY: lint/isort
 lint/isort: ## check imports formatting
@@ -146,7 +147,7 @@ package:
 	-v ${PWD}:/infrahouse-toolkit \
 	--name infrahouse-toolkit-builder \
 	--rm \
-	"twindb/omnibus-ubuntu:${OS_VERSION}" \
+	"twindb/omnibus-ubuntu:${OS_VERSION}-${ARCH}" \
 	bash -l /infrahouse-toolkit/omnibus-infrahouse-toolkit/omnibus_build.sh
 
 .PHONY: dist

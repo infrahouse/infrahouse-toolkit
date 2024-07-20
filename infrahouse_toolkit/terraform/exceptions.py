@@ -1,6 +1,7 @@
 """
 :py:mod:`infrahouse_toolkit.terraform` exceptions.
 """
+
 from infrahouse_toolkit.exceptions import IHException
 
 

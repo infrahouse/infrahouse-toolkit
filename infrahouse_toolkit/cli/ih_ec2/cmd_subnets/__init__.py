@@ -5,6 +5,7 @@
 
     See ``ih-ec2 subnets`` for more details.
 """
+
 import sys
 from logging import getLogger
 

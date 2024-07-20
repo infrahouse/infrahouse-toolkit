@@ -5,6 +5,7 @@
 
     See ``ih-certbot --help`` for more details.
 """
+
 import sys
 from logging import getLogger
 from subprocess import CalledProcessError, check_call

@@ -1,4 +1,5 @@
 """parse_plan() tests."""
+
 # import os.path
 from os import path as osp
 

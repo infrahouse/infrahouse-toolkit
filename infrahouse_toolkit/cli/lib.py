@@ -1,4 +1,5 @@
 """Auxiliary functions for command line tools."""
+
 import json
 
 import boto3

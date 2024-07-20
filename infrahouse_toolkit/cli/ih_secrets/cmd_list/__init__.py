@@ -5,6 +5,7 @@
 
     See ``ih-secrets list`` for more details.
 """
+
 import sys
 from logging import getLogger
 from operator import itemgetter

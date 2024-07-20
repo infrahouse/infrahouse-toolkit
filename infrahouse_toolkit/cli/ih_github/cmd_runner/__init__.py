@@ -5,6 +5,7 @@
 
     See ``ih-github run --help`` for more details.
 """
+
 import logging
 
 import boto3

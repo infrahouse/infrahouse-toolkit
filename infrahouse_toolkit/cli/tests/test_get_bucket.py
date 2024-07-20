@@ -1,4 +1,5 @@
 """Unit tests for :py:func:`infrahouse_toolkit.cli.lib.get_bucket`."""
+
 from infrahouse_toolkit.cli.lib import get_bucket
 
 

@@ -5,6 +5,7 @@
 
     See ``ih-ec2 list`` for more details.
 """
+
 import sys
 from logging import getLogger
 from pprint import pformat

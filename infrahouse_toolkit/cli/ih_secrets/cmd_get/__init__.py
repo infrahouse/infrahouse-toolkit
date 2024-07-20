@@ -5,6 +5,7 @@
 
     See ``ih-secrets get`` for more details.
 """
+
 import sys
 from logging import getLogger
 from pprint import pformat

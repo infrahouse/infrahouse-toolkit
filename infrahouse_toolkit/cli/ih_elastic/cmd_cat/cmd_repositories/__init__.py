@@ -5,6 +5,7 @@
 
     See ``ih-elastic cat repositories --help`` for more details.
 """
+
 import logging
 
 import click

@@ -5,6 +5,7 @@
 
     See ``ih-aws credentials --help`` for more details.
 """
+
 import sys
 from logging import getLogger
 

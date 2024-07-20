@@ -5,6 +5,7 @@
 
     See ``ih-puppet apply`` for more details.
 """
+
 import json
 import os
 import re

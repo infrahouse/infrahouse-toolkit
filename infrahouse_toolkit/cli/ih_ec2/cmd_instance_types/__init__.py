@@ -5,6 +5,7 @@
 
     See ``ih-ec2 instance-types`` for more details.
 """
+
 import sys
 from logging import getLogger
 

@@ -1,6 +1,7 @@
 """
 Lock module exceptions.
 """
+
 from infrahouse_toolkit.exceptions import IHException
 
 

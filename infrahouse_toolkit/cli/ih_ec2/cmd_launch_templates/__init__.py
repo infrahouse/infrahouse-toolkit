@@ -5,6 +5,7 @@
 
     See ``ih-ec2 launch-templates`` for more details.
 """
+
 import sys
 from logging import getLogger
 

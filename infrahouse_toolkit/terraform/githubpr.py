@@ -1,6 +1,7 @@
 """
 Module for :py:class:`GitHubPR`.
 """
+
 from logging import getLogger
 from os import environ
 from typing import Union

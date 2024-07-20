@@ -5,6 +5,7 @@
 
     See ``ih-secrets set`` for more details.
 """
+
 import sys
 from logging import getLogger
 

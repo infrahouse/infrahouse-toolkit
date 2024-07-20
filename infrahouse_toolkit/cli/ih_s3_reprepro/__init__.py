@@ -5,6 +5,7 @@
 
     See ``ih-s3-reprepro --help`` for more details.
 """
+
 from logging import getLogger
 
 import click

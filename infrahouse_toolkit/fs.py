@@ -1,6 +1,7 @@
 """
 InfraHouse Toolkit file system module.
 """
+
 from logging import getLogger
 from os import chmod, stat
 

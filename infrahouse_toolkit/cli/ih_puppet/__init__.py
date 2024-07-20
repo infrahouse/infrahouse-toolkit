@@ -5,6 +5,7 @@
 
     See ``ih-puppet --help`` for more details.
 """
+
 from logging import getLogger
 
 import click

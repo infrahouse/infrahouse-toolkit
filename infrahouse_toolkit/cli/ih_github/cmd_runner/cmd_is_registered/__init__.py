@@ -5,6 +5,7 @@
 
     See ``ih-github runner is-registered --help`` for more details.
 """
+
 import json
 import logging
 import sys

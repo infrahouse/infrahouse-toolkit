@@ -6,6 +6,7 @@
 
     See ``ih-plan --help`` for more details.
 """
+
 import click
 
 from infrahouse_toolkit.cli.ih_plan.cmd_download import cmd_download

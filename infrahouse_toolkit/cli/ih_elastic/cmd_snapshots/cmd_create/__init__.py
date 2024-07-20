@@ -5,6 +5,7 @@
 
     See ``ih-elastic snapshots create --help`` for more details.
 """
+
 import json
 import logging
 from datetime import datetime, timezone
