@@ -5,6 +5,7 @@
 
     See ``ih-elastic snapshots status --help`` for more details.
 """
+
 import json
 import logging
 

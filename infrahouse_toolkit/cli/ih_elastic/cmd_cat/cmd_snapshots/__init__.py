@@ -5,6 +5,7 @@
 
     See ``ih-elastic cat snapshots --help`` for more details.
 """
+
 import logging
 
 import click

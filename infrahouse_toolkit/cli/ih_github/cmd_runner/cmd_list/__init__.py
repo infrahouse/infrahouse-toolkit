@@ -5,6 +5,7 @@
 
     See ``ih-github runner list --help`` for more details.
 """
+
 import json
 import logging
 

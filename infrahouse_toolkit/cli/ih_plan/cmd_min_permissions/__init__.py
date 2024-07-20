@@ -5,6 +5,7 @@
 
     See ``ih-plan min-permissions --help`` for more details.
 """
+
 import json
 from json import JSONDecodeError
 

@@ -5,6 +5,7 @@
 
     See ``ih-elastic --help`` for more details.
 """
+
 import socket
 import sys
 from logging import getLogger

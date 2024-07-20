@@ -5,6 +5,7 @@
 
     See ``ih-github runner download --help`` for more details.
 """
+
 import json
 import logging
 import sys

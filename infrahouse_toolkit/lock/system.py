@@ -2,6 +2,7 @@
 A system-wide Lock class.
 Where the system is a server, computer, container, and/or file system.
 """
+
 from fcntl import LOCK_EX, LOCK_NB, LOCK_UN, flock
 
 from infrahouse_toolkit import DEFAULT_OPEN_ENCODING

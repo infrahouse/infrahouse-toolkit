@@ -5,6 +5,7 @@
 
     See ``ih-github runner register --help`` for more details.
 """
+
 import logging
 from os import path as osp
 from subprocess import run

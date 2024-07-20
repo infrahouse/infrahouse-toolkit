@@ -1,4 +1,5 @@
 """Terraform S3 backend"""
+
 from os import environ
 
 from infrahouse_toolkit.terraform.backends.tfbackend import TFBackend

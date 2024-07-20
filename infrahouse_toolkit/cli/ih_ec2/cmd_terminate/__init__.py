@@ -5,6 +5,7 @@
 
     See ``ih-ec2 terminate`` for more details.
 """
+
 import sys
 from logging import getLogger
 

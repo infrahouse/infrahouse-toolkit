@@ -5,6 +5,7 @@
 
     See ``ih-s3-reprepro checkpool --help`` for more details.
 """
+
 import click
 from click import Context
 

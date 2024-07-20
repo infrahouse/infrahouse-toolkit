@@ -1,6 +1,7 @@
 """
 InfraHouse Toolkit timeout module.
 """
+
 import signal
 from contextlib import contextmanager
 

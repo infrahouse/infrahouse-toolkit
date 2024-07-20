@@ -5,6 +5,7 @@
 
     See ``ih-registry --help`` for more details.
 """
+
 from logging import getLogger
 
 import click

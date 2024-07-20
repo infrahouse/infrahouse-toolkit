@@ -5,6 +5,7 @@
 
     See ``ih-github runner deregister --help`` for more details.
 """
+
 import logging
 
 import click

@@ -3,6 +3,7 @@
 
     AWS helper functions.
 """
+
 from logging import getLogger
 from os import environ
 

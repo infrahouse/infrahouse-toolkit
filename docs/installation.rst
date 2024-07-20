@@ -5,7 +5,7 @@ Installation
 ============
 
 The InfraHouse Toolkit runs on MacOS or Linux operating systems. It can be installed as a Python package from
-the public PyPI, with Homebrew on MacOS, or as a .deb package on Ubuntu jammy.
+the public PyPI, with Homebrew on MacOS, or as a .deb package on Ubuntu.
 
 Python Package (Linux, MacOS)
 -----------------------------
@@ -30,13 +30,20 @@ Homebrew package (MacOS)
     brew install infrahouse/infrahouse-toolkit/infrahouse-toolkit
 
 
-Debian package (Ubuntu jammy, focal)
-------------------------------------
+Debian package (Ubuntu noble, jammy, focal)
+-------------------------------------------
 
 Download the repository public key and convert it into apt compatible format.
 
 .. code-block:: console
 
+    # Install dependencies
+    apt-get update
+    apt-get install \
+        gpg \
+        lsb-release \
+        curl
+    # Add a GPG public key to verify InfraHouse packages
     mkdir -p /etc/apt/cloud-init.gpg.d/
     curl  -fsSL https://release-$(lsb_release -cs).infrahouse.com/DEB-GPG-KEY-release-$(lsb_release -cs).infrahouse.com \
         | gpg --dearmor -o /etc/apt/cloud-init.gpg.d/infrahouse.gpg

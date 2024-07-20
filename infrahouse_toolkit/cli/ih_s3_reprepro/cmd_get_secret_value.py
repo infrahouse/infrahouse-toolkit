@@ -5,6 +5,7 @@
 
     See ``ih-s3-reprepro get-secret-value --help`` for more details.
 """
+
 import sys
 from logging import getLogger
 

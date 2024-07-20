@@ -5,6 +5,7 @@
 
     See ``ih-registry upload`` for more details.
 """
+
 from logging import getLogger
 from os import path as osp
 from shutil import make_archive

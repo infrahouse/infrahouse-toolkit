@@ -1,6 +1,7 @@
 """
 InfraHouse Toolkit Logging.
 """
+
 import logging
 import sys
 

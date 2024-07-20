@@ -5,6 +5,7 @@
 
     See ``ih-s3-reprepro remove --help`` for more details.
 """
+
 import sys
 from logging import getLogger
 
