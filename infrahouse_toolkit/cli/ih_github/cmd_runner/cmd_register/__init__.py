@@ -11,8 +11,11 @@ from os import path as osp
 from subprocess import run
 from tempfile import gettempdir
 
+import boto3
 import click
 from requests import post
+
+from infrahouse_toolkit.cli.ih_secrets.cmd_get import get_secret
 
 LOG = logging.getLogger()
 AR_URL = "https://github.com/actions/runner/releases/download/v2.314.1/actions-runner-linux-x64-2.314.1.tar.gz"
@@ -41,17 +44,24 @@ def cmd_register(ctx, **kwargs):
     """
     github_token = ctx.obj["github_token"]
     org = ctx.obj["org"]
-    response = post(
-        f"https://api.github.com/orgs/{org}/actions/runners/registration-token",
-        headers={
-            "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {github_token}",
-            "X-GitHub-Api-Version": "2022-11-28",
-        },
-        timeout=30,
-    )
-    response.raise_for_status()
-    token = response.json()["token"]
+    registration_token_secret = ctx.obj["registration_token_secret"]
+
+    if registration_token_secret:
+        token = get_secret(boto3.client("secretsmanager"), registration_token_secret)
+
+    else:
+        response = post(
+            f"https://api.github.com/orgs/{org}/actions/runners/registration-token",
+            headers={
+                "Accept": "application/vnd.github+json",
+                "Authorization": f"Bearer {github_token}",
+                "X-GitHub-Api-Version": "2022-11-28",
+            },
+            timeout=30,
+        )
+        response.raise_for_status()
+        token = response.json()["token"]
+
     cmd = [
         osp.join(kwargs["actions_runner_code_path"], "config.sh"),
         "--url",

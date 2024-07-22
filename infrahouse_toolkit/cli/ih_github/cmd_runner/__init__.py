@@ -28,6 +28,7 @@ LOG = logging.getLogger()
 )
 @click.option("--github-token", help="Personal access token for GitHub.", envvar="GITHUB_TOKEN", show_default=True)
 @click.option("--github-token-secret", help="Read GitHub token from AWS secret.")
+@click.option("--registration-token-secret", help="AWS secret name with a registration token.", default=None)
 @click.option(
     "--org",
     help="GitHub organization",
@@ -47,7 +48,11 @@ def cmd_runner(ctx, *args, **kwargs):
     else:
         github_token = kwargs["github_token"]
 
-    ctx.obj = {"github_token": github_token, "org": kwargs["org"]}
+    ctx.obj = {
+        "github_token": github_token,
+        "org": kwargs["org"],
+        "registration_token_secret": kwargs["registration_token_secret"],
+    }
 
 
 for cmd in [cmd_list, cmd_register, cmd_deregister, cmd_is_registered, cmd_download]:
