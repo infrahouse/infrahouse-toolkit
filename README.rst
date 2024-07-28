@@ -173,6 +173,162 @@ The ``ih-ec2`` command works with AWS EC2.
 
 Note, the help message reads your ``~/.aws/config`` and prints available AWS profiles.
 
+``ih-ec2 list``
+~~~~~~~~~~~~~~~
+
+The ``ih-ec2 list`` command prints a list of ECS instances in a region.
+
+Without additional options, it shows an instance's Name, PrivateIpAddress, InstanceId, InstanceType, and State.
+
+.. code-block:: bash
+
+    $ ih-ec2 list
+    +--------------------+--------------------+---------------------+----------------+---------+
+    | Name               | PrivateIpAddress   | InstanceId          | InstanceType   | State   |
+    +====================+====================+=====================+================+=========+
+    | auth               | 10.0.1.233         | i-053a08fa0f4d583c1 | t3.small       | running |
+    | jumphost           | 10.0.1.130         | i-0f7b00928e84b9173 | t3a.micro      | running |
+    | mail               | 10.0.3.66          | i-0e1c3c842edc1a43a | t3a.micro      | running |
+    | openvpn            | 10.0.1.213         | i-069ff960335c93087 | m6in.large     | running |
+    | openvpn-portal     | 10.0.3.177         | i-0a77715da944ed583 | t3.small       | running |
+    | terraform-registry | 10.0.3.117         | i-011f470b96279cb89 | t3.micro       | running |
+    | webserver          | 10.0.6.203         | i-00eb66708c5108595 | t3.micro       | running |
+    | webserver          | 10.0.7.88          | i-0ff80ad49cf5a46ea | t3.micro       | running |
+    +--------------------+--------------------+---------------------+----------------+---------+
+
+Should you want to see the instance's public DNS name or IP address, use ``--public-dns-name``
+and ``--public-ip-address`` options respectively.
+
+The ``--tags`` option will add formatted instance tags.
+
+.. code-block:: bash
+
+    $ ih-ec2 list --tags
+    +--------------------+--------------------+---------------------+----------------+--------------------------------------------------------------------------------+---------+
+    | Name               | PrivateIpAddress   | InstanceId          | InstanceType   | Tags                                                                           | State   |
+    +====================+====================+=====================+================+================================================================================+=========+
+    | auth               | 10.0.1.233         | i-053a08fa0f4d583c1 | t3.small       | {                                                                              | running |
+    |                    |                    |                     |                |     "AmazonECSManaged": "true",                                                |         |
+    |                    |                    |                     |                |     "account": "493370826424",                                                 |         |
+    |                    |                    |                     |                |     "aws:autoscaling:groupName": "auth2024030222363784960000000d",             |         |
+    |                    |                    |                     |                |     "aws:ec2launchtemplate:id": "lt-0d93139ab32de43aa",                        |         |
+    |                    |                    |                     |                |     "aws:ec2launchtemplate:version": "2",                                      |         |
+    |                    |                    |                     |                |     "environment": "development",                                              |         |
+    |                    |                    |                     |                |     "managed-by": "terraform",                                                 |         |
+    |                    |                    |                     |                |     "service": "auth"                                                          |         |
+    |                    |                    |                     |                | }                                                                              |         |
+    +--------------------+--------------------+---------------------+----------------+--------------------------------------------------------------------------------+---------+
+    | jumphost           | 10.0.1.130         | i-0f7b00928e84b9173 | t3a.micro      | {                                                                              | running |
+    |                    |                    |                     |                |     "aws:autoscaling:groupName": "jumphost-20240223005113359100000009-02R7BZ", |         |
+    |                    |                    |                     |                |     "aws:ec2launchtemplate:id": "lt-001743d1d2257c40b",                        |         |
+    |                    |                    |                     |                |     "aws:ec2launchtemplate:version": "10",                                     |         |
+    |                    |                    |                     |                |     "created_by_module": "infrahouse/jumphost/aws"                             |         |
+    |                    |                    |                     |                | }                                                                              |         |
+    +--------------------+--------------------+---------------------+----------------+--------------------------------------------------------------------------------+---------+
+
+It is possible to filter output based on a tag value, multiple values or its existence.
+
+To print instances that have a ``service`` tag with any value.
+
+.. code-block:: bash
+
+    $ ih-ec2 list --tags --service
+    +--------------------+--------------------+---------------------+----------------+-------------------------------------------------------------------------------+---------+
+    | Name               | PrivateIpAddress   | InstanceId          | InstanceType   | Tags                                                                          | State   |
+    +====================+====================+=====================+================+===============================================================================+=========+
+    | auth               | 10.0.1.233         | i-053a08fa0f4d583c1 | t3.small       | {                                                                             | running |
+    |                    |                    |                     |                |     "AmazonECSManaged": "true",                                               |         |
+    |                    |                    |                     |                |     "account": "493370826424",                                                |         |
+    |                    |                    |                     |                |     "aws:autoscaling:groupName": "auth2024030222363784960000000d",            |         |
+    |                    |                    |                     |                |     "aws:ec2launchtemplate:id": "lt-0d93139ab32de43aa",                       |         |
+    |                    |                    |                     |                |     "aws:ec2launchtemplate:version": "2",                                     |         |
+    |                    |                    |                     |                |     "environment": "development",                                             |         |
+    |                    |                    |                     |                |     "managed-by": "terraform",                                                |         |
+    |                    |                    |                     |                |     "service": "auth"                                                         |         |
+    |                    |                    |                     |                | }                                                                             |         |
+    +--------------------+--------------------+---------------------+----------------+-------------------------------------------------------------------------------+---------+
+    ...
+    +--------------------+--------------------+---------------------+----------------+-------------------------------------------------------------------------------+---------+
+    | webserver          | 10.0.7.88          | i-0ff80ad49cf5a46ea | t3.micro       | {                                                                             | running |
+    |                    |                    |                     |                |     "account": "493370826424",                                                |         |
+    |                    |                    |                     |                |     "aws:autoscaling:groupName": "web20231125205239428700000003",             |         |
+    |                    |                    |                     |                |     "aws:ec2launchtemplate:id": "lt-042ea5dd55b0fff3b",                       |         |
+    |                    |                    |                     |                |     "aws:ec2launchtemplate:version": "6",                                     |         |
+    |                    |                    |                     |                |     "environment": "production",                                              |         |
+    |                    |                    |                     |                |     "managed-by": "terraform",                                                |         |
+    |                    |                    |                     |                |     "service": "website"                                                      |         |
+    |                    |                    |                     |                | }                                                                             |         |
+    +--------------------+--------------------+---------------------+----------------+-------------------------------------------------------------------------------+---------+
+
+To print instances of a "website" service.
+
+.. code-block:: bash
+
+    $ ih-ec2 list --tags --service=website
+    +-----------+--------------------+---------------------+----------------+-------------------------------------------------------------------+---------+
+    | Name      | PrivateIpAddress   | InstanceId          | InstanceType   | Tags                                                              | State   |
+    +===========+====================+=====================+================+===================================================================+=========+
+    | webserver | 10.0.6.203         | i-00eb66708c5108595 | t3.micro       | {                                                                 | running |
+    |           |                    |                     |                |     "account": "493370826424",                                    |         |
+    |           |                    |                     |                |     "aws:autoscaling:groupName": "web20231125205239428700000003", |         |
+    |           |                    |                     |                |     "aws:ec2launchtemplate:id": "lt-042ea5dd55b0fff3b",           |         |
+    |           |                    |                     |                |     "aws:ec2launchtemplate:version": "6",                         |         |
+    |           |                    |                     |                |     "environment": "production",                                  |         |
+    |           |                    |                     |                |     "managed-by": "terraform",                                    |         |
+    |           |                    |                     |                |     "service": "website"                                          |         |
+    |           |                    |                     |                | }                                                                 |         |
+    +-----------+--------------------+---------------------+----------------+-------------------------------------------------------------------+---------+
+    | webserver | 10.0.7.88          | i-0ff80ad49cf5a46ea | t3.micro       | {                                                                 | running |
+    |           |                    |                     |                |     "account": "493370826424",                                    |         |
+    |           |                    |                     |                |     "aws:autoscaling:groupName": "web20231125205239428700000003", |         |
+    |           |                    |                     |                |     "aws:ec2launchtemplate:id": "lt-042ea5dd55b0fff3b",           |         |
+    |           |                    |                     |                |     "aws:ec2launchtemplate:version": "6",                         |         |
+    |           |                    |                     |                |     "environment": "production",                                  |         |
+    |           |                    |                     |                |     "managed-by": "terraform",                                    |         |
+    |           |                    |                     |                |     "service": "website"                                          |         |
+    |           |                    |                     |                | }                                                                 |         |
+    +-----------+--------------------+---------------------+----------------+-------------------------------------------------------------------+---------+
+
+To print instances of more than one service, list them with a comma.
+
+.. code-block:: bash
+
+    $ ih-ec2 list --tags --service=website,auth
+    +-----------+--------------------+---------------------+----------------+--------------------------------------------------------------------+---------+
+    | Name      | PrivateIpAddress   | InstanceId          | InstanceType   | Tags                                                               | State   |
+    +===========+====================+=====================+================+====================================================================+=========+
+    | auth      | 10.0.1.233         | i-053a08fa0f4d583c1 | t3.small       | {                                                                  | running |
+    |           |                    |                     |                |     "AmazonECSManaged": "true",                                    |         |
+    |           |                    |                     |                |     "account": "493370826424",                                     |         |
+    |           |                    |                     |                |     "aws:autoscaling:groupName": "auth2024030222363784960000000d", |         |
+    |           |                    |                     |                |     "aws:ec2launchtemplate:id": "lt-0d93139ab32de43aa",            |         |
+    |           |                    |                     |                |     "aws:ec2launchtemplate:version": "2",                          |         |
+    |           |                    |                     |                |     "environment": "development",                                  |         |
+    |           |                    |                     |                |     "managed-by": "terraform",                                     |         |
+    |           |                    |                     |                |     "service": "auth"                                              |         |
+    |           |                    |                     |                | }                                                                  |         |
+    +-----------+--------------------+---------------------+----------------+--------------------------------------------------------------------+---------+
+    | webserver | 10.0.6.203         | i-00eb66708c5108595 | t3.micro       | {                                                                  | running |
+    |           |                    |                     |                |     "account": "493370826424",                                     |         |
+    |           |                    |                     |                |     "aws:autoscaling:groupName": "web20231125205239428700000003",  |         |
+    |           |                    |                     |                |     "aws:ec2launchtemplate:id": "lt-042ea5dd55b0fff3b",            |         |
+    |           |                    |                     |                |     "aws:ec2launchtemplate:version": "6",                          |         |
+    |           |                    |                     |                |     "environment": "production",                                   |         |
+    |           |                    |                     |                |     "managed-by": "terraform",                                     |         |
+    |           |                    |                     |                |     "service": "website"                                           |         |
+    |           |                    |                     |                | }                                                                  |         |
+    +-----------+--------------------+---------------------+----------------+--------------------------------------------------------------------+---------+
+    | webserver | 10.0.7.88          | i-0ff80ad49cf5a46ea | t3.micro       | {                                                                  | running |
+    |           |                    |                     |                |     "account": "493370826424",                                     |         |
+    |           |                    |                     |                |     "aws:autoscaling:groupName": "web20231125205239428700000003",  |         |
+    |           |                    |                     |                |     "aws:ec2launchtemplate:id": "lt-042ea5dd55b0fff3b",            |         |
+    |           |                    |                     |                |     "aws:ec2launchtemplate:version": "6",                          |         |
+    |           |                    |                     |                |     "environment": "production",                                   |         |
+    |           |                    |                     |                |     "managed-by": "terraform",                                     |         |
+    |           |                    |                     |                |     "service": "website"                                           |         |
+    |           |                    |                     |                | }                                                                  |         |
+    +-----------+--------------------+---------------------+----------------+--------------------------------------------------------------------+---------+
+
 ``ih-elastic``
 --------------
 

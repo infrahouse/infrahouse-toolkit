@@ -6,6 +6,7 @@
     See ``ih-ec2 list`` for more details.
 """
 
+import json
 import sys
 from logging import getLogger
 from pprint import pformat
@@ -17,14 +18,20 @@ from tabulate import tabulate
 LOG = getLogger(__name__)
 
 
-def list_ec2_instances(ec2_client):
+def list_ec2_instances(ec2_client, fields=None, tag_filter=None):
     """
     Print a summary about EC2 instances in a region.
     """
-    response = ec2_client.describe_instances()
+    kwargs = {}
+    if tag_filter:
+        kwargs["Filters"] = tag_filter
+
+    response = ec2_client.describe_instances(**kwargs)
     LOG.debug("describe_instances() = %s", pformat(response, indent=4))
     instances = []
-    header = ["InstanceId", "InstanceType", "PublicDnsName", "PublicIpAddress", "PrivateIpAddress"]
+    header = ["PrivateIpAddress", "InstanceId", "InstanceType"]
+    fields = {} if fields is None else fields
+    header.extend([k for k, v in fields.items() if v])
     for reservation in response["Reservations"]:
         for instance in reservation["Instances"]:
             name = None
@@ -34,23 +41,88 @@ def list_ec2_instances(ec2_client):
             row = [name]
             for field in header:
                 value = instance[field] if field in instance else ""
+                if field == "Tags":
+                    value = json.dumps(
+                        dict(
+                            sorted(
+                                {tag.get("Key"): tag.get("Value") for tag in value if tag.get("Key") != "Name"}.items()
+                            )
+                        ),
+                        indent=4,
+                    )
                 row.append(value)
             row.append(instance["State"]["Name"])
             instances.append(row)
 
-    print(tabulate(instances, headers=["Name"] + header + ["State"], tablefmt="outline"))
+    print(
+        tabulate(
+            sorted(instances), headers=["Name"] + header + ["State"], tablefmt="grid" if fields["Tags"] else "outline"
+        )
+    )
 
 
-@click.command(name="list")
+@click.command(
+    name="list",
+    context_settings={
+        "ignore_unknown_options": True,
+        "allow_extra_args": True,
+    },
+)
+@click.option(
+    "--public-dns-name",
+    "PublicDnsName",
+    help="Show public DNS name.",
+    is_flag=True,
+    default=False,
+)
+@click.option(
+    "--public-ip-address",
+    "PublicIpAddress",
+    help="Show public IP address.",
+    is_flag=True,
+    default=False,
+)
+@click.option(
+    "--tags",
+    "Tags",
+    help="Show tags.",
+    is_flag=True,
+    default=False,
+)
 @click.pass_context
-def cmd_list(ctx):
+def cmd_list(ctx, **kwargs):
     """
     List created EC2 instances.
+
+    By default, it will show instances' Name, PrivateIpAddress, InstanceId, InstanceType, and State.
+
+    To display the instance's public DNS name or IP address, use options --public-dns-name,
+    --public-ip-address respectively.
+
+    Option --tags will show instance's tags.
+
+    You can use tag names to filter output. For instance, option --service will show instances
+    that have a tag 'service'. The same option with a value e.g. --service=vpn-portal will show instances
+    that have a tag 'service' and its value 'vpn-portal'. Use comma separated service name to display more
+    than one service. e.g. --service=elastic,elastic-kibana.
     """
     ec2_client = ctx.obj["ec2_client"]
     aws_config = ctx.obj["aws_config"]
+    tag_filter = []
+    for arg in ctx.args:
+        arg = arg.lstrip("--")
+        split = arg.split("=")
+        if len(split) < 2:
+            name = "tag-key"
+            values = [split[0]]
+        else:
+            name = f"tag:{split[0]}"
+            values = list(split[1].split(","))
+
+        tag_filter.append({"Name": name, "Values": values})
+
     try:
-        list_ec2_instances(ec2_client)
+        list_ec2_instances(ec2_client, kwargs, tag_filter)
     except ClientError as err:
         LOG.exception(err)
         LOG.info("Try to run ih-ec2 with --aws-profile option.")
