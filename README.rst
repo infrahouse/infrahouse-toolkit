@@ -22,13 +22,13 @@ A collection of tools for building infrastructure.
 .. contents:: List of tools
 
 
-``ih-aws``
-----------
+``ih-aws``: AWS helpers
+-----------------------
 
 The command is supposed to work with AWS. As of now, only one commands is supported - ``ih-aws credentials``.
 
-``ih-aws credentials``
-~~~~~~~~~~~~~~~~~~~~~~
+``ih-aws credentials``: retrieve temporary AWS credentials
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``ih-aws credentials`` authenticates a user in `AWS IAM Identity Center <https://aws.amazon.com/iam/identity-center/>`_
 and prints acquired AWS credentials. It is useful when you have configured IAM roles in ~/.aws/config
@@ -108,8 +108,8 @@ then you can get credentials for a specific profile.
     }
 
 
-``ih-certbot``
---------------
+``ih-certbot``: a bundled certbot
+---------------------------------
 
 ``ih-certbot`` is a wrapper around. InfraHouse Toolkit packages it to avoid installing ``certbot``
 in the system Python environment. To see what ``certbot`` provides, get its help.
@@ -144,8 +144,8 @@ in the system Python environment. To see what ``certbot`` provides, get its help
     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-``ih-ec2``
-----------
+``ih-ec2``: common EC2 operations
+---------------------------------
 
 The ``ih-ec2`` command works with AWS EC2.
 
@@ -175,8 +175,8 @@ The ``ih-ec2`` command works with AWS EC2.
 
 Note, the help message reads your ``~/.aws/config`` and prints available AWS profiles.
 
-``ih-ec2 list``
-~~~~~~~~~~~~~~~
+``ih-ec2 list``: list EC2 instances
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``ih-ec2 list`` command prints a list of ECS instances in a region.
 
@@ -331,8 +331,8 @@ To print instances of more than one service, list them with a comma.
     |           |                    |                     |                | }                                                                  |         |
     +-----------+--------------------+---------------------+----------------+--------------------------------------------------------------------+---------+
 
-``ih-elastic``
---------------
+``ih-elastic``: manage Elasticsearch cluster
+--------------------------------------------
 
 The ``ih-elastic`` command works with an Elasticsearch cluster.
 
@@ -433,8 +433,8 @@ My favorite commands.
       restore            Restores a snapshot in a repository.
       status             Returns information about the status of a snapshot.
 
-``ih-github``
--------------
+``ih-github``: manage action runners
+------------------------------------
 
 As the name suggests, the ``ih-github`` command works with GitHub.
 
@@ -535,8 +535,8 @@ For example, I can see what runners are offline.
     "Name: ip-10-1-3-65, Status: offline"
 
 
-``ih-plan``
------------
+``ih-plan``: summarize and publish Terraform plan to pull request
+-----------------------------------------------------------------
 
 ``ih-plan`` is a helper tool to upload/download a Terraform plan.
 
@@ -574,8 +574,8 @@ Command ``min-permissions`` parses a Terraform trace and figures out the minimal
 needed to execute the plan. Say, you want to reduce permissions of a role running terraform.
 That's the use-case.
 
-``ih-puppet``
--------------
+``ih-puppet``: run master-less puppet
+-------------------------------------
 
 ``ih-puppet apply`` runs a Puppet client. For instance, all InfraHouse provisioned hosts have a cron job
 
@@ -592,8 +592,8 @@ That's the use-case.
 
 It's just a wrapper that installs Puppet module dependencies and runs the client.
 
-``ih-registry``
----------------
+``ih-registry``: publish Terraform modules
+------------------------------------------
 
 The ``ih-registry upload`` command can publish a Terraform module to a Tapir_-managed private registry.
 
@@ -612,8 +612,8 @@ The ``ih-registry upload`` command can publish a Terraform module to a Tapir_-ma
     Commands:
       upload  Upload Terraform module to the InfraHouse Terraform Registry
 
-``ih-s3-reprepro``
-------------------
+``ih-s3-reprepro``: manage Debian repository in S3
+--------------------------------------------------
 
 Manage Debian repository in an S3 bucket.
 
@@ -649,8 +649,8 @@ pulls a GPG private key from AWS's secretsmanager and configures the GPG home en
       list                List all packages by the given name occurring in...
       remove              Delete all packages in the specified distribution,...
 
-``ih-secrets``
---------------
+``ih-secrets``: access AWS Secrets Manager
+------------------------------------------
 
 The ``ih-secrets`` command works with
 `AWS Secrets Manager <https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html>`_.
@@ -710,8 +710,8 @@ And, if your credentials allow updating the secret, you can set it's value.
       --help  Show this message and exit.
 
 
-``ih-skeema``
--------------
+``ih-skeema``: run Skeema in CI/CD
+----------------------------------
 
 The ``ih-skeema`` command is a wrapper around a popular Skeema tool. The wrapper provides intergration with
 AWS Secrets Manager to provide database credentials.
