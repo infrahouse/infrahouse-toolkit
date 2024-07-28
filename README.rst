@@ -19,6 +19,8 @@ A collection of tools for building infrastructure.
 * Free software: Apache Software License 2.0
 * Documentation: https://infrahouse-toolkit.readthedocs.io.
 
+.. contents:: List of tools
+
 
 ``ih-aws``
 ----------
