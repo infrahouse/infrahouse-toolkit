@@ -578,6 +578,22 @@ Command ``min-permissions`` parses a Terraform trace and figures out the minimal
 needed to execute the plan. Say, you want to reduce permissions of a role running terraform.
 That's the use-case.
 
+The full comment includes several sections:
+
+    * Title specifies in what Terraform state the changes will be made.
+    * "Affected resources counts" is a summary table with counts of how many resources will be added, modified, or destroyed.
+    * "Affected resources by action" is a table that lists resources that are going to be added, modified, or destroyed.
+    * Finally, a collapsible "STDOUT" block. It includes the output of ``terraform plan``, however it skips progress messages for brevity and convenience.
+
+.. image:: docs/_static/ih-plan-full-comment.png
+    :align: center
+    :alt: Example of a comment published by ``ih-plan``.
+
+.. image:: docs/_static/ih-plan-stdout-block.png
+    :align: center
+    :alt: A part of ``terraform plan`` standard output.
+
+
 ``ih-puppet``: run master-less puppet
 -------------------------------------
 
