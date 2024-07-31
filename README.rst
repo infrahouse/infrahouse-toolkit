@@ -18,6 +18,10 @@ A collection of tools for building infrastructure.
 
 * Free software: Apache Software License 2.0
 * Documentation: https://infrahouse-toolkit.readthedocs.io.
+    - `Usage examples <https://infrahouse-toolkit.readthedocs.io/en/latest/readme.html#infrahouse-toolkit>`_
+    - `Installation <https://infrahouse-toolkit.readthedocs.io/en/latest/installation.html>`_
+    - `Code documentation <https://infrahouse-toolkit.readthedocs.io/en/latest/modules.html>`_
+    - `Contributing <https://infrahouse-toolkit.readthedocs.io/en/latest/contributing.html>`_
 
 .. contents:: List of tools
 
