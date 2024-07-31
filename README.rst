@@ -581,11 +581,11 @@ The full comment includes several sections:
     * "Affected resources by action" is a table that lists resources that are going to be added, modified, or destroyed.
     * Finally, a collapsible "STDOUT" block. It includes the output of ``terraform plan``, however it skips progress messages for brevity and convenience.
 
-.. image:: _static/ih-plan-full-comment.png
+.. image:: docs/_static/ih-plan-full-comment.png
     :align: center
     :alt: Example of a comment published by ``ih-plan``.
 
-.. image:: _static/ih-plan-stdout-block.png
+.. image:: docs/_static/ih-plan-stdout-block.png
     :align: center
     :alt: A part of ``terraform plan`` standard output.
 
