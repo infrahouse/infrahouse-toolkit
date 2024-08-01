@@ -54,17 +54,15 @@ LOG = getLogger(__name__)
 )
 @click.version_option()
 @click.pass_context
-def ih_secrets(ctx, **kwargs):
+def ih_secrets(ctx, verbose, debug, aws_profile, aws_region):
     """AWS EC2 helpers."""
-    setup_logging(debug=kwargs["debug"], quiet=not kwargs["verbose"])
-    aws_profile = kwargs["aws_profile"]
-    aws_region = kwargs["aws_region"]
+    setup_logging(debug=debug, quiet=not verbose)
     aws_config = AWSConfig()
     aws_session = get_aws_session(aws_config, aws_profile, aws_region)
 
     try:
         ctx.obj = {
-            "debug": kwargs["debug"],
+            "debug": debug,
             "secretsmanager_client": get_aws_client("secretsmanager", aws_profile, aws_region, session=aws_session),
             "aws_config": aws_config,
         }
