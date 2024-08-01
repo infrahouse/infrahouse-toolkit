@@ -54,6 +54,6 @@ def cmd_credentials(ctx, docker, export):
 
     except ClientError as err:
         LOG.exception(err)
-        LOG.error("Try to run ih-secrets with --aws-profile option.")
+        LOG.error("Try to run ih-aws with --aws-profile option.")
         LOG.error("Available profiles:\n\t%s", "\n\t".join(aws_config.profiles))
         sys.exit(1)

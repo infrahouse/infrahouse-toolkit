@@ -29,7 +29,7 @@ A collection of tools for building infrastructure.
 ``ih-aws``: AWS helpers
 -----------------------
 
-The command is supposed to work with AWS. As of now, only one commands is supported - ``ih-aws credentials``.
+The command group to work with AWS services.
 
 ``ih-aws credentials``: retrieve temporary AWS credentials
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -111,6 +111,28 @@ then you can get credentials for a specific profile.
         "Arn": "arn:aws:sts::303467602807:assumed-role/AWSReservedSSO_AWSAdministratorAccess_422821c726d81c14/aleks"
     }
 
+``ih-aws ecs``: ECS helpers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: bash
+
+    $ ih-aws ecs wait-services-stable --help
+    Usage: ih-aws ecs wait-services-stable [OPTIONS]
+
+      Wait up to --timeout seconds until all specified services in an ECS cluster
+      become stable.
+
+      The service is considered stable when there is only one deployment for it
+      and number of running tasks is equal to desired number tasks.
+
+    Options:
+      --cluster TEXT          ECS cluster name that runs requested services.
+                              [required]
+      --service TEXT          ECS service name that we wait to become stable.
+                              Multiple services can be specified.  [required]
+      --wait-timeout INTEGER  Time in seconds to wait until all services become
+                              stable.  [default: 1200]
+      --help                  Show this message and exit.
 
 ``ih-certbot``: a bundled certbot
 ---------------------------------
