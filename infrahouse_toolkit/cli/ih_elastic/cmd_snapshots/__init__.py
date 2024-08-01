@@ -5,8 +5,7 @@
 
     See ``ih-elastic snapshots --help`` for more details.
 """
-
-import logging
+from logging import getLogger
 
 import click
 
@@ -20,7 +19,7 @@ from infrahouse_toolkit.cli.ih_elastic.cmd_snapshots.cmd_delete_repository impor
 from infrahouse_toolkit.cli.ih_elastic.cmd_snapshots.cmd_restore import cmd_restore
 from infrahouse_toolkit.cli.ih_elastic.cmd_snapshots.cmd_status import cmd_status
 
-LOG = logging.getLogger()
+LOG = getLogger(__name__)
 
 
 @click.group(name="snapshots")

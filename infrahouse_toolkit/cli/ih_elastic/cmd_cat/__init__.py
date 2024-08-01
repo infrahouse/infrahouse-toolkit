@@ -5,15 +5,15 @@
 
     See ``ih-elastic cat --help`` for more details.
 """
-
-import logging
+from logging import getLogger
 
 import click
 
 from infrahouse_toolkit.cli.ih_elastic.cmd_cat.cmd_repositories import cmd_repositories
+from infrahouse_toolkit.cli.ih_elastic.cmd_cat.cmd_shards import cmd_shards
 from infrahouse_toolkit.cli.ih_elastic.cmd_cat.cmd_snapshots import cmd_snapshots
 
-LOG = logging.getLogger()
+LOG = getLogger(__name__)
 
 
 @click.group(name="cat")
@@ -23,6 +23,6 @@ def cmd_cat():
     """
 
 
-for cmd in [cmd_repositories, cmd_snapshots]:
+for cmd in [cmd_repositories, cmd_snapshots, cmd_shards]:
     # noinspection PyTypeChecker
     cmd_cat.add_command(cmd)
