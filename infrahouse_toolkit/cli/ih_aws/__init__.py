@@ -15,6 +15,7 @@ from botocore.exceptions import NoRegionError
 from infrahouse_toolkit.aws import get_aws_session
 from infrahouse_toolkit.aws.config import AWSConfig
 from infrahouse_toolkit.cli.ih_aws.cmd_credentials import cmd_credentials
+from infrahouse_toolkit.cli.ih_aws.cmd_ecs import cmd_ecs
 from infrahouse_toolkit.logging import setup_logging
 
 AWS_DEFAULT_REGION = "us-west-1"
@@ -74,6 +75,7 @@ def ih_aws(ctx, **kwargs):
 
 for cmd in [
     cmd_credentials,
+    cmd_ecs,
 ]:
     # noinspection PyTypeChecker
     ih_aws.add_command(cmd)

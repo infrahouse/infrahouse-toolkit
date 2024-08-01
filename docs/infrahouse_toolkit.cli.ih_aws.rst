@@ -8,6 +8,7 @@ Subpackages
    :maxdepth: 4
 
    infrahouse_toolkit.cli.ih_aws.cmd_credentials
+   infrahouse_toolkit.cli.ih_aws.cmd_ecs
 
 Module contents
 ---------------
