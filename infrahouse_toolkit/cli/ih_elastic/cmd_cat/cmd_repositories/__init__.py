@@ -5,13 +5,12 @@
 
     See ``ih-elastic cat repositories --help`` for more details.
 """
-
-import logging
+from logging import getLogger
 
 import click
 from elasticsearch.client import CatClient
 
-LOG = logging.getLogger()
+LOG = getLogger(__name__)
 
 
 @click.command(name="repositories")

@@ -5,14 +5,13 @@
 
     See ``ih-elastic passwd --help`` for more details.
 """
-
-import logging
+from logging import getLogger
 
 import boto3
 import click
 from elasticsearch.client import SecurityClient
 
-LOG = logging.getLogger()
+LOG = getLogger(__name__)
 
 
 @click.command(name="passwd")

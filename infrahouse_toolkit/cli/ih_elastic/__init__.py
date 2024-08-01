@@ -16,13 +16,14 @@ from elasticsearch import Elasticsearch
 from requests.auth import HTTPBasicAuth
 
 from infrahouse_toolkit.cli.ih_elastic.cmd_cat import cmd_cat
+from infrahouse_toolkit.cli.ih_elastic.cmd_cluster import cmd_cluster
 from infrahouse_toolkit.cli.ih_elastic.cmd_cluster_health import cmd_cluster_health
 from infrahouse_toolkit.cli.ih_elastic.cmd_passwd import cmd_passwd
 from infrahouse_toolkit.cli.ih_elastic.cmd_snapshots import cmd_snapshots
 from infrahouse_toolkit.cli.lib import get_elastic_password
 from infrahouse_toolkit.logging import setup_logging
 
-LOG = getLogger()
+LOG = getLogger(__name__)
 
 
 @click.group(
@@ -98,6 +99,6 @@ def ih_elastic(ctx, **kwargs):  # pylint: disable=unused-argument
     }
 
 
-for cmd in [cmd_passwd, cmd_cluster_health, cmd_snapshots, cmd_cat]:
+for cmd in [cmd_passwd, cmd_cluster_health, cmd_snapshots, cmd_cat, cmd_cluster]:
     # noinspection PyTypeChecker
     ih_elastic.add_command(cmd)

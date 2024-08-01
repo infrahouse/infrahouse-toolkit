@@ -7,8 +7,8 @@
 """
 
 import json
-import logging
 from datetime import datetime, timezone
+from logging import getLogger
 
 import click
 from elasticsearch import NotFoundError
@@ -16,7 +16,7 @@ from elasticsearch.client import ClusterClient, SnapshotClient
 
 from infrahouse_toolkit import DEFAULT_OPEN_ENCODING
 
-LOG = logging.getLogger()
+LOG = getLogger(__name__)
 
 
 @click.command(name="create")

@@ -7,12 +7,12 @@
 """
 
 import json
-import logging
+from logging import getLogger
 
 import click
 from elasticsearch.client import SnapshotClient
 
-LOG = logging.getLogger()
+LOG = getLogger(__name__)
 
 
 @click.command(name="status")
