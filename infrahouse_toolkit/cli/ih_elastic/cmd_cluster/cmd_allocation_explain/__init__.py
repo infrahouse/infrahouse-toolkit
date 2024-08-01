@@ -45,8 +45,6 @@ def cmd_allocation_explain(ctx, **kwargs):
     Provides explanations for shard allocations in the cluster.
     """
     client = ClusterClient(ctx.obj["es"])
-    print(kwargs)
-    # 1/0
     try:
         ae_kwargs = {}
         for arg in ["index", "shard"]:

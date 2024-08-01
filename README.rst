@@ -381,7 +381,7 @@ The ``ih-elastic`` command works with an Elasticsearch cluster.
       --password-secret TEXT          AWS secretsmanager secret id with the
                                       password.
       --es-protocol TEXT              Elasticsearch protocol  [default: http]
-      --es-host TEXT                  Elasticsearch host  [default: 10.1.2.145]
+      --es-host TEXT                  Elasticsearch host  [default: 127.0.1.1]
       --es-port INTEGER               Elasticsearch port  [default: 9200]
       --format [text|json|cbor|yaml|smile]
                                       Output format
@@ -389,14 +389,15 @@ The ``ih-elastic`` command works with an Elasticsearch cluster.
 
     Commands:
       cat             Compact and aligned text (CAT) APIs.
+      cluster         Cluster level operations.
       cluster-health  Connect to Elasticsearch host and print the cluster...
       passwd          Change password for Elasticsearch user.
       snapshots       Work with snapshots.
 
+``ih-elastic cluster-health``: Show cluster health
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-My favorite commands.
-
-``ih-elastic cluster-health`` shows a cluster health. The command is supposed to be run on an Elasticsearch node.
+``ih-elastic cluster-health`` shows the cluster health. The command is supposed to be run on an Elasticsearch node.
 
 .. code-block:: bash
 
@@ -421,6 +422,43 @@ My favorite commands.
         "active_shards_percent_as_number": 100.0
     }
 
+``ih-elastic cluster allocation-explain``: Explain allocation problems
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: bash
+
+    $ ih-elastic cluster allocation-explain --help
+    Usage: ih-elastic cluster allocation-explain [OPTIONS]
+
+      Provides explanations for shard allocations in the cluster.
+
+    Options:
+      --index TEXT           Specifies the name of the index that you would like
+                             an explanation for. Run ih-elastic cat shards to get
+                             a list.
+      --shard INTEGER        Specifies the ID of the shard that you would like an
+                             explanation for. Run ih-elastic cat shards to get a
+                             list.
+      --primary / --replica  If --primary, returns explanation for the primary
+                             shard for the given shard ID.
+      --help                 Show this message and exit.
+
+
+``ih-elastic cat shards``: List shards
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: bash
+
+    $ ih-elastic cat shards --help
+    Usage: ih-elastic cat shards [OPTIONS]
+
+      Provides a detailed view of shard allocation on nodes.
+
+    Options:
+      --help  Show this message and exit.
+
+``ih-elastic cat snapshots``: Shows backup copies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``ih-elastic cat snapshots`` shows available backup copies. It also has to be run on an Elasticsearch node.
 
@@ -438,6 +476,9 @@ My favorite commands.
     elastic-2024-02-21_11-44-02.921604 backups    SUCCESS 1708515842  11:44:02   1708515844 11:44:04     1.4s      36                36             0           36
     elastic-2024-02-21_12-37-02.628985 backups    SUCCESS 1708519022  12:37:02   1708519023 12:37:03    800ms      36                36             0           36
 
+
+``ih-elastic snapshots``: Create or restore snapshots
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``ih-elastic snapshots`` can take or restore a snapshot.
 

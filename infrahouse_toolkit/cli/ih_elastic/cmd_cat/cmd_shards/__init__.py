@@ -18,7 +18,7 @@ LOG = getLogger(__name__)
 @click.pass_context
 def cmd_shards(ctx):
     """
-    Returns information about snapshot shards registered in the cluster.
+    Provides a detailed view of shard allocation on nodes.
     """
     client = CatClient(ctx.obj["es"])
     if ctx.obj["format"] == "json":
