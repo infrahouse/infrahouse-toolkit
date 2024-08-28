@@ -127,7 +127,7 @@ class TFStatus:
                 f"{'🟡' if self.success and self.change is not None and self.change > 0 else ''} Change",
                 f"{'🔴' if self.success and self.destroy is not None and self.destroy > 0 else ''} Destroy",
             ],
-            colalign=("center",),
+            colalign=("right",),
             tablefmt="pipe",
         )
 
