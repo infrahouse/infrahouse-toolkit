@@ -18,9 +18,9 @@ from infrahouse_toolkit.terraform.status import RunOutput, RunResult, TFStatus
 # State **`s3://foo_backet/path/to/tf.state`**
 ## Affected resources counts
 
-|  Success  |   🟢 Add |   🟡 Change |   🔴 Destroy |
-|:---------:|--------:|-----------:|------------:|
-|     ✅     |       1 |          1 |           1 |
+|   Success |   🟢 Add |   🟡 Change |   🔴 Destroy |
+|----------:|---------:|------------:|-------------:|
+|        ✅ |        1 |           1 |            1 |
 <details>
 <summary>STDOUT</summary>
 
@@ -42,9 +42,9 @@ eyJzMzovL2Zvb19iYWNrZXQvcGF0aC90by90Zi5zdGF0ZSI6IHsic3VjY2VzcyI6IHRydWUsICJhZGQi
 # State **`s3://foo_backet/path/to/tf.state`**
 ## Affected resources counts
 
-|  Success  |    Add |    Change |    Destroy |
-|:---------:|-------:|----------:|-----------:|
-|     ✅     |      0 |         0 |          0 |
+|   Success |    Add |    Change |    Destroy |
+|----------:|-------:|----------:|-----------:|
+|        ✅ |      0 |         0 |          0 |
 <details>
 <summary>STDOUT</summary>
 
@@ -67,9 +67,9 @@ eyJzMzovL2Zvb19iYWNrZXQvcGF0aC90by90Zi5zdGF0ZSI6IHsic3VjY2VzcyI6IHRydWUsICJhZGQi
 # State **`s3://foo_backet/path/to/tf.state`**
 ## Affected resources counts
 
-|  Success  |   🟢 Add |    Change |    Destroy |
-|:---------:|--------:|----------:|-----------:|
-|     ✅     |       2 |         0 |          0 |
+|   Success |   🟢 Add |    Change |    Destroy |
+|----------:|---------:|----------:|-----------:|
+|        ✅ |        2 |         0 |          0 |
 <details>
 <summary>STDOUT</summary>
 
@@ -157,9 +157,9 @@ eyJzMzovL2Zvb19iYWNrZXQvcGF0aC90by90Zi5zdGF0ZSI6IHsic3VjY2VzcyI6IHRydWUsICJhZGQi
 # State **`s3://foo_backet/path/to/tf.state`**
 ## Affected resources counts
 
-|  Success  |   🟢 Add |   🟡 Change |   🔴 Destroy |
-|:---------:|--------:|-----------:|------------:|
-|     ✅     |       2 |          1 |           2 |
+|   Success |   🟢 Add |   🟡 Change |   🔴 Destroy |
+|----------:|---------:|------------:|-------------:|
+|        ✅ |        2 |           1 |            2 |
 <details>
 <summary>STDOUT</summary>
 
