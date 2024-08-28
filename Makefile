@@ -126,6 +126,7 @@ lint/pylint: ## check style with pylint
 
 .PHONY: test
 test: ## run tests quickly with the default Python
+	set
 	pytest --cov \
 		--cov-report=term-missing --cov-report=xml  \
 		-xvvs infrahouse_toolkit
