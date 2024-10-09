@@ -6,8 +6,10 @@
     See ``ih-github backup --help`` for more details.
 """
 import logging
+from datetime import datetime
 from multiprocessing import Pool, set_start_method
 from os import path as osp
+from shutil import rmtree
 from urllib.parse import urlparse
 
 import click
@@ -69,6 +71,11 @@ def _get_org_name(github_client, installation_id):
     default=None,
     required=True,
 )
+@click.option(
+    "--only-installation-id",
+    help="Backup only a specified installation id.",
+    type=click.INT,
+)
 @click.pass_context
 def cmd_backup(ctx, **kwargs):
     """
@@ -104,6 +111,14 @@ def cmd_backup(ctx, **kwargs):
             )
             continue
         org_name = _get_org_name(github_client, installation.id)
+        if kwargs["only_installation_id"] and kwargs["only_installation_id"] != installation.id:
+            LOG.warning(
+                "Skipping installation id %d (%s) because --only-installation-id %d was requested.",
+                installation.id,
+                org_name,
+                kwargs["only_installation_id"],
+            )
+            continue
         token = github_client.get_access_token(installation_id=installation.id).token
         bucket_name = _get_backup_bucket(token, org_name)
         with tmpfs_s3(bucket_name, role_arn=_get_backup_role(token, org_name)) as path:
@@ -115,10 +130,21 @@ def cmd_backup(ctx, **kwargs):
 def _backup_repo(repository, dst_path, token, debug=False):
     setup_logging(debug=debug)
     LOG.debug("Backing up repository %s", repository)
-    mkdir_p(osp.join(dst_path, repository.owner.login))
+    mkdir_p(osp.join(dst_path, str(repository.owner.login)))
+    suffix = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     retry(
         execute,
-        (["gh", "repo", "clone", repository.full_name, repository.full_name, "--", "--mirror"],),
+        (
+            [
+                "gh",
+                "repo",
+                "clone",
+                repository.full_name,
+                osp.join(repository.full_name, suffix),
+                "--",
+                "--mirror",
+            ],
+        ),
         {
             "cwd": dst_path,
             "env": {
@@ -128,3 +154,11 @@ def _backup_repo(repository, dst_path, token, debug=False):
             "exit_on_error": False,
         },
     )
+    execute(
+        ["tar", "zcf", f"{suffix}.tar.gz", suffix],
+        cwd=osp.join(dst_path, str(repository.full_name)),
+        env={
+            "PATH": "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:",
+        },
+    )
+    rmtree(osp.join(dst_path, str(repository.full_name), suffix))
