@@ -64,7 +64,7 @@ class TFStatus:
     Credit for emojis https://emojicombos.com/
     """
 
-    # pylint: disable=too-many-instance-attributes,too-many-positional-arguments,too-many-arguments
+    # pylint: disable=too-many-instance-attributes,too-many-arguments
     # Probably counts could be calculated from
     # affected_resources, but it's optional.
     def __init__(
