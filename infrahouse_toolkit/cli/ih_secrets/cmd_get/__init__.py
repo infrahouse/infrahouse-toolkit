@@ -8,23 +8,13 @@
 
 import sys
 from logging import getLogger
-from pprint import pformat
 
 import click
 from botocore.exceptions import ClientError
 
+from infrahouse_toolkit.aws import get_secret
+
 LOG = getLogger(__name__)
-
-
-def get_secret(secretsmanager_client, secret_name):
-    """
-    Retrieve a value of a secret by its name.
-    """
-    response = secretsmanager_client.get_secret_value(
-        SecretId=secret_name,
-    )
-    LOG.debug("get_secrets() = %s", pformat(response, indent=4))
-    return response["SecretString"]
 
 
 @click.command(name="get")

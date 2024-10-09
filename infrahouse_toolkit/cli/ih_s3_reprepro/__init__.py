@@ -27,7 +27,7 @@ from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_remove import cmd_remove
 from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_set_secret_value import (
     cmd_set_secret_value,
 )
-from infrahouse_toolkit.cli.ih_s3_reprepro.utils import DEPENDENCIES, check_dependencies
+from infrahouse_toolkit.cli.utils import DEPENDENCIES, check_dependencies
 from infrahouse_toolkit.logging import setup_logging
 
 LOG = getLogger()
