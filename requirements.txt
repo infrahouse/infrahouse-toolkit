@@ -1,5 +1,5 @@
 GitPython ~= 3.1
-PyGithub ~= 1.58
+PyGithub ~= 2.4
 boto3 ~= 1.26
 botocore ~= 1.29
 certbot ~= 2.9
@@ -9,6 +9,7 @@ cryptography < 43.0.0 # Pinning until https://github.com/certbot/certbot/issues/
 diskcache ~= 5.6
 elasticsearch ~= 8.12.0
 pyhcl ~= 0.4
+pyjwt ~= 2.9
 requests ~= 2.31
 tabulate ~= 0.9
 wcwidth ~= 0.2

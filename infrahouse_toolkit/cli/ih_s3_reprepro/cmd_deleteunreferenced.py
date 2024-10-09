@@ -9,7 +9,7 @@
 import click
 from click import Context
 
-from infrahouse_toolkit.cli.ih_s3_reprepro.utils import execute, local_s3
+from infrahouse_toolkit.cli.utils import execute, local_s3
 
 
 @click.command(name="deleteunreferenced")

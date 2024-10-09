@@ -21,7 +21,7 @@ class LessThanFilter(logging.Filter):  # pylint: disable=too-few-public-methods
 def setup_logging(logger=None, debug=False, quiet=False):  # pragma: no cover
     """Configures logging for the module"""
     logger = logger or logging.getLogger()
-    fmt_str = "%(asctime)s: %(levelname)s: %(name)s:%(module)s.%(funcName)s():%(lineno)d: %(message)s"
+    fmt_str = "%(asctime)s: %(process)d: %(levelname)s: %(name)s:%(module)s.%(funcName)s():%(lineno)d: %(message)s"
 
     console_handler = logging.StreamHandler(stream=sys.stdout)
     console_handler.addFilter(LessThanFilter(logging.WARNING))

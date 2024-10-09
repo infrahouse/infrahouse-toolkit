@@ -13,7 +13,7 @@ import click
 from botocore.exceptions import BotoCoreError, ClientError
 from click import Context
 
-from infrahouse_toolkit.cli.ih_s3_reprepro.utils import execute, repo_env
+from infrahouse_toolkit.cli.utils import execute, repo_env
 
 LOG = getLogger()
 
