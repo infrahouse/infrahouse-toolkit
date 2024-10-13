@@ -2,6 +2,7 @@
 Module for ASG class - a class to work with Autoscaling group.
 """
 from logging import getLogger
+from typing import Dict, List
 
 from botocore.exceptions import ClientError
 
@@ -18,7 +19,7 @@ class ASG:
         self._asg_name = asg_name
 
     @property
-    def instance_refreshes(self) -> list[dict]:
+    def instance_refreshes(self) -> List[Dict]:
         """
         :return: List of ASG instance refresh tasks.
         """
@@ -27,7 +28,7 @@ class ASG:
         )["InstanceRefreshes"]
 
     @property
-    def instances(self) -> list[ASGInstance]:
+    def instances(self) -> List[ASGInstance]:
         """
         :return: List of EC2 instances in the autoscaling group.
         """
