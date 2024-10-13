@@ -14,6 +14,7 @@ from botocore.exceptions import NoRegionError
 
 from infrahouse_toolkit.aws import get_aws_session
 from infrahouse_toolkit.aws.config import AWSConfig
+from infrahouse_toolkit.cli.ih_aws.cmd_autoscaling import cmd_autoscaling
 from infrahouse_toolkit.cli.ih_aws.cmd_credentials import cmd_credentials
 from infrahouse_toolkit.cli.ih_aws.cmd_ecs import cmd_ecs
 from infrahouse_toolkit.logging import setup_logging
@@ -76,6 +77,7 @@ def ih_aws(ctx, **kwargs):
 for cmd in [
     cmd_credentials,
     cmd_ecs,
+    cmd_autoscaling,
 ]:
     # noinspection PyTypeChecker
     ih_aws.add_command(cmd)
