@@ -23,10 +23,26 @@ Subpackages
 Submodules
 ----------
 
+infrahouse\_toolkit.cli.gpg module
+----------------------------------
+
+.. automodule:: infrahouse_toolkit.cli.gpg
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 infrahouse\_toolkit.cli.lib module
 ----------------------------------
 
 .. automodule:: infrahouse_toolkit.cli.lib
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+infrahouse\_toolkit.cli.utils module
+------------------------------------
+
+.. automodule:: infrahouse_toolkit.cli.utils
    :members:
    :undoc-members:
    :show-inheritance:
