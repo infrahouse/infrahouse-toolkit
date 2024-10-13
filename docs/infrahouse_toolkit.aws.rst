@@ -12,10 +12,34 @@ Subpackages
 Submodules
 ----------
 
+infrahouse\_toolkit.aws.asg module
+----------------------------------
+
+.. automodule:: infrahouse_toolkit.aws.asg
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+infrahouse\_toolkit.aws.asg\_instance module
+--------------------------------------------
+
+.. automodule:: infrahouse_toolkit.aws.asg_instance
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 infrahouse\_toolkit.aws.config module
 -------------------------------------
 
 .. automodule:: infrahouse_toolkit.aws.config
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+infrahouse\_toolkit.aws.ec2\_instance module
+--------------------------------------------
+
+.. automodule:: infrahouse_toolkit.aws.ec2_instance
    :members:
    :undoc-members:
    :show-inheritance:

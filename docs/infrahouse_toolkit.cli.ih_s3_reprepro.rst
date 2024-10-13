@@ -4,14 +4,6 @@ infrahouse\_toolkit.cli.ih\_s3\_reprepro package
 Submodules
 ----------
 
-infrahouse\_toolkit.cli.ih\_s3\_reprepro.aws module
----------------------------------------------------
-
-.. automodule:: infrahouse_toolkit.cli.ih_s3_reprepro.aws
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 infrahouse\_toolkit.cli.ih\_s3\_reprepro.cmd\_check module
 ----------------------------------------------------------
 
@@ -80,22 +72,6 @@ infrahouse\_toolkit.cli.ih\_s3\_reprepro.cmd\_set\_secret\_value module
 -----------------------------------------------------------------------
 
 .. automodule:: infrahouse_toolkit.cli.ih_s3_reprepro.cmd_set_secret_value
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-infrahouse\_toolkit.cli.ih\_s3\_reprepro.gpg module
----------------------------------------------------
-
-.. automodule:: infrahouse_toolkit.cli.ih_s3_reprepro.gpg
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-infrahouse\_toolkit.cli.ih\_s3\_reprepro.utils module
------------------------------------------------------
-
-.. automodule:: infrahouse_toolkit.cli.ih_s3_reprepro.utils
    :members:
    :undoc-members:
    :show-inheritance:

@@ -7,6 +7,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   infrahouse_toolkit.cli.ih_elastic.cmd_cat.cmd_nodes
    infrahouse_toolkit.cli.ih_elastic.cmd_cat.cmd_repositories
    infrahouse_toolkit.cli.ih_elastic.cmd_cat.cmd_shards
    infrahouse_toolkit.cli.ih_elastic.cmd_cat.cmd_snapshots

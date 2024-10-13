@@ -65,6 +65,7 @@ LOG = getLogger(__name__)
 )
 @click.option("--es-port", help="Elasticsearch port", default=9200, show_default=True)
 @click.option("--format", help="Output format", type=click.Choice(["text", "json", "cbor", "yaml", "smile"]))
+@click.version_option()
 @click.pass_context
 def ih_elastic(ctx, **kwargs):  # pylint: disable=unused-argument
     """

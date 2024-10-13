@@ -7,6 +7,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   infrahouse_toolkit.cli.ih_aws.cmd_autoscaling
    infrahouse_toolkit.cli.ih_aws.cmd_credentials
    infrahouse_toolkit.cli.ih_aws.cmd_ecs
 

@@ -8,6 +8,7 @@ Subpackages
    :maxdepth: 4
 
    infrahouse_toolkit.cli.ih_elastic.cmd_cluster.cmd_allocation_explain
+   infrahouse_toolkit.cli.ih_elastic.cmd_cluster.cmd_decommision_node
 
 Module contents
 ---------------

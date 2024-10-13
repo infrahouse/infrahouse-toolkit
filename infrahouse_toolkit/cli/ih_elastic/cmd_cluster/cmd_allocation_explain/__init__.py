@@ -1,9 +1,9 @@
 """
-.. topic:: ``ih-elastic cat shards``
+.. topic:: ``ih-elastic cluster allocation-explain``
 
-    A ``ih-elastic cat shards`` subcommand.
+    A ``ih-elastic cluster allocation-explain`` subcommand.
 
-    See ``ih-elastic cat shards --help`` for more details.
+    See ``ih-elastic cluster allocation-explain --help`` for more details.
 """
 import json
 import sys
