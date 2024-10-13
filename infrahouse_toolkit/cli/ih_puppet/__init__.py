@@ -79,6 +79,7 @@ def ih_puppet(ctx, **kwargs):
         "environmentpath": kwargs["environmentpath"].format(root_directory=kwargs["root_directory"]),
         "module_path": kwargs["module_path"].format(
             root_directory=kwargs["root_directory"],
+            environment=kwargs["environment"],
         ),
     }
 
