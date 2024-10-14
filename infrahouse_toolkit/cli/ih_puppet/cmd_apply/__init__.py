@@ -16,8 +16,11 @@ from os import path as osp
 from subprocess import PIPE, Popen
 
 import click
+from requests import ConnectTimeout
 
 from infrahouse_toolkit import DEFAULT_OPEN_ENCODING
+from infrahouse_toolkit.aws.asg import ASG
+from infrahouse_toolkit.aws.asg_instance import ASGInstance
 from infrahouse_toolkit.lock.system import SystemLock
 
 LOG = getLogger()
@@ -52,42 +55,15 @@ def cmd_apply(ctx, manifest):
         ]
     )
 
-    with SystemLock("/var/run/ih-puppet-apply.lock"):
-        env = {"PATH": f"{environ['PATH']}:/opt/puppetlabs/bin"}
-        for path in ctx.obj["module_path"].split(":"):
-            install_module_dependencies(module_path=path, env=env)
-        LOG.debug("Executing %s", " ".join(cmd))
-        # First run is to update the puppet code
-        with Popen(
-            cmd, env=env, stdout=open("/dev/null", "w", encoding=DEFAULT_OPEN_ENCODING) if quiet else None
-        ) as proc:
-            proc.communicate()
+    cancel_ir = ctx.obj["cancel_instance_refresh_on_error"]
+    try:
+        _run_apply(cmd, ctx.obj["module_path"].split(":"), quiet, cancel_ir=cancel_ir)
 
-        # Second run is to apply whatever the new puppet code brings
-        with Popen(
-            cmd, env=env, stdout=open("/dev/null", "w", encoding=DEFAULT_OPEN_ENCODING) if quiet else None
-        ) as proc:
-            proc.communicate()
-            ret = proc.returncode
-            LOG.debug("Exit code: %d", ret)
-            if ret == 0:
-                LOG.info("The run succeeded with no changes or failures; the system was already in the desired state.")
-                sys.exit(0)
-            elif ret == 1:
-                LOG.error("The run failed.")
-                sys.exit(ret)
-            elif ret == 2:
-                LOG.info("The run succeeded, and some resources were changed.")
-                sys.exit(0)
-            elif ret == 4:
-                LOG.warning("The run succeeded, and some resources failed.")
-                sys.exit(ret)
-            elif ret == 6:
-                LOG.warning("The run succeeded, and included both changes and failures.")
-                sys.exit(ret)
-            else:
-                LOG.error("Unknown run state.")
-                sys.exit(ret)
+    except Exception as err:  # pylint: disable=broad-exception-caught
+        LOG.exception(err)
+        if cancel_ir:
+            _cancel_ir()
+        sys.exit(1)
 
 
 def install_module_dependencies(module_path: str, env: dict = None):
@@ -159,3 +135,53 @@ def strip_colors(text: str) -> str:
         re.VERBOSE,
     )
     return ansi_escape.sub("", text)
+
+
+def _run_apply(cmd, module_path, quiet, cancel_ir):
+    with SystemLock("/var/run/ih-puppet-apply.lock"):
+        env = {"PATH": f"{environ['PATH']}:/opt/puppetlabs/bin"}
+        for path in module_path:
+            if osp.exists(path):
+                install_module_dependencies(module_path=path, env=env)
+        LOG.debug("Executing %s", " ".join(cmd))
+        # First run is to update the puppet code
+        with Popen(
+            cmd, env=env, stdout=open("/dev/null", "w", encoding=DEFAULT_OPEN_ENCODING) if quiet else None
+        ) as proc:
+            proc.communicate()
+
+        # Second run is to apply whatever the new puppet code brings
+        with Popen(
+            cmd, env=env, stdout=open("/dev/null", "w", encoding=DEFAULT_OPEN_ENCODING) if quiet else None
+        ) as proc:
+            proc.communicate()
+            ret = proc.returncode
+            LOG.debug("Exit code: %d", ret)
+            if cancel_ir and ret not in [0, 2]:
+                _cancel_ir()
+            try:
+                if ret == 0:
+                    LOG.info(
+                        "The run succeeded with no changes or failures; the system was already in the desired state."
+                    )
+                elif ret == 1:
+                    LOG.error("The run failed.")
+                elif ret == 2:
+                    LOG.info("The run succeeded, and some resources were changed.")
+                    ret = 0
+                elif ret == 4:
+                    LOG.warning("The run succeeded, and some resources failed.")
+                elif ret == 6:
+                    LOG.warning("The run succeeded, and included both changes and failures.")
+                else:
+                    LOG.error("Unknown run state.")
+            finally:
+                sys.exit(ret)
+
+
+def _cancel_ir():
+    try:
+        ASG(ASGInstance().asg_name).cancel_instance_refresh()
+    except ConnectTimeout as err:
+        LOG.warning("Couldn't cancel instance refreshes")
+        LOG.warning(err)
