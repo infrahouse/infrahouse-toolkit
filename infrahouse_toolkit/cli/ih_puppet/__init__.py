@@ -62,6 +62,13 @@ LOG = getLogger()
     default="{root_directory}/modules",
     show_default=True,
 )
+@click.option(
+    "--cancel-instance-refresh-on-error",
+    help="If ih-puppet fails, try to cancel all existing autoscaling group instance refreshes.",
+    is_flag=True,
+    default=False,
+    show_default=True,
+)
 @click.version_option()
 @click.pass_context
 def ih_puppet(ctx, **kwargs):
@@ -81,6 +88,7 @@ def ih_puppet(ctx, **kwargs):
             root_directory=kwargs["root_directory"],
             environment=kwargs["environment"],
         ),
+        "cancel_instance_refresh_on_error": kwargs["cancel_instance_refresh_on_error"],
     }
 
 
