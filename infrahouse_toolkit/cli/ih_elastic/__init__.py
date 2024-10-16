@@ -15,6 +15,7 @@ import click
 from elasticsearch import Elasticsearch
 from requests.auth import HTTPBasicAuth
 
+from infrahouse_toolkit.cli.ih_elastic.cmd_api import cmd_api
 from infrahouse_toolkit.cli.ih_elastic.cmd_cat import cmd_cat
 from infrahouse_toolkit.cli.ih_elastic.cmd_cluster import cmd_cluster
 from infrahouse_toolkit.cli.ih_elastic.cmd_cluster_health import cmd_cluster_health
@@ -101,6 +102,6 @@ def ih_elastic(ctx, **kwargs):  # pylint: disable=unused-argument
     }
 
 
-for cmd in [cmd_passwd, cmd_cluster_health, cmd_snapshots, cmd_cat, cmd_cluster, cmd_security]:
+for cmd in [cmd_passwd, cmd_cluster_health, cmd_snapshots, cmd_cat, cmd_cluster, cmd_security, cmd_api]:
     # noinspection PyTypeChecker
     ih_elastic.add_command(cmd)
