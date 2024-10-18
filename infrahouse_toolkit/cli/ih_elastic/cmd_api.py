@@ -5,6 +5,7 @@
 
     See ``ih-elastic cluster-health --help`` for more details.
 """
+
 import json
 import os
 import sys

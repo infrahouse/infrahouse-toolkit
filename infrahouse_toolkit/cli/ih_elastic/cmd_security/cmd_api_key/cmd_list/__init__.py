@@ -5,6 +5,7 @@
 
     See ``ih-elastic security api-key list --help`` for more details.
 """
+
 from logging import getLogger
 
 import click

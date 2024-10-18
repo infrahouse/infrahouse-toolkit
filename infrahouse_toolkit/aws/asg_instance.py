@@ -2,6 +2,7 @@
 Module for ASGInstance class - a class to describe and work with
 an instance that is a part of an Autoscaling group.
 """
+
 from cached_property import cached_property_with_ttl
 
 from infrahouse_toolkit.aws import get_client

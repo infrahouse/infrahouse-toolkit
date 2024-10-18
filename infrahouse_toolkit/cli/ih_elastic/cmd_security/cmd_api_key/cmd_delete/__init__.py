@@ -5,6 +5,7 @@
 
     See ``ih-elastic security api-key delete --help`` for more details.
 """
+
 import sys
 from logging import getLogger
 

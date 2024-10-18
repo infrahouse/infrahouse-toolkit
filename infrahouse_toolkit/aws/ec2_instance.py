@@ -1,6 +1,7 @@
 """
 Module for EC2Instance class - a class tha represents an EC2 instance.
 """
+
 from logging import getLogger
 
 from cached_property import cached_property_with_ttl

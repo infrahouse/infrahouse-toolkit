@@ -5,6 +5,7 @@
 
     See ``ih-elastic cat --help`` for more details.
 """
+
 from logging import getLogger
 
 import click

@@ -5,6 +5,7 @@
 
     See ``ih-github backup --help`` for more details.
 """
+
 import logging
 from datetime import datetime
 from multiprocessing import Pool, set_start_method

@@ -5,6 +5,7 @@
 
     See ``ih-elastic cluster allocation-explain --help`` for more details.
 """
+
 import json
 import sys
 from logging import getLogger
