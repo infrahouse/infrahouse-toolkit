@@ -193,7 +193,11 @@ class TFStatus:
             if "~ user_data" in output[idx]:
                 parts = output[idx].split()
                 before = b64decode(parts[3].strip('"')).decode()
-                after = b64decode(parts[5].strip('"')).decode()
+                after = (
+                    "(known after apply)"
+                    if parts[5].strip('"') == "(known"
+                    else b64decode(parts[5].strip('"')).decode()
+                )
                 result_lines.append("userdata changes:")
                 for diff_line in unified_diff(
                     before.splitlines(), after.splitlines(), fromfile="before", tofile="after", lineterm=""
