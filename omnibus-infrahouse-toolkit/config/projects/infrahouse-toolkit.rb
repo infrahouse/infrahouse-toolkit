@@ -12,7 +12,7 @@ homepage "https://infrahouse.com"
 # and /opt/infrahouse-toolkit on all other platforms
 install_dir "#{default_root}/#{name}"
 
-build_version '2.39.1'
+build_version '2.39.2'
 build_iteration 1
 
 override :openssl, version: '1.1.1t'
