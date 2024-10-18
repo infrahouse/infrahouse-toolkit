@@ -5,6 +5,7 @@
 
     See ``ih-elastic security --help`` for more details.
 """
+
 from logging import getLogger
 
 import click

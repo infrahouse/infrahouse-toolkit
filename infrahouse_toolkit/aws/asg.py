@@ -1,6 +1,7 @@
 """
 Module for ASG class - a class to work with Autoscaling group.
 """
+
 from logging import getLogger
 from typing import Dict, List
 

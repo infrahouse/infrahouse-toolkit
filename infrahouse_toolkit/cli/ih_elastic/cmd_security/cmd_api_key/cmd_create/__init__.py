@@ -5,6 +5,7 @@
 
     See ``ih-elastic security api-key create --help`` for more details.
 """
+
 import json
 from logging import getLogger
 

@@ -5,6 +5,7 @@
 
     See ``ih-elastic snapshots restore --help`` for more details.
 """
+
 from logging import getLogger
 
 import click

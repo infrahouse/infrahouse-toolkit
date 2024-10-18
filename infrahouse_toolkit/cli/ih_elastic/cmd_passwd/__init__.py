@@ -5,6 +5,7 @@
 
     See ``ih-elastic passwd --help`` for more details.
 """
+
 from logging import getLogger
 
 import boto3

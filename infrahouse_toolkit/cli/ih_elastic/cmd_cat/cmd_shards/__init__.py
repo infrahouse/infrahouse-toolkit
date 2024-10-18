@@ -5,6 +5,7 @@
 
     See ``ih-elastic cat shards --help`` for more details.
 """
+
 import json
 from logging import getLogger
 

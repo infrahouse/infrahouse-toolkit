@@ -5,6 +5,7 @@
 
     See ``ih-elastic cat nodes --help`` for more details.
 """
+
 import json
 from logging import getLogger
 
