@@ -4,8 +4,9 @@ Module for :py:class:`TFStatus`, Terraform plan run status class.
 
 import json
 import re
-from base64 import b64encode
+from base64 import b64decode, b64encode
 from collections import namedtuple
+from difflib import unified_diff
 
 from tabulate import tabulate
 
@@ -189,6 +190,16 @@ class TFStatus:
         # Save the rest of output
         while idx < len(output):
             result_lines.append(output[idx])
+            if "~ user_data" in output[idx]:
+                parts = output[idx].split()
+                before = b64decode(parts[3].strip('"')).decode()
+                after = b64decode(parts[5].strip('"')).decode()
+                result_lines.append("userdata changes:")
+                for diff_line in unified_diff(
+                    before.splitlines(), after.splitlines(), fromfile="before", tofile="after", lineterm=""
+                ):
+                    result_lines.append(diff_line)
+                result_lines.append("EOF userdata changes.")
             idx += 1
 
         if result_lines:
