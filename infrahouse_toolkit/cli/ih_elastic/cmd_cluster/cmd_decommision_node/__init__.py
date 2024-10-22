@@ -116,7 +116,7 @@ def cmd_decommission_node(ctx, **kwargs):
     LOG.info("Checking %s cluster health: %s", health.body["cluster_name"], health.body["status"])
 
     if health.body["status"] != "green":
-        LOG.error("The cluster status is %s - not green and, therefore, aborting.", health.body["status"])
+        LOG.info("The cluster status is %s - not green and, therefore, aborting.", health.body["status"])
         if kwargs["complete_lifecycle_action"]:
             ASG(asg_name=ASGInstance().asg_name).cancel_instance_refresh()
         sys.exit(1)
