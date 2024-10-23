@@ -11,6 +11,9 @@ import logging
 import boto3
 import click
 
+from infrahouse_toolkit.cli.ih_github.cmd_runner.cmd_check_health import (
+    cmd_check_health,
+)
 from infrahouse_toolkit.cli.ih_github.cmd_runner.cmd_deregister import cmd_deregister
 from infrahouse_toolkit.cli.ih_github.cmd_runner.cmd_download import cmd_download
 from infrahouse_toolkit.cli.ih_github.cmd_runner.cmd_is_registered import (
@@ -42,7 +45,6 @@ def cmd_runner(ctx, *args, **kwargs):
     """
     LOG.debug("args = %s", args)
     LOG.debug("kwargs = %s", kwargs)
-    LOG.debug(ctx.args)
     if kwargs["github_token_secret"]:
         github_token = get_secret(boto3.client("secretsmanager"), kwargs["github_token_secret"])
     else:
@@ -55,6 +57,6 @@ def cmd_runner(ctx, *args, **kwargs):
     }
 
 
-for cmd in [cmd_list, cmd_register, cmd_deregister, cmd_is_registered, cmd_download]:
+for cmd in [cmd_list, cmd_register, cmd_deregister, cmd_is_registered, cmd_download, cmd_check_health]:
     # noinspection PyTypeChecker
     cmd_runner.add_command(cmd)
