@@ -8,6 +8,7 @@
 
 import logging
 import sys
+import subprocess
 from shutil import disk_usage
 
 import click
@@ -27,7 +28,7 @@ def cmd_check_health():
 
     Exit code is zero if healthy. Otherwise, 1.
     """
-    for check in [_disk_usage]:
+    for check in [_disk_usage, _check_is_service_running]:
         if not check():
             ASGInstance().mark_unhealthy()
             sys.exit(1)
@@ -41,3 +42,17 @@ def _disk_usage(path="/", threshold=99.0) -> bool:
         return False
     LOG.debug("Disk usage on partition %s is %f%%", path, du_pct)
     return True
+
+
+def _check_is_service_running(service_name="actions-runner") -> bool:
+    try:
+        output = subprocess.run(
+            ["systemctl", "is-active", service_name],
+            capture_output=True,
+            text=True
+        )
+        # If the service is active, output will contain 'active'
+        return output.stdout.strip() == "active"
+    except Exception as e:
+        print(f"Error checking service status: {e}")
+        return False
