@@ -8,8 +8,8 @@
 
 import logging
 import sys
-import subprocess
 from shutil import disk_usage
+from subprocess import DEVNULL, CalledProcessError, check_call
 
 import click
 
@@ -46,13 +46,11 @@ def _disk_usage(path="/", threshold=99.0) -> bool:
 
 def _check_is_service_running(service_name="actions-runner") -> bool:
     try:
-        output = subprocess.run(
+        check_call(
             ["systemctl", "is-active", service_name],
-            capture_output=True,
-            text=True
+            stdout=DEVNULL,
         )
-        # If the service is active, output will contain 'active'
-        return output.stdout.strip() == "active"
-    except Exception as e:
-        print(f"Error checking service status: {e}")
+        return True
+    except CalledProcessError as err:
+        LOG.error("Error checking service status: %s", err)
         return False
