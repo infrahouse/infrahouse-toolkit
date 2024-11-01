@@ -21,15 +21,22 @@ LOG = logging.getLogger()
 @click.command(
     name="check-health",
 )
-def cmd_check_health():
+@click.option(
+    "--disk-usage-threshold",
+    help="How much the disk can be used in %% before the instance is considered healthy.",
+    default=99.0,
+    show_default=True,
+)
+def cmd_check_health(**kwargs):
     """
     Check if runner is online and healthy. If not healthy, make the instance as Unhealthy
     in the autoscaling group.
 
     Exit code is zero if healthy. Otherwise, 1.
     """
-    for check in [_disk_usage, _check_is_service_running]:
-        if not check():
+    checks = {_disk_usage: {"threshold": kwargs["disk_usage_threshold"]}, _check_is_service_running: {}}
+    for func, keywargs in checks.items():
+        if not func(**keywargs):
             ASGInstance().mark_unhealthy()
             sys.exit(1)
 
