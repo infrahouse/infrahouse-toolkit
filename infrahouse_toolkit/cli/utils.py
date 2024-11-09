@@ -144,7 +144,7 @@ def local_s3(bucket, role_arn=None, retry_timeout=60, region=None, check_file="c
 
 
 @contextmanager
-def tmpfs_s3(bucket, role_arn=None) -> str:
+def tmpfs_s3(bucket, role_arn=None, volume_size="512M") -> str:
     """
     Mount a temporary file system, sync an S3 bucket onto it.
     Then sync the local volume back to S3 an umount it.
@@ -153,12 +153,14 @@ def tmpfs_s3(bucket, role_arn=None) -> str:
     :type bucket: str
     :param role_arn: Assume role if specified.
     :type role_arn: str
+    :param volume_size: Temporary memory partition size. By default, 512M.
+    :type volume_size: str
     :return: Local filesystem path where the S3 bucket is mounted at.
     """
     with TemporaryDirectory() as mnt_dir:
         try:
             run(
-                ["mount", "-t", "tmpfs", "-o", "size=512M", "tmpfs", mnt_dir],
+                ["mount", "-t", "tmpfs", "-o", f"size={volume_size}", "tmpfs", mnt_dir],
                 capture_output=True,
                 check=True,
             )
