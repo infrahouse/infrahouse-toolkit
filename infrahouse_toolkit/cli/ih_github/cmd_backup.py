@@ -77,6 +77,12 @@ def _get_org_name(github_client, installation_id):
     help="Backup only a specified installation id.",
     type=click.INT,
 )
+@click.option(
+    "--tmp-volume-size",
+    help="Size of in-memory temporary file system.",
+    default="512M",
+    show_default=True,
+)
 @click.pass_context
 def cmd_backup(ctx, **kwargs):
     """
@@ -122,7 +128,9 @@ def cmd_backup(ctx, **kwargs):
             continue
         token = github_client.get_access_token(installation_id=installation.id).token
         bucket_name = _get_backup_bucket(token, org_name)
-        with tmpfs_s3(bucket_name, role_arn=_get_backup_role(token, org_name)) as path:
+        with tmpfs_s3(
+            bucket_name, role_arn=_get_backup_role(token, org_name), volume_size=kwargs["tmp_volume_size"]
+        ) as path:
             with Pool() as pool:
                 pool.starmap(_backup_repo, [(repo, path, token, ctx.obj["debug"]) for repo in installation.get_repos()])
         LOG.info("Backing up installation %r is done.", installation)
