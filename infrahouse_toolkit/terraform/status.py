@@ -3,6 +3,7 @@ Module for :py:class:`TFStatus`, Terraform plan run status class.
 """
 
 import json
+import logging
 import re
 from base64 import b64decode, b64encode
 from collections import namedtuple
@@ -15,6 +16,8 @@ from infrahouse_toolkit.terraform.backends.tfbackend import TFBackend
 
 RunResult = namedtuple("RunResult", "add change destroy")
 RunOutput = namedtuple("RunOutput", "stdout stderr")
+
+LOG = logging.getLogger()
 
 RE_NO_COLOR = r"""
     \x1B  # ESC
@@ -191,19 +194,22 @@ class TFStatus:
         while idx < len(output):
             result_lines.append(output[idx])
             if "~ user_data" in output[idx]:
-                parts = output[idx].split()
-                before = b64decode(parts[3].strip('"')).decode()
-                after = (
-                    "(known after apply)"
-                    if parts[5].strip('"') == "(known"
-                    else b64decode(parts[5].strip('"')).decode()
-                )
-                result_lines.append("userdata changes:")
-                for diff_line in unified_diff(
-                    before.splitlines(), after.splitlines(), fromfile="before", tofile="after", lineterm=""
-                ):
-                    result_lines.append(diff_line)
-                result_lines.append("EOF userdata changes.")
+                try:
+                    parts = output[idx].split()
+                    before = b64decode(parts[3].strip('"')).decode()
+                    after = (
+                        "(known after apply)"
+                        if parts[5].strip('"') == "(known"
+                        else b64decode(parts[5].strip('"')).decode()
+                    )
+                    result_lines.append("userdata changes:")
+                    for diff_line in unified_diff(
+                        before.splitlines(), after.splitlines(), fromfile="before", tofile="after", lineterm=""
+                    ):
+                        result_lines.append(diff_line)
+                    result_lines.append("EOF userdata changes.")
+                except UnicodeDecodeError as err:
+                    LOG.warning("Failed to decode userdata: %s", err)
             idx += 1
 
         if result_lines:
