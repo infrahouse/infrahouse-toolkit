@@ -20,6 +20,7 @@ from github.Consts import MAX_JWT_EXPIRY
 
 from infrahouse_toolkit import DEFAULT_OPEN_ENCODING
 from infrahouse_toolkit.aws import get_client, get_secret
+from infrahouse_toolkit.cli.ih_github.exceptions import IHVariableNotFound
 from infrahouse_toolkit.cli.utils import (
     check_dependencies,
     execute,
@@ -41,6 +42,9 @@ def _get_variable(name, gh_token, org_name):
         "X-GitHub-Api-Version": "2022-11-28",
     }
     response = requests.get(url, headers=headers, timeout=600)
+    if response.status_code == 404:
+        raise IHVariableNotFound(f"Variable {name} doesn't exist.")
+
     return response.json()["value"]
 
 
@@ -127,13 +131,20 @@ def cmd_backup(ctx, **kwargs):
             )
             continue
         token = github_client.get_access_token(installation_id=installation.id).token
-        bucket_name = _get_backup_bucket(token, org_name)
-        with tmpfs_s3(
-            bucket_name, role_arn=_get_backup_role(token, org_name), volume_size=kwargs["tmp_volume_size"]
-        ) as path:
-            with Pool() as pool:
-                pool.starmap(_backup_repo, [(repo, path, token, ctx.obj["debug"]) for repo in installation.get_repos()])
-        LOG.info("Backing up installation %r is done.", installation)
+        try:
+            bucket_name = _get_backup_bucket(token, org_name)
+            with tmpfs_s3(
+                bucket_name, role_arn=_get_backup_role(token, org_name), volume_size=kwargs["tmp_volume_size"]
+            ) as path:
+                with Pool() as pool:
+                    pool.starmap(
+                        _backup_repo, [(repo, path, token, ctx.obj["debug"]) for repo in installation.get_repos()]
+                    )
+            LOG.info("Backing up installation %r is done.", installation)
+
+        except IHVariableNotFound as err:
+            LOG.error(err)
+            LOG.error("Organization %s is not fully configured.", org_name)
 
 
 def _backup_repo(repository, dst_path, token, debug=False):
