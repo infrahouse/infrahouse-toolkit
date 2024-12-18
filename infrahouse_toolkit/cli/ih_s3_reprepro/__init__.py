@@ -23,6 +23,7 @@ from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_get_secret_value import (
 )
 from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_includedeb import cmd_includedeb
 from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_list import cmd_list
+from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_migrate import cmd_migrate
 from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_remove import cmd_remove
 from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_set_secret_value import (
     cmd_set_secret_value,
@@ -106,6 +107,7 @@ for cmd in [
     cmd_deleteunreferenced,
     cmd_set_secret_value,
     cmd_get_secret_value,
+    cmd_migrate,
 ]:
     # noinspection PyTypeChecker
     ih_s3_reprepro.add_command(cmd)

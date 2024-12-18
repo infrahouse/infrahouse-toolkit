@@ -203,7 +203,10 @@ def execute(cmd: list, cwd: str = None, env: dict = None, exit_on_error: bool = 
                 cout, cerr = proc.communicate()
                 ret_code = proc.returncode
                 LOG.debug("Command: '%s': Return code: %d", " ".join(cmd), ret_code)
+                if cout:
+                    print(cout.decode())
                 if ret_code != 0:
+                    print(cerr.decode())
                     raise CalledProcessError(
                         returncode=ret_code, cmd=" ".join(cmd), output=cout.decode(), stderr=cerr.decode()
                     )
