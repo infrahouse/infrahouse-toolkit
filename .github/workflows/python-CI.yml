@@ -20,14 +20,7 @@ jobs:
 
             - name: Install InfraHouse APT repository
               run: |
-                apt-get update
-                apt-get install gpg lsb-release curl
-                mkdir -p /etc/apt/cloud-init.gpg.d/
-                curl  -fsSL https://release-$(lsb_release -cs).infrahouse.com/DEB-GPG-KEY-release-$(lsb_release -cs).infrahouse.com \
-                | gpg --dearmor -o /etc/apt/cloud-init.gpg.d/infrahouse.gpg
-                echo "deb [signed-by=/etc/apt/cloud-init.gpg.d/infrahouse.gpg] https://release-$(lsb_release -cs).infrahouse.com/ $(lsb_release -cs) main" \
-                > /etc/apt/sources.list.d/infrahouse.list
-                apt-get update
+                sudo make install-infrahouse-repo
 
             - name: Install dependencies
               run: |
