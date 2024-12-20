@@ -71,6 +71,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/infrahouse/infrahouse-toolkit",
-    version="2.45.0",
+    version="2.45.1",
     zip_safe=False,
 )
