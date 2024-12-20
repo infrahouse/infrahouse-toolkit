@@ -26,6 +26,7 @@ dependency "zlib"
 dependency "openssl"
 dependency "bzip2"
 dependency "sqlite3"
+dependency "liblzma"
 
 if version >= "3.9.0"
   dependency "libffi"
