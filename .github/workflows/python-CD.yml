@@ -33,6 +33,11 @@ jobs:
               uses: actions/setup-python@v3
               with:
                   python-version: '3.x'
+
+            - name: Install InfraHouse APT repository
+              run: |
+                  sudo make install-infrahouse-repo
+
             - name: Install dependencies
               run: |
                 make bootstrap
