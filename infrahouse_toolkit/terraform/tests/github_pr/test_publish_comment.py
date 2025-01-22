@@ -37,7 +37,7 @@ def test_publish_too_large_comment():
         GitHubPR, "pull_request", new_callable=mock.PropertyMock, return_value=mock_pull_request
     ), mock.patch.object(GitHubPR, "_publish_gist", return_value=mock_gist) as mock_publish_gist:
         gh_pr.publish_comment("foo comment")
-        mock_publish_gist.assert_called_once_with("pr-123-plan", "foo-bar-pr-123-plan.txt", "foo comment", False)
+        mock_publish_gist.assert_not_called()
         mock_pull_request.create_issue_comment.assert_has_calls(
-            [call("foo comment"), call("Comment was too big. It's published as a gist at gist url.")]
+            [call("foo comment"), call("Comment was too big. Check the CI workflow output.")]
         )
