@@ -2,6 +2,7 @@
 Module for :py:class:`GitHubPR`.
 """
 
+import warnings
 from logging import getLogger
 from os import environ
 from typing import Union
@@ -119,23 +120,19 @@ class GitHubPR:
             else:
                 raise
 
-    def publish_comment(self, comment: str, private_gist: bool = True):
+    def publish_comment(self, comment: str, private_gist: bool = None):
         """Add the given text as a comment in the pull request."""
+        if private_gist is not None:
+            warnings.warn(
+                "Argument private_gist is deprecated and will be removed soon.", DeprecationWarning, stacklevel=2
+            )
         try:
             self.pull_request.create_issue_comment(comment)
         except GithubException as err:
             LOG.error(err)
             # https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28#create-an-issue-comment
             if err.status == 422:  # Validation failed, or the endpoint has been spammed.
-                gist = self._publish_gist(
-                    f"pr-{self._pr_number}-plan",
-                    f"{self._repo_name.replace('/', '-')}-pr-{self._pr_number}-plan.txt",
-                    comment,
-                    not private_gist,
-                )
-                self.pull_request.create_issue_comment(
-                    f"Comment was too big. It's published as a gist at {gist.html_url}."
-                )
+                self.pull_request.create_issue_comment("Comment was too big. Check the CI workflow output.")
             else:
                 raise
 
