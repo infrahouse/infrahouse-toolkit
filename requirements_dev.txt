@@ -1,5 +1,5 @@
 black ~= 24.3
-build ~= 0.10
+build ~= 1.2
 bump2version ~= 1.0
 isort ~= 5.12
 mdformat ~= 0.7

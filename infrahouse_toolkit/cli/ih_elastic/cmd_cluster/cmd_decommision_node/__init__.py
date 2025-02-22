@@ -14,9 +14,9 @@ from time import sleep
 import click
 from botocore.exceptions import ClientError
 from elasticsearch.client import ClusterClient, NodesClient, ShutdownClient
+from infrahouse_core.aws.asg import ASG
+from infrahouse_core.aws.asg_instance import ASGInstance
 
-from infrahouse_toolkit.aws.asg import ASG
-from infrahouse_toolkit.aws.asg_instance import ASGInstance
 from infrahouse_toolkit.lock.exceptions import LockAcquireError
 from infrahouse_toolkit.lock.system import SystemLock
 from infrahouse_toolkit.timeout import timeout
@@ -24,7 +24,7 @@ from infrahouse_toolkit.timeout import timeout
 LOG = getLogger(__name__)
 
 
-def wait_until_complete(client: ShutdownClient, node_id: str, wait_time: int = 3600):
+def wait_until_complete(client: ShutdownClient, node_id: str, wait_time: int = 3600, hook_name: str = "terminating"):
     """
     Give up to ``wait_time`` seconds to Elasticsearch to move shards out of the node.
     The function periodically checks the node's shutdown info
@@ -39,8 +39,12 @@ def wait_until_complete(client: ShutdownClient, node_id: str, wait_time: int = 3
     :type node_id: str
     :param wait_time: Time in second to wait for the ``COMPLETE`` state.
     :type wait_time: int
+    :param hook_name: Lifecycle hook name to extend while waiting.
+    :type hook_name: str
     :raise TimeoutError: if after ``wait_time``, Elasticsearch hasn't moved all shards from the node.
     """
+    local_instance = ASGInstance()
+    asg = ASG(asg_name=local_instance.asg_name)
     if wait_time:
         try:
             with timeout(wait_time):
@@ -49,10 +53,14 @@ def wait_until_complete(client: ShutdownClient, node_id: str, wait_time: int = 3
                         "Current shutdown state:\n %s",
                         json.dumps(client.get_node(node_id=node_id).raw, indent=4),
                     )
+                    if local_instance.lifecycle_state == "Terminating:Wait":
+                        LOG.debug("Extend lifecycle hook %s", hook_name)
+                        asg.record_lifecycle_action_heartbeat(hook_name=hook_name)
+
                     sleep(3)
         except TimeoutError as err:
             LOG.error(err)
-            ASG(asg_name=ASGInstance().asg_name).cancel_instance_refresh()
+            asg.cancel_instance_refresh()
             raise
 
     else:
