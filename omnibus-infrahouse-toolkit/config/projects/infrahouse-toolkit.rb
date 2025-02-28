@@ -12,7 +12,7 @@ homepage "https://infrahouse.com"
 # and /opt/infrahouse-toolkit on all other platforms
 install_dir "#{default_root}/#{name}"
 
-build_version '2.45.3'
+build_version '2.46.0'
 build_iteration 1
 
 override :openssl, version: '1.1.1t'
@@ -36,6 +36,7 @@ extra_package_file "#{scripts_dir}/ih-github"
 extra_package_file "#{scripts_dir}/ih-plan"
 extra_package_file "#{scripts_dir}/ih-registry"
 extra_package_file "#{scripts_dir}/ih-puppet"
+extra_package_file "#{scripts_dir}/ih-s3"
 extra_package_file "#{scripts_dir}/ih-s3-reprepro"
 extra_package_file "#{scripts_dir}/ih-secrets"
 extra_package_file "#{scripts_dir}/ih-skeema"
