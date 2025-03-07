@@ -50,7 +50,7 @@ def cmd_apply(ctx, manifest):
             ctx.obj["hiera_config"],
             f"--modulepath={ctx.obj['module_path']}",
             manifest,
-            "--write-catalog-summary",
+            "--write_catalog_summary",
             "--detailed-exitcodes",
         ]
     )
