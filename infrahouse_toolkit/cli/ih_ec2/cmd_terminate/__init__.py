@@ -12,6 +12,7 @@ from logging import getLogger
 import click
 
 from infrahouse_toolkit.cli.ih_ec2.cmd_list import list_ec2_instances
+from infrahouse_toolkit.logging import setup_logging
 
 LOG = getLogger()
 
@@ -33,6 +34,7 @@ def cmd_terminate(ctx, instance_id):
     """
     Terminate an EC2 instance.
     """
+    setup_logging(debug=ctx.obj["debug"])
     ec2_client = ctx.obj["ec2_client"]
     if not instance_id:
         LOG.error("Please specify INSTANCE_ID from following:")

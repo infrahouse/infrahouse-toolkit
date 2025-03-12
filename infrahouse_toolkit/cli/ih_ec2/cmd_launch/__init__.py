@@ -13,6 +13,7 @@ import click
 
 from infrahouse_toolkit.cli.ih_ec2.cmd_launch_templates import list_launch_templates
 from infrahouse_toolkit.cli.ih_ec2.cmd_subnets import list_subnets
+from infrahouse_toolkit.logging import setup_logging
 
 LOG = getLogger()
 SUPPORTED_UBUNTU_CODENAMES = ["jammy"]
@@ -38,6 +39,7 @@ def cmd_launch(ctx, subnet_id, launch_template):
     """
     Start an EC2 instance.
     """
+    setup_logging(debug=ctx.obj["debug"])
     ec2_client = ctx.obj["ec2_client"]
     if not subnet_id:
         LOG.error("Please specify --subnet-id from following:")

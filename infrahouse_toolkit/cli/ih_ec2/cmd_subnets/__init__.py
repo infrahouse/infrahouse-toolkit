@@ -13,6 +13,8 @@ import click
 from botocore.exceptions import ClientError
 from tabulate import tabulate
 
+from infrahouse_toolkit.logging import setup_logging
+
 LOG = getLogger()
 
 
@@ -69,6 +71,7 @@ def cmd_subnets(ctx):
     """
     Describe AWS subnets.
     """
+    setup_logging(debug=ctx.obj["debug"])
     ec2_client = ctx.obj["ec2_client"]
     aws_config = ctx.obj["aws_config"]
     try:

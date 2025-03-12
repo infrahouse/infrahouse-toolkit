@@ -52,7 +52,8 @@ LOG = getLogger(__name__)
 @click.pass_context
 def ih_ec2(ctx, **kwargs):
     """AWS EC2 helpers."""
-    setup_logging(debug=kwargs["debug"])
+    if kwargs["debug"]:
+        setup_logging(debug=kwargs["debug"])
 
     aws_profile = kwargs["aws_profile"]
     aws_config = AWSConfig()
