@@ -15,10 +15,12 @@ import click
 from botocore.exceptions import ClientError
 from tabulate import tabulate
 
+from infrahouse_toolkit.logging import setup_logging
+
 LOG = getLogger(__name__)
 
 
-def list_ec2_instances(ec2_client, fields=None, tag_filter=None):
+def list_ec2_instances(ec2_client, fields=None, tag_filter=None, comma_separated=False):
     """
     Print a summary about EC2 instances in a region.
     """
@@ -54,11 +56,16 @@ def list_ec2_instances(ec2_client, fields=None, tag_filter=None):
             row.append(instance["State"]["Name"])
             instances.append(row)
 
-    print(
-        tabulate(
-            sorted(instances), headers=["Name"] + header + ["State"], tablefmt="grid" if fields["Tags"] else "outline"
+    if comma_separated:
+        print(",".join([i[1] for i in instances]))
+    else:
+        print(
+            tabulate(
+                sorted(instances),
+                headers=["Name"] + header + ["State"],
+                tablefmt="grid" if fields["Tags"] else "outline",
+            )
         )
-    )
 
 
 @click.command(
@@ -79,6 +86,12 @@ def list_ec2_instances(ec2_client, fields=None, tag_filter=None):
     "--public-ip-address",
     "PublicIpAddress",
     help="Show public IP address.",
+    is_flag=True,
+    default=False,
+)
+@click.option(
+    "-c",
+    help="Output a comma-separated list instead of table.",
     is_flag=True,
     default=False,
 )
@@ -106,6 +119,8 @@ def cmd_list(ctx, **kwargs):
     that have a tag 'service' and its value 'vpn-portal'. Use comma separated service name to display more
     than one service. e.g. --service=elastic,elastic-kibana.
     """
+    setup_logging(debug=ctx.obj["debug"], quiet=not kwargs["c"])
+
     ec2_client = ctx.obj["ec2_client"]
     aws_config = ctx.obj["aws_config"]
     tag_filter = []
@@ -122,7 +137,8 @@ def cmd_list(ctx, **kwargs):
         tag_filter.append({"Name": name, "Values": values})
 
     try:
-        list_ec2_instances(ec2_client, kwargs, tag_filter)
+        comma_separated = kwargs.pop("c")
+        list_ec2_instances(ec2_client, kwargs, tag_filter, comma_separated=comma_separated)
     except ClientError as err:
         LOG.exception(err)
         LOG.info("Try to run ih-ec2 with --aws-profile option.")

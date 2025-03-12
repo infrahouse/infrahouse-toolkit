@@ -13,6 +13,8 @@ import click
 from botocore.exceptions import ClientError
 from tabulate import tabulate
 
+from infrahouse_toolkit.logging import setup_logging
+
 LOG = getLogger()
 
 
@@ -76,6 +78,7 @@ def cmd_instance_types(ctx):
     """
     Describe AWS EC2 instance types.
     """
+    setup_logging(debug=ctx.obj["debug"])
     ec2_client = ctx.obj["ec2_client"]
     try:
         list_instance_types(ec2_client)
