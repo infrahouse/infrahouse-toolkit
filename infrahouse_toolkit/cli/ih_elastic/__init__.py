@@ -25,7 +25,7 @@ from infrahouse_toolkit.cli.ih_elastic.cmd_snapshots import cmd_snapshots
 from infrahouse_toolkit.cli.lib import get_elastic_password
 from infrahouse_toolkit.logging import setup_logging
 
-LOG = getLogger(__name__)
+LOG = getLogger()
 
 
 @click.group(
@@ -66,6 +66,9 @@ LOG = getLogger(__name__)
 )
 @click.option("--es-port", help="Elasticsearch port", default=9200, show_default=True)
 @click.option("--format", help="Output format", type=click.Choice(["text", "json", "cbor", "yaml", "smile"]))
+@click.option(
+    "--request-timeout", help="Timeout for HTTP requests in seconds.", default=10, show_default=True, type=click.INT
+)
 @click.version_option()
 @click.pass_context
 def ih_elastic(ctx, **kwargs):  # pylint: disable=unused-argument
@@ -97,7 +100,7 @@ def ih_elastic(ctx, **kwargs):  # pylint: disable=unused-argument
         "auth": HTTPBasicAuth(kwargs["username"], password),
         "username": kwargs["username"],
         "password": password,
-        "es": Elasticsearch(url, basic_auth=(kwargs["username"], password)),
+        "es": Elasticsearch(url, basic_auth=(kwargs["username"], password), request_timeout=kwargs["request_timeout"]),
         "format": kwargs["format"],
     }
 
