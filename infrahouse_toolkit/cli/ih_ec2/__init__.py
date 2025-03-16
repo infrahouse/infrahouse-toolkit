@@ -19,6 +19,7 @@ from infrahouse_toolkit.cli.ih_ec2.cmd_launch import cmd_launch
 from infrahouse_toolkit.cli.ih_ec2.cmd_launch_templates import cmd_launch_templates
 from infrahouse_toolkit.cli.ih_ec2.cmd_list import cmd_list
 from infrahouse_toolkit.cli.ih_ec2.cmd_subnets import cmd_subnets
+from infrahouse_toolkit.cli.ih_ec2.cmd_tags import cmd_tags
 from infrahouse_toolkit.cli.ih_ec2.cmd_terminate import cmd_terminate
 from infrahouse_toolkit.logging import setup_logging
 
@@ -72,6 +73,6 @@ def ih_ec2(ctx, **kwargs):
         sys.exit(1)
 
 
-for cmd in [cmd_launch, cmd_list, cmd_instance_types, cmd_terminate, cmd_subnets, cmd_launch_templates]:
+for cmd in [cmd_launch, cmd_list, cmd_instance_types, cmd_terminate, cmd_subnets, cmd_launch_templates, cmd_tags]:
     # noinspection PyTypeChecker
     ih_ec2.add_command(cmd)
