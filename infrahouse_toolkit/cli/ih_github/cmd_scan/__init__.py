@@ -70,8 +70,9 @@ def cmd_scan(ctx, *args, **kwargs):
 ## {vuln["name"]}=={vuln["version"]}
 The package `{vuln["name"]}` (version {vuln["version"]}) has a {vuln["severity"]}-severity vulnerability.
 
-If you can upgrade to non-vulnerable version, please do.
-If you can't upgrade now, you can append this entry to `osv-scanner.toml`
+If you're able to upgrade to a non-vulnerable version, we recommend doing so.
+If upgrading isn't currently possible, consider adding this entry to your `osv-scanner.toml` file
+in the root directory of this repository.
 
 ```
 [[IgnoredVulns]]
