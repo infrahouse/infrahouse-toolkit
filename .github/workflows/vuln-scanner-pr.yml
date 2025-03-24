@@ -11,10 +11,16 @@ permissions:
     contents: read
     pull-requests: write
 
+env:
+    GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
 jobs:
-    scan-pr:
+    vulnerability-check:
         runs-on: ["self-hosted", "Linux", "noble"]
         steps:
+            - uses: actions/checkout@v4
             - name: Detect vulnerabilities
               run: |
-                osv-scanner ./
+                ih-github scan \
+                  --repo ${{ github.repository }} \
+                  --pull-request ${{ github.event.pull_request.number }}
