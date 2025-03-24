@@ -26,12 +26,26 @@ DEPENDENCIES = ["osv-scanner"]
     context_settings={"ignore_unknown_options": True, "allow_extra_args": True},
 )
 @click.option("--github-token", help="Personal access token for GitHub.", envvar="GITHUB_TOKEN")
+@click.option(
+    "--osv-config", help="Path to osv-scanner configuration file.", default="osv-scanner.toml", show_default=True
+)
 @click.option("--repo", help="GitHub repository name in a long format e.g. infrahouse/infrahouse-toolkit.")
 @click.option("--pull-request", help="GitHub pull request number.", type=click.INT)
-@click.option("--sla-critical", help="SLA in days on when critical vulnerabilities should be fixed.", default=15)
-@click.option("--sla-high", help="SLA in days on when high vulnerabilities should be fixed.", default=30)
-@click.option("--sla-medium", help="SLA in days on when medium vulnerabilities should be fixed.", default=45)
-@click.option("--sla-low", help="SLA in days on when medium vulnerabilities should be fixed.", default=90)
+@click.option(
+    "--sla-critical",
+    help="SLA in days on when critical vulnerabilities should be fixed.",
+    default=15,
+    show_default=True,
+)
+@click.option(
+    "--sla-high", help="SLA in days on when high vulnerabilities should be fixed.", default=30, show_default=True
+)
+@click.option(
+    "--sla-medium", help="SLA in days on when medium vulnerabilities should be fixed.", default=45, show_default=True
+)
+@click.option(
+    "--sla-low", help="SLA in days on when medium vulnerabilities should be fixed.", default=90, show_default=True
+)
 @click.pass_context
 def cmd_scan(ctx, *args, **kwargs):
     """
@@ -43,9 +57,10 @@ def cmd_scan(ctx, *args, **kwargs):
     cmd_args = ctx.args
     LOG.debug("cmd_args = %s", cmd_args)
     check_dependencies(DEPENDENCIES)
-    # pull_request = GitHubPR(kwargs["repo"], kwargs["pull_request_number"], github_token=kwargs["github_token"])
-    cmd = ["osv-scanner", "scan", "--format", "markdown", "--recursive", "--verbosity", "warn", "./"]
+    osv_config = kwargs["osv_config"]
+    cmd = ["osv-scanner", "scan", "--config", osv_config, "--format", "markdown", "--recursive", "--verbosity", "warn"]
     cmd.extend(cmd_args)
+    cmd.extend(["./"])
     sla_map = {
         "CRITICAL": kwargs["sla_critical"],
         "HIGH": kwargs["sla_high"],
@@ -64,14 +79,14 @@ def cmd_scan(ctx, *args, **kwargs):
             if return_code != 0:
                 comment = "# Vulnerabilities report\n"
                 comment += vuln_table.decode()
-                for vuln in _get_vulnerability_details(cmd_args):
+                for vuln in _get_vulnerability_details(osv_config, cmd_args):
                     future_date = datetime.now() + timedelta(days=sla_map.get(vuln["severity"], 30))
                     comment += f"""
 ## {vuln["name"]}=={vuln["version"]}
 The package `{vuln["name"]}` (version {vuln["version"]}) has a {vuln["severity"]}-severity vulnerability.
 
 If you're able to upgrade to a non-vulnerable version, we recommend doing so.
-If upgrading isn't currently possible, consider adding this entry to your `osv-scanner.toml` file
+If upgrading isn't currently possible, consider adding this entry to your `{osv_config}` file
 in the root directory of this repository.
 
 ```
@@ -93,7 +108,7 @@ reason = "Detailed explanation why the vulnerability is ignored and how it is pl
     sys.exit(return_code)
 
 
-def _get_vulnerability_details(extra_args):
+def _get_vulnerability_details(config_file, extra_args):
     """
     returns a JSON
     [
@@ -105,8 +120,9 @@ def _get_vulnerability_details(extra_args):
         }
     ]
     """
-    cmd = ["osv-scanner", "scan", "--format", "json", "--recursive", "--verbosity", "warn", "./"]
+    cmd = ["osv-scanner", "scan", "--config", config_file, "--format", "json", "--recursive", "--verbosity", "warn"]
     cmd.extend(extra_args)
+    cmd.extend(["./"])
     return_value = []
     with Popen(cmd, stderr=PIPE, stdout=PIPE) as proc:
         LOG.debug("Launched command: %s", " ".join(cmd))
