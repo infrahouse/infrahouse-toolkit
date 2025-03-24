@@ -12,9 +12,9 @@ permissions:
     pull-requests: write
 
 jobs:
-    scan-pr:
+    vulnerability-check:
         runs-on: ["self-hosted", "Linux", "noble"]
         steps:
             - name: Detect vulnerabilities
               run: |
-                osv-scanner ./
+                ih-github scan --repo ${GITHUB_REPOSITORY} --pull-request ${{ github.event.pull_request.number }}
