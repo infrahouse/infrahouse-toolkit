@@ -1,5 +1,0 @@
-[[IgnoredVulns]]
-id = "GHSA-7g2v-jj9q-g3rg"
-ignoreUntil = 2025-05-08 # Optional exception expiry date
-reason = "Detailed explanation why the vulnerability is ignored and how it is planned to be fixed."
-

@@ -10,6 +10,7 @@ import json
 import logging
 import sys
 from datetime import datetime, timedelta
+from os import path as osp
 from subprocess import PIPE, Popen
 
 import click
@@ -58,7 +59,9 @@ def cmd_scan(ctx, *args, **kwargs):
     LOG.debug("cmd_args = %s", cmd_args)
     check_dependencies(DEPENDENCIES)
     osv_config = kwargs["osv_config"]
-    cmd = ["osv-scanner", "scan", "--config", osv_config, "--format", "markdown", "--recursive", "--verbosity", "warn"]
+    cmd = ["osv-scanner", "scan", "--format", "markdown", "--recursive", "--verbosity", "warn"]
+    if osp.exists(osv_config):
+        cmd.extend(["--config", osv_config])
     cmd.extend(cmd_args)
     cmd.extend(["./"])
     sla_map = {
@@ -120,7 +123,9 @@ def _get_vulnerability_details(config_file, extra_args):
         }
     ]
     """
-    cmd = ["osv-scanner", "scan", "--config", config_file, "--format", "json", "--recursive", "--verbosity", "warn"]
+    cmd = ["osv-scanner", "scan", "--format", "json", "--recursive", "--verbosity", "warn"]
+    if osp.exists(config_file):
+        cmd.extend(["--config", config_file])
     cmd.extend(extra_args)
     cmd.extend(["./"])
     return_value = []
