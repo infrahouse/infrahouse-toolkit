@@ -18,13 +18,10 @@ jobs:
               with:
                   python-version: ${{ matrix.python-version }}
 
-            - name: Install InfraHouse APT repository
-              run: |
-                sudo make install-infrahouse-repo
-
             - name: Install dependencies
               run: |
                   make bootstrap
+
             - name: Linters
               run: |
                   make lint
