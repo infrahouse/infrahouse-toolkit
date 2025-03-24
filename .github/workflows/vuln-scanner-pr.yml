@@ -13,8 +13,8 @@ permissions:
 
 jobs:
     scan-pr:
-    runs-on: ["self-hosted", "Linux", "noble"]
-    steps:
-        - name: Detect vulnerabilities
-          run: |
-              osv-scanner ./
+        runs-on: ["self-hosted", "Linux", "noble"]
+        steps:
+            - name: Detect vulnerabilities
+              run: |
+                osv-scanner ./
