@@ -37,8 +37,6 @@ def cmd_scan(ctx, *args, **kwargs):
     """
     Scan the current directory for dependency vulnerabilities.
     If found, publish a report as a pull request comment.
-
-    For instance
     """
     LOG.debug("args = %s", args)
     LOG.debug("kwargs = %s", kwargs)
