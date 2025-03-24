@@ -18,6 +18,7 @@ jobs:
     vulnerability-check:
         runs-on: ["self-hosted", "Linux", "noble"]
         steps:
+            - uses: actions/checkout@v4
             - name: Detect vulnerabilities
               run: |
                 ih-github scan \
