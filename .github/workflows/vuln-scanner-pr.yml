@@ -17,4 +17,4 @@ jobs:
         steps:
             - name: Detect vulnerabilities
               run: |
-                ih-github scan --repo ${GITHUB_REPOSITORY} --pull-request ${{ github.event.pull_request.number }}
+                ih-github scan --repo ${{ github.repository }} --pull-request ${{ github.event.pull_request.number }}
