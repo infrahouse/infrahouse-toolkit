@@ -23,14 +23,14 @@ env:
 jobs:
     deploy:
 
-        runs-on: ubuntu-24.04
+        runs-on: ["self-hosted", "Linux", "noble"]
         strategy:
             matrix:
                 codename: ["jammy", "noble", "oracular"]
         steps:
             - uses: actions/checkout@v3
             - name: Set up Python
-              uses: actions/setup-python@v3
+              uses: actions/setup-python@v5
               with:
                   python-version: '3.x'
 
@@ -41,7 +41,6 @@ jobs:
             - name: Install dependencies
               run: |
                 make bootstrap
-                sudo apt-get -y install reprepro gpg s3fs
 
             - name: Check if version was bumped
               run: |
