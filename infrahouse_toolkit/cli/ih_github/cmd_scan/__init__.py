@@ -77,9 +77,11 @@ def cmd_scan(ctx, *args, **kwargs):
             LOG.info("Launched command: %s", " ".join(cmd))
             vuln_table, cerr = proc.communicate()
             return_code = proc.returncode
+
             if cerr:
-                LOG.error(cerr)
-            if return_code != 0:
+                LOG.error(cerr.decode())
+
+            if return_code == 1:
                 comment = "# Vulnerabilities report\n"
                 comment += vuln_table.decode()
                 for vuln in _get_vulnerability_details(osv_config, cmd_args):
@@ -99,6 +101,12 @@ ignoreUntil = {future_date.strftime("%Y-%m-%d")} # Optional exception expiry dat
 reason = "Detailed explanation why the vulnerability is ignored and how it is planned to be fixed."
 ```
 """
+            elif return_code == 128:
+                LOG.warning("No package lock file found, will assume no vulnerabilities.")
+                sys.exit(0)
+            else:
+                LOG.warning("osv-scanner exited with unknown exit code %d", return_code)
+
             sys.stdout.write(vuln_table.decode())
 
     finally:
