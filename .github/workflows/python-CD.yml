@@ -34,11 +34,21 @@ jobs:
               with:
                   python-version: '3.x'
 
+            - name: "Setup tmate session"
+              uses: "mxschmitt/action-tmate@v3"
+              if: "${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}"
+              with:
+                  limit-access-to-actor: true
+
             - name: Install dependencies
               run: |
                 make bootstrap
 
-            - name: Check if version was bumped
+            - name: Unit tests
+              run: |
+                  make test
+
+            - name: Check if Python package version was bumped
               run: |
                   published=$(curl -s https://pypi.org/pypi/infrahouse-toolkit/json | jq -r .info.version)
                   current=$(python -c "from infrahouse_toolkit import __version__; print(__version__)")
@@ -49,9 +59,35 @@ jobs:
                     echo "PUBLISH=no" >> $GITHUB_ENV
                   fi
 
-            - name: Unit tests
+            - name: Build Python package
+              if: env.PUBLISH == 'yes'
               run: |
-                  make test
+                  python -m build
+
+            - name: Publish Python package
+              if: ${{ env.PUBLISH == 'yes' && matrix.codename == 'jammy' }}
+              uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
+              with:
+                  user: __token__
+                  password: ${{ secrets.PYPI_API_TOKEN }}
+
+            - name: Check if Debian package version was bumped
+              run: |
+                  current=$(python -c "from infrahouse_toolkit import __version__; print(__version__)")
+                  repo="https://release-${{ matrix.codename }}.infrahouse.com"
+                  arch="$(dpkg --print-architecture)"
+                  if curl --head --fail $repo/pool/main/i/infrahouse-toolkit/infrahouse-toolkit_${current}-1_$arch.deb
+                  then
+                    echo "PUBLISH_DEB=no" >> $GITHUB_ENV
+                  else
+                    echo "PUBLISH_DEB=yes" >> $GITHUB_ENV
+                  fi
+
+            - name: Build package
+              if: env.PUBLISH_DEB == 'yes'
+              run: |
+                OS_VERSION=${{ matrix.codename }} make package
+
 
             - name: Configure AWS Credentials
               uses: aws-actions/configure-aws-credentials@v2
@@ -60,27 +96,8 @@ jobs:
                   role-session-name: github-action-infrahouse-toolkit-cd
                   aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
-            - name: "Setup tmate session"
-              uses: "mxschmitt/action-tmate@v3"
-              if: "${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}"
-              with:
-                  limit-access-to-actor: true
-
-            - name: Build package
-              if: env.PUBLISH == 'yes'
-              run: |
-                python -m build
-                OS_VERSION=${{ matrix.codename }} make package
-
-            - name: Publish python package
-              if: ${{ env.PUBLISH == 'yes' && matrix.codename == 'jammy' }}
-              uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
-              with:
-                  user: __token__
-                  password: ${{ secrets.PYPI_API_TOKEN }}
-
             - name: Publish Debian package
-              if: env.PUBLISH == 'yes'
+              if: env.PUBLISH_DEB == 'yes'
               run: |
                   ih-s3-reprepro \
                     --aws-region ${{ secrets.AWS_DEFAULT_REGION }} \
