@@ -19,10 +19,17 @@ LOG = getLogger()
 
 
 @click.command(name="includedeb")
+@click.option(
+    "--priority",
+    help="Overrides the Debian package priority of inclusions.",
+    type=click.Choice(["required", "important", "standard", "optional", "extra"]),
+    default=None,
+    show_default=True,
+)
 @click.argument("codename")
 @click.argument("deb_file")
 @click.pass_context
-def cmd_includedeb(ctx: Context, codename, deb_file):
+def cmd_includedeb(ctx: Context, priority, codename, deb_file):
     """
     Include the given binary package.
 
@@ -37,7 +44,11 @@ def cmd_includedeb(ctx: Context, codename, deb_file):
             ctx.parent.params["gpg_passphrase_secret_id"],
             region=ctx.parent.params["aws_region"],
         ) as (path, gpg_home):
-            execute(["reprepro", "-V", "-b", path, "--gnupghome", gpg_home, "includedeb", codename, deb_file])
+            cmd = ["reprepro", "-V", "-b", path, "--gnupghome", gpg_home]
+            if priority:
+                cmd.extend(["--priority", priority])
+            cmd.extend(["includedeb", codename, deb_file])
+            execute(cmd)
 
     except (ClientError, BotoCoreError) as err:
         LOG.error(err)
