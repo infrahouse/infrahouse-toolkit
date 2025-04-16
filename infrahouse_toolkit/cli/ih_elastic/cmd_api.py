@@ -47,16 +47,22 @@ def cmd_api(ctx, **kwargs):
     url = ctx.obj["url"]
     uri = kwargs["uri"]
     request_kwargs = {"auth": ctx.obj["auth"], "headers": {"Content-Type": "application/json"}}
-    if kwargs["data"] is not None:
-        request_kwargs["data"] = _get_input(method, uri) if kwargs["data"] == "editor" else kwargs["data"]
-        try:
-            json.loads(request_kwargs["data"])
-        except JSONDecodeError as err:
-            LOG.error("Not a valid JSON:\n%s", request_kwargs["data"])
-            LOG.error(err)
-            sys.exit(1)
-
     full_url = f"{url}/{uri.lstrip('/')}"
+    if kwargs["data"] is not None:
+        while True:
+            request_kwargs["data"] = _get_input(method, uri) if kwargs["data"] == "editor" else kwargs["data"]
+            try:
+                json.loads(request_kwargs["data"])
+            except JSONDecodeError as err:
+                LOG.error("Not a valid JSON:\n%s", request_kwargs["data"])
+                LOG.error(err)
+                sys.exit(1)
+
+            click.echo(f"About to send a {method} to {full_url} with data")
+            click.echo(json.dumps(json.loads(request_kwargs["data"]), indent=4))
+            if click.confirm("Do you want to continue?", default=False):
+                break
+
     LOG.debug("Sending request %s", full_url)
     response = getattr(requests, method.lower())(full_url, **request_kwargs)
     try:
