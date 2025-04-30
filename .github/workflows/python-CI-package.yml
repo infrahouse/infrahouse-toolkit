@@ -1,0 +1,47 @@
+# This workflow will upload a Python Package using Twine when a new commit to main is pushed
+---
+name: Python Continuous Deployment
+
+on:  # yamllint disable-line rule:truthy
+    pull_request:
+        branches: ["main"]
+    workflow_dispatch:
+
+permissions:
+    id-token: write  # This is required for requesting the JWT
+    contents: read
+
+env:
+    ROLE_ARN: "arn:aws:iam::493370826424:role/ih-tf-infrahouse-toolkit-github"
+
+jobs:
+    deploy:
+
+        runs-on: ["self-hosted", "Linux", "awesome"]
+        strategy:
+            matrix:
+                codename: ["jammy", "noble", "oracular"]
+        steps:
+            - uses: actions/checkout@v3
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: '3.x'
+
+            - name: "Setup tmate session"
+              uses: "mxschmitt/action-tmate@v3"
+              if: "${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}"
+              with:
+                  limit-access-to-actor: true
+
+            - name: Install dependencies
+              run: |
+                make bootstrap
+
+            - name: Unit tests
+              run: |
+                  make test
+
+            - name: Build package
+              run: |
+                OS_VERSION=${{ matrix.codename }} make package
