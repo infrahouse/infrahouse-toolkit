@@ -11,7 +11,7 @@ diskcache ~= 5.6
 ec2-metadata ~= 2.13
 elastic-transport ~= 8.12.0
 elasticsearch ~= 8.12.0
-infrahouse-core ~= 0.7, >= 0.7.1
+infrahouse-core ~= 0.10
 pyhcl ~= 0.4
 pyjwt ~= 2.9
 requests ~= 2.32
