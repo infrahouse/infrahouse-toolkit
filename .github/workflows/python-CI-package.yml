@@ -17,7 +17,7 @@ env:
 jobs:
     deploy:
 
-        runs-on: ["self-hosted", "Linux", "awesome"]
+        runs-on: ["self-hosted", "Linux", "noble"]
         strategy:
             matrix:
                 codename: ["jammy", "noble", "oracular"]
