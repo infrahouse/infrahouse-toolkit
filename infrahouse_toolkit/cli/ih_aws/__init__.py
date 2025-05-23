@@ -67,6 +67,7 @@ def ih_aws(ctx, **kwargs):
             "aws_session": get_aws_session(aws_config, aws_profile, aws_region),
             "aws_config": aws_config,
             "aws_profile": aws_profile,
+            "aws_region": aws_region,
         }
     except NoRegionError as err:
         LOG.error(err)
