@@ -35,7 +35,7 @@ def cmd_credentials(ctx, docker, export):
         }
 
         if aws_config.get_region(aws_profile):
-            creds["AWS_DEFAULT_REGION"] = aws_config.get_region(aws_profile)
+            creds["AWS_DEFAULT_REGION"] = ctx.obj["aws_region"] or aws_config.get_region(aws_profile)
 
         if aws_session.get_credentials().token:
             creds["AWS_SESSION_TOKEN"] = aws_session.get_credentials().token

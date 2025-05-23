@@ -91,6 +91,21 @@ class AWSConfig:
         except NoOptionError:
             return self.config_parser.get("default", "region") if "default" in self.config_parser.sections() else None
 
+    def get_sso_region(self, profile_name):
+        """For a given profile, find SSO region"""
+        try:
+            sso_session = self.config_parser.get(self._get_section(profile_name), "sso_session")
+        except NoOptionError:
+            return self.config_parser.get("default", "region") if "default" in self.config_parser.sections() else None
+
+        except NoSectionError:
+            return self.config_parser.get("default", "region") if "default" in self.config_parser.sections() else None
+
+        try:
+            return self.config_parser.get(f"sso-session {sso_session}", "sso_region")
+        except NoOptionError:
+            return self.config_parser.get("default", "region")
+
     def get_role(self, profile_name):
         """Read AWS IAM role for given profile."""
         return self.config_parser.get(self._get_section(profile_name), "sso_role_name")

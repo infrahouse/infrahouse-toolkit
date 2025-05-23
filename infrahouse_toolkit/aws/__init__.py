@@ -229,7 +229,7 @@ def _get_credentials(aws_config: AWSConfig, profile_name: str):
     """
 
     session = Session()
-    sso_oidc = session.client("sso-oidc")
+    sso_oidc = session.client("sso-oidc", aws_config.get_sso_region(profile_name))
     client_creds = sso_oidc.register_client(
         clientName="infrahouse-toolkit",
         clientType="public",
@@ -258,7 +258,7 @@ def _get_credentials(aws_config: AWSConfig, profile_name: str):
                 clientSecret=client_creds["clientSecret"],
             )
             access_token = token["accessToken"]
-            sso = session.client("sso")
+            sso = session.client("sso", region_name=aws_config.get_sso_region(profile_name))
             role_creds = sso.get_role_credentials(
                 roleName=aws_config.get_role(profile_name),
                 accountId=aws_config.get_account_id(profile_name),
