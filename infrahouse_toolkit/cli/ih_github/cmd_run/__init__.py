@@ -40,6 +40,7 @@ def cmd_run(ctx, *args, **kwargs):
     cmd = ctx.args
     comment = None
     pull_request = GitHubPR(kwargs["repo"], kwargs["pull_request_number"], github_token=kwargs["github_token"])
+    comment_salt = f"Command `{' '.join(cmd)}`"
     try:
         with Popen(cmd, stderr=PIPE, stdout=PIPE) as proc:
             LOG.info("Launched command: %s", " ".join(cmd))
@@ -60,9 +61,9 @@ def cmd_run(ctx, *args, **kwargs):
 
             cout, cerr = proc.communicate()
 
-            comment = f"Command `{' '.join(cmd)}` exited with code {return_code}.\n"
-            comment += f"**Standard output**:\n```\n{cout.decode() or 'No output'}\n```\n"
-            comment += f"**Standard error**:\n```\n{cerr.decode() or 'No output'}\n```\n"
+            comment = f"{comment_salt} exited with code {return_code}.\n"
+            comment += f"**`/dev/stdout`**:\n```\n{cout.decode() or 'No output'}\n```\n"
+            comment += f"**`/dev/stderr`**:\n```\n{cerr.decode() or 'No output'}\n```\n"
 
             sys.stdout.write(cout.decode())
             sys.stderr.write(cerr.decode())
@@ -70,9 +71,17 @@ def cmd_run(ctx, *args, **kwargs):
 
     except FileNotFoundError as err:
         LOG.exception(err)
-        comment = f"Command `{' '.join(cmd)}` failed to start.\n"
+        comment = f"{comment_salt} failed to start.\n"
         comment += f"Stack trace:\n```\n{traceback.format_exc()}\n```\n"
         sys.exit(1)
 
     finally:
+        _upsert_comment(pull_request, comment, comment_salt)
+
+
+def _upsert_comment(pull_request, comment, comment_salt):
+    existing_comment = next((item for item in pull_request.comments if item.body.startswith(comment_salt)), None)
+    if existing_comment:
+        pull_request.edit_comment(existing_comment, comment)
+    else:
         pull_request.publish_comment(comment)
