@@ -10,7 +10,7 @@ cryptography ~= 44.0, >= 44.0.1
 diskcache ~= 5.6
 ec2-metadata ~= 2.13
 elastic-transport ~= 8.12.0
-elasticsearch ~= 8.12.0
+elasticsearch ~=9.0.2
 infrahouse-core ~= 0.10
 pyhcl ~= 0.4
 pyjwt ~= 2.9
