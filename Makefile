@@ -131,7 +131,7 @@ lint/mdformat:
 
 .PHONY: lint/reqsort
 lint/reqsort: ## check requirements sorting order
-	@set -e ; for f in requirements.txt requirements_dev.txt; do test "$$(sort $$f)" = "$$(cat $$f)" || (echo "$$f is not sorted, run make reqsort" ; exit 1); done
+	@set -e ; for f in requirements.txt requirements_dev.txt; do test "$$(sort -f $$f)" = "$$(cat $$f)" || (echo "$$f is not sorted, run make reqsort" ; exit 1); done
 
 .PHONY: lint/pylint
 lint/pylint: ## check style with pylint
