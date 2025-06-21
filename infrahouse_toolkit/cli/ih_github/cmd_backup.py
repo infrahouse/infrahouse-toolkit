@@ -17,6 +17,7 @@ import click
 import requests
 from github import GithubIntegration
 from github.Consts import MAX_JWT_EXPIRY
+from infrahouse_core.logging import setup_logging
 
 from infrahouse_toolkit import DEFAULT_OPEN_ENCODING
 from infrahouse_toolkit.aws import get_client, get_secret
@@ -28,7 +29,6 @@ from infrahouse_toolkit.cli.utils import (
     retry,
     tmpfs_s3,
 )
-from infrahouse_toolkit.logging import setup_logging
 
 LOG = logging.getLogger()
 GH_APP_ID = "1016509"

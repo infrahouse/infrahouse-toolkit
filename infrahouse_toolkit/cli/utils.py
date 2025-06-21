@@ -4,6 +4,7 @@
     Various helper functions.
 """
 
+import hashlib
 import json
 import os
 import pathlib
@@ -17,13 +18,10 @@ from tempfile import TemporaryDirectory
 from time import sleep, time
 
 import boto3
+from infrahouse_core.aws import AWSConfig, get_aws_session
 
 from infrahouse_toolkit import DEFAULT_OPEN_ENCODING
-from infrahouse_toolkit.aws import (
-    assume_role,
-    get_credentials_from_environ,
-    get_credentials_from_profile,
-)
+from infrahouse_toolkit.aws import assume_role, get_credentials_from_environ
 from infrahouse_toolkit.cli.gpg import gpg
 from infrahouse_toolkit.exceptions import IHRetriableError
 
@@ -66,7 +64,7 @@ def mount_s3(bucket: str, path: str, role_arn: str = None, region: str = None):
     env = {}
     cmd = ["s3fs", bucket, path, "-o", f"uid={getuid()}", "-o", f"gid={getgid()}"]
     if role_arn:
-        LOG.debug("Using AWS credentials from IAM role %s", role_arn)
+        LOG.debug("Using the %s IAM role for authentication", role_arn)
         env = assume_role(role_arn)
         sts = boto3.client(
             "sts",
@@ -80,7 +78,18 @@ def mount_s3(bucket: str, path: str, role_arn: str = None, region: str = None):
     elif "AWS_ACCESS_KEY_ID" in os.environ:
         env = get_credentials_from_environ()
     else:
-        env = get_credentials_from_profile()
+        aws_session = get_aws_session(AWSConfig(), None, region)
+        env = {
+            "AWS_ACCESS_KEY_ID": aws_session.get_credentials().access_key,
+            "AWS_SECRET_ACCESS_KEY": aws_session.get_credentials().secret_key,
+            "AWS_SESSION_TOKEN": aws_session.get_credentials().token,
+            # These are old s3.fs options
+            # Soon they will be deprecated
+            # https://github.com/s3fs-fuse/s3fs-fuse/pull/1729
+            "AWSACCESSKEYID": aws_session.get_credentials().access_key,
+            "AWSSECRETACCESSKEY": aws_session.get_credentials().secret_key,
+            "AWSSESSIONTOKEN": aws_session.get_credentials().token,
+        }
 
     LOG.debug(
         "To reproduce environment: \n%s",
@@ -312,3 +321,28 @@ def retry(func, args, kwargs, attempts: int = 5, retriable_exit_codes: list = No
                 continue
             raise
     raise RuntimeError(f"Function didn't succeed after {attempts} attempts")
+
+
+def sha256(input_value: str) -> str:
+    """
+    Compute the SHA-256 hash of the given input string.
+
+    :param input_value: The input string to be hashed.
+    :return: The SHA-256 hash of the input string as a hexadecimal string.
+    """
+    return hashlib.sha256(input_value.encode()).hexdigest()
+
+
+def sanitize_secret(input_value: str) -> str:
+    """
+    Sanitize the secret value by replacing all but the first two
+    and the last characters with asterisks.
+
+    :param input_value: The input secret string to be sanitized.
+    :return: The sanitized secret string.
+    """
+    # Check the length of the input value
+    if len(input_value) <= 4:
+        return input_value
+    # Replace all but the first two and last characters with asterisks
+    return input_value[:2] + "*" * (len(input_value) - 3) + input_value[-1]

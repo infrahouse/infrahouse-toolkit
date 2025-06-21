@@ -25,7 +25,7 @@ jobs:
                   --repo ${{ github.repository }} \
                   --pull-request ${{ github.event.pull_request.number }}
 
-    sat-check:
+    sast-check:
         runs-on: ["self-hosted", "Linux", "noble"]
         steps:
             - uses: actions/checkout@v4

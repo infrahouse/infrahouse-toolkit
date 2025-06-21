@@ -9,9 +9,9 @@
 from logging import getLogger
 
 import click
+from infrahouse_core.logging import setup_logging
 
 from infrahouse_toolkit.cli.ih_puppet.cmd_apply import cmd_apply
-from infrahouse_toolkit.logging import setup_logging
 
 LOG = getLogger()
 

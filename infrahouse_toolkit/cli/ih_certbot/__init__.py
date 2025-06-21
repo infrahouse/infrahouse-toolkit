@@ -11,8 +11,7 @@ from logging import getLogger
 from subprocess import CalledProcessError, check_call
 
 import click
-
-from infrahouse_toolkit.logging import setup_logging
+from infrahouse_core.logging import setup_logging
 
 LOG = getLogger()
 

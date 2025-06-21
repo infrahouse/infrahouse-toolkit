@@ -12,9 +12,9 @@ from logging import getLogger
 import click
 from botocore.exceptions import NoRegionError
 from infrahouse_core.aws import AWSConfig, get_aws_client, get_aws_session
+from infrahouse_core.logging import setup_logging
 
 from infrahouse_toolkit.cli.ih_s3.cmd_upload_logs import cmd_upload_logs
-from infrahouse_toolkit.logging import setup_logging
 
 AWS_DEFAULT_REGION = "us-west-1"
 LOG = getLogger(__name__)
