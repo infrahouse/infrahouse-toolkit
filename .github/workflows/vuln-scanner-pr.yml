@@ -32,6 +32,6 @@ jobs:
             - name: SAST
               run: |
                   ih-github run \
-                    --repo ${{ github.repository }} \
-                    --pull-request ${{ github.event.pull_request.number }} \
-                    semgrep scan
+                    ${{ github.repository }} \
+                    ${{ github.event.pull_request.number }} \
+                    semgrep scan --error
