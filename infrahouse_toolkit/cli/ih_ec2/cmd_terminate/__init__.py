@@ -10,9 +10,9 @@ import sys
 from logging import getLogger
 
 import click
+from infrahouse_core.logging import setup_logging
 
 from infrahouse_toolkit.cli.ih_ec2.cmd_list import list_ec2_instances
-from infrahouse_toolkit.logging import setup_logging
 
 LOG = getLogger()
 

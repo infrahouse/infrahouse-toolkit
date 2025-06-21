@@ -13,6 +13,7 @@ import click
 from botocore.exceptions import ClientError
 
 from infrahouse_toolkit.cli.lib import read_from_file_or_prompt
+from infrahouse_toolkit.cli.utils import sha256
 
 LOG = getLogger(__name__)
 
@@ -36,7 +37,7 @@ def cmd_set(ctx, secret, path):
     aws_config = ctx.obj["aws_config"]
     try:
         value = read_from_file_or_prompt(path[0] if path else None)
-        LOG.debug("Secret value: %s", value)
+        LOG.debug("Hashed input value (SHA-256): %s", sha256(value))
         secretsmanager_client.put_secret_value(SecretId=secret, SecretString=value)
         LOG.info("Value of %s is successfully set.", secret)
 

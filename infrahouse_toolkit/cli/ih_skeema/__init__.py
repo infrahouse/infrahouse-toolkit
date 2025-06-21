@@ -13,11 +13,11 @@ from subprocess import check_output
 
 import boto3
 import click
+from infrahouse_core.logging import setup_logging
 
 from infrahouse_toolkit import DEFAULT_ENCODING
 from infrahouse_toolkit.cli.ih_secrets.cmd_get import get_secret
 from infrahouse_toolkit.cli.ih_skeema.cmd_run import cmd_run
-from infrahouse_toolkit.logging import setup_logging
 
 LOG = getLogger()
 

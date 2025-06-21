@@ -32,7 +32,7 @@ help:
 
 .PHONY: pip
 pip:
-	pip install -U "pip ~= 23.0"
+	pip install -U "pip ~= 25.1"
 
 .PHONY: pip-tools
 pip-tools: pip
@@ -40,7 +40,7 @@ pip-tools: pip
 
 .PHONY: setuptools
 setuptools: pip
-	pip install -U "setuptools ~= 62.3.2"
+	pip install -U "setuptools ~= 80.9.0"
 
 .PHONY: hooks
 hooks:

@@ -15,6 +15,7 @@ from click import Context
 
 from infrahouse_toolkit.aws import get_client
 from infrahouse_toolkit.cli.lib import read_from_file_or_prompt
+from infrahouse_toolkit.cli.utils import sha256
 
 LOG = getLogger()
 
@@ -38,7 +39,7 @@ def cmd_set_secret_value(ctx: Context, secret_id, path):
     try:
         client = get_client("secretsmanager", role_arn=role_arn, region=ctx.parent.params["aws_region"])
         value = read_from_file_or_prompt(path[0])
-        LOG.debug("Secret value: %s", value)
+        LOG.debug("Hashed input value (SHA-256): %s", sha256(value))
         client.put_secret_value(SecretId=secret_id, SecretString=value)
         LOG.info("Value of %s is successfully set.", secret_id)
 

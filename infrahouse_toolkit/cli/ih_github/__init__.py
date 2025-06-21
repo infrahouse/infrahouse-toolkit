@@ -9,12 +9,12 @@
 from logging import getLogger
 
 import click
+from infrahouse_core.logging import setup_logging
 
 from infrahouse_toolkit.cli.ih_github.cmd_backup import cmd_backup
 from infrahouse_toolkit.cli.ih_github.cmd_run import cmd_run
 from infrahouse_toolkit.cli.ih_github.cmd_runner import cmd_runner
 from infrahouse_toolkit.cli.ih_github.cmd_scan import cmd_scan
-from infrahouse_toolkit.logging import setup_logging
 
 LOG = getLogger()
 

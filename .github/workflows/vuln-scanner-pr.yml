@@ -24,3 +24,23 @@ jobs:
                 ih-github scan \
                   --repo ${{ github.repository }} \
                   --pull-request ${{ github.event.pull_request.number }}
+
+    sast-check:
+        runs-on: ["self-hosted", "Linux", "noble"]
+        steps:
+            - uses: actions/checkout@v4
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
+
+            - name: Install dependencies
+              run: |
+                make bootstrap
+
+            - name: SAST
+              run: |
+                ih-github run \
+                  ${{ github.repository }} \
+                  ${{ github.event.pull_request.number }} \
+                  semgrep scan --error

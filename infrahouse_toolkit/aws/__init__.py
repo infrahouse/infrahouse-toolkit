@@ -12,7 +12,6 @@ from pprint import pformat
 from time import sleep
 
 import boto3
-import requests
 from boto3 import Session
 from botocore.exceptions import (
     ClientError,
@@ -145,22 +144,6 @@ def get_client(service_name, role_arn=None, region=None, session_name=__name__):
     return boto3.client(service_name, region_name=region)
 
 
-def get_credentials_from_profile() -> dict:
-    """
-    Another way to get AWS credentials is from EC2 instance metadata.
-
-    :return: A dictionary with AWS_* variables.
-    """
-    LOG.debug("Using AWS credentials from instance metadata")
-    url = "http://169.254.169.254/latest/meta-data/iam/security-credentials/"
-    profile_name = requests.get(url, timeout=10).text
-    LOG.debug("Profile name %s", profile_name)
-    profile_data = requests.get(f"{url}/{profile_name}", timeout=10).json()
-    profile_data["SessionToken"] = profile_data["Token"]
-
-    return {var: profile_data.get(key) for var, key in VALUE_MAP.items()}
-
-
 def get_credentials_from_environ():
     """Yet another way to get credentials.
 
@@ -188,7 +171,6 @@ def get_secret(secretsmanager_client, secret_name):
     response = secretsmanager_client.get_secret_value(
         SecretId=secret_name,
     )
-    LOG.debug("get_secrets() = %s", pformat(response, indent=4))
     return response["SecretString"]
 
 

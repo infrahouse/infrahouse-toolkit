@@ -31,7 +31,7 @@ def list_secrets(secretsmanager_client, all_fields=False):
     while True:
         kwargs = {"NextToken": next_token} if next_token else {}
         response = secretsmanager_client.list_secrets(**kwargs)
-        LOG.debug("list_secrets() = %s", pformat(response, indent=4))
+        LOG.debug("list_secrets() = %s", pformat(response, indent=4))  ## nosem
         for secret in response["SecretList"]:
             row = []
             for field in fields:

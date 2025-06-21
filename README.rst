@@ -42,10 +42,10 @@ The command prints the credentials in a format that you can copy&paste for diffe
 .. code-block:: bash
 
     $ ih-aws credentials
-    AWS_ACCESS_KEY_ID=ASIAXFXZRL24LGX6JZ5A
+    AWS_ACCESS_KEY_ID=ASIA***************A
     AWS_SECRET_ACCESS_KEY=ILA***********************************GR
     AWS_DEFAULT_REGION=us-west-1
-    AWS_SESSION_TOKEN=IQoJb3JpZ2luX2VjEMr...F2Dooyg9dJ0hnVsphfLkA==
+    AWS_SESSION_TOKEN=IQoJb*************************************A==
 
 
 With a ``-e`` option, the tool adds the ``export`` keyword in case you want a child process to have access to the credentials
@@ -53,10 +53,10 @@ With a ``-e`` option, the tool adds the ``export`` keyword in case you want a ch
 .. code-block:: bash
 
     $ ih-aws credentials -e
-    export AWS_ACCESS_KEY_ID=ASIAXFXZRL24LGX6JZ5A
+    export AWS_ACCESS_KEY_ID=ASIA***************A
     export AWS_SECRET_ACCESS_KEY=ILA***********************************GR
     export AWS_DEFAULT_REGION=us-west-1
-    export AWS_SESSION_TOKEN=IQoJb3JpZ2luX2VjEMr...F2Dooyg9dJ0hnVsphfLkA==
+    export AWS_SESSION_TOKEN=IQoJb*************************************A==
 
 If you want to pass the AWS credentials to a docker, the ``--docker`` option will generate a command line options to
 the ``docker`` command.

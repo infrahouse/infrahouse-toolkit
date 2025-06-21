@@ -24,5 +24,5 @@ def cmd_create(ctx, name):
     """
     client = SecurityClient(ctx.obj["es"])
     api_key = client.create_api_key(name=name)
-    LOG.info("API key %s is created.", name)
+    LOG.info("API key %s is created.", name)  ## nosem
     print(json.dumps(dict(api_key.body), indent=4))

@@ -13,9 +13,8 @@ from pprint import pformat
 
 import click
 from botocore.exceptions import ClientError
+from infrahouse_core.logging import setup_logging
 from tabulate import tabulate
-
-from infrahouse_toolkit.logging import setup_logging
 
 LOG = getLogger(__name__)
 
