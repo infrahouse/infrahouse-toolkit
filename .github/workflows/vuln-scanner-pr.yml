@@ -24,3 +24,14 @@ jobs:
                 ih-github scan \
                   --repo ${{ github.repository }} \
                   --pull-request ${{ github.event.pull_request.number }}
+
+    sat-check:
+        runs-on: ["self-hosted", "Linux", "noble"]
+        steps:
+            - uses: actions/checkout@v4
+            - name: SAST
+              run: |
+                  ih-github run \
+                    --repo ${{ github.repository }} \
+                    --pull-request ${{ github.event.pull_request.number }} \
+                    semgrep scan
