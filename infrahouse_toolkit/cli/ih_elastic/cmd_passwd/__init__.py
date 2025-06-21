@@ -29,4 +29,4 @@ def cmd_passwd(ctx, **kwargs):
 
     client = SecurityClient(ctx.obj["es"])
     client.change_password(username=kwargs["username"], password=new_password)
-    LOG.info("Successfully changed password for user %s.", kwargs["username"])
+    LOG.info("Successfully changed password for user %s.", kwargs["username"])  ## nosem

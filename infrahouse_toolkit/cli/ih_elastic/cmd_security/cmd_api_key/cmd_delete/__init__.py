@@ -13,6 +13,8 @@ import click
 from elasticsearch import NotFoundError
 from elasticsearch.client import SecurityClient
 
+from infrahouse_toolkit.cli.utils import sanitize_secret
+
 LOG = getLogger(__name__)
 
 
@@ -29,11 +31,11 @@ def cmd_delete(ctx, **kwargs):
         api_key = client.get_api_key(id=key_id)["api_keys"][0]
         client.invalidate_api_key(ids=[key_id])
 
-        LOG.info(
+        LOG.info(  ## nosem
             "API key %s:%s is invalidated. It will be fully deleted after the configured retention period.",
-            api_key["id"],
+            sanitize_secret(api_key["id"]),
             api_key["name"],
         )
     except NotFoundError:
-        LOG.error("API key %s not found.", key_id)
+        LOG.error("API key %s not found.", sanitize_secret(key_id))  ## nosem
         sys.exit(1)

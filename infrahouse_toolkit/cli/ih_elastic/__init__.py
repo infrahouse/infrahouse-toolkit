@@ -13,6 +13,7 @@ from logging import getLogger
 import boto3
 import click
 from elasticsearch import Elasticsearch
+from infrahouse_core.logging import setup_logging
 from requests.auth import HTTPBasicAuth
 
 from infrahouse_toolkit.cli.ih_elastic.cmd_api import cmd_api
@@ -23,7 +24,6 @@ from infrahouse_toolkit.cli.ih_elastic.cmd_passwd import cmd_passwd
 from infrahouse_toolkit.cli.ih_elastic.cmd_security import cmd_security
 from infrahouse_toolkit.cli.ih_elastic.cmd_snapshots import cmd_snapshots
 from infrahouse_toolkit.cli.lib import get_elastic_password
-from infrahouse_toolkit.logging import setup_logging
 
 LOG = getLogger()
 

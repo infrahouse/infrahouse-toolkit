@@ -9,6 +9,7 @@
 from logging import getLogger
 
 import click
+from infrahouse_core.logging import setup_logging
 
 from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_check import cmd_check
 from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_checkpool import cmd_checkpool
@@ -29,7 +30,6 @@ from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_set_secret_value import (
     cmd_set_secret_value,
 )
 from infrahouse_toolkit.cli.utils import DEPENDENCIES, check_dependencies
-from infrahouse_toolkit.logging import setup_logging
 
 LOG = getLogger()
 

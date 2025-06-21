@@ -64,8 +64,10 @@ def gpg(secret_key=None, role_arn=None, secret_passphrase=None, region: str = No
         except ClientError as err:
             LOG.error(err)
             if err.response["Error"]["Code"] == "ResourceNotFoundException":
-                LOG.error("Make sure that you set a secret value to the key %s:", secret_key)
-                LOG.error("ih-s3-reprepro ... set-secret-value %s /path/to/file/with/%s-value", secret_key, secret_key)
+                LOG.error("Make sure that you set a secret value to the key %s:", secret_key)  ## nosem
+                LOG.error(  ## nosem
+                    "ih-s3-reprepro ... set-secret-value %s /path/to/file/with/%s-value", secret_key, secret_key
+                )
             raise
 
         with gpg_home() as homedir, NamedTemporaryFile() as gpg_key_desc, NamedTemporaryFile() as gpg_passphrase_desc:
