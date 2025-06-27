@@ -60,6 +60,14 @@ infrahouse\_toolkit.cli.ih\_s3\_reprepro.cmd\_list module
    :undoc-members:
    :show-inheritance:
 
+infrahouse\_toolkit.cli.ih\_s3\_reprepro.cmd\_migrate module
+------------------------------------------------------------
+
+.. automodule:: infrahouse_toolkit.cli.ih_s3_reprepro.cmd_migrate
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 infrahouse\_toolkit.cli.ih\_s3\_reprepro.cmd\_remove module
 -----------------------------------------------------------
 

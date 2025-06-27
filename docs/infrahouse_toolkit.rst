@@ -32,14 +32,6 @@ infrahouse\_toolkit.fs module
    :undoc-members:
    :show-inheritance:
 
-infrahouse\_toolkit.logging module
-----------------------------------
-
-.. automodule:: infrahouse_toolkit.logging
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 infrahouse\_toolkit.timeout module
 ----------------------------------
 

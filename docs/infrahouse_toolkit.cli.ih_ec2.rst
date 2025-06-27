@@ -12,6 +12,7 @@ Subpackages
    infrahouse_toolkit.cli.ih_ec2.cmd_launch_templates
    infrahouse_toolkit.cli.ih_ec2.cmd_list
    infrahouse_toolkit.cli.ih_ec2.cmd_subnets
+   infrahouse_toolkit.cli.ih_ec2.cmd_tags
    infrahouse_toolkit.cli.ih_ec2.cmd_terminate
 
 Module contents

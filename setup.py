@@ -35,6 +35,7 @@ console_scripts = [
     "ih-ec2=infrahouse_toolkit.cli.ih_ec2:ih_ec2",
     "ih-elastic=infrahouse_toolkit.cli.ih_elastic:ih_elastic",
     "ih-github=infrahouse_toolkit.cli.ih_github:ih_github",
+    "ih-openvpn=infrahouse_toolkit.cli.ih_openvpn:ih_openvpn",
     "ih-plan=infrahouse_toolkit.cli.ih_plan:ih_plan",
     "ih-puppet=infrahouse_toolkit.cli.ih_puppet:ih_puppet",
     "ih-registry=infrahouse_toolkit.cli.ih_registry:ih_registry",
@@ -72,6 +73,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/infrahouse/infrahouse-toolkit",
-    version="2.54.2",
+    version="2.55.0",
     zip_safe=False,
 )

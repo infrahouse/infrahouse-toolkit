@@ -28,6 +28,14 @@ infrahouse\_toolkit.aws.tests.config.test\_get\_region module
    :undoc-members:
    :show-inheritance:
 
+infrahouse\_toolkit.aws.tests.config.test\_get\_sso\_region module
+------------------------------------------------------------------
+
+.. automodule:: infrahouse_toolkit.aws.tests.config.test_get_sso_region
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 infrahouse\_toolkit.aws.tests.config.test\_profiles module
 ----------------------------------------------------------
 
