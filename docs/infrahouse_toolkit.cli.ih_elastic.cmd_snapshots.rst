@@ -10,6 +10,7 @@ Subpackages
    infrahouse_toolkit.cli.ih_elastic.cmd_snapshots.cmd_create
    infrahouse_toolkit.cli.ih_elastic.cmd_snapshots.cmd_create_repository
    infrahouse_toolkit.cli.ih_elastic.cmd_snapshots.cmd_delete_repository
+   infrahouse_toolkit.cli.ih_elastic.cmd_snapshots.cmd_policy
    infrahouse_toolkit.cli.ih_elastic.cmd_snapshots.cmd_restore
    infrahouse_toolkit.cli.ih_elastic.cmd_snapshots.cmd_status
 

@@ -14,6 +14,17 @@ Subpackages
    infrahouse_toolkit.cli.ih_elastic.cmd_security
    infrahouse_toolkit.cli.ih_elastic.cmd_snapshots
 
+Submodules
+----------
+
+infrahouse\_toolkit.cli.ih\_elastic.cmd\_api module
+---------------------------------------------------
+
+.. automodule:: infrahouse_toolkit.cli.ih_elastic.cmd_api
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 
