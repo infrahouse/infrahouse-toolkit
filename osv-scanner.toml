@@ -1,0 +1,6 @@
+[[IgnoredVulns]]
+id = "GHSA-mqcp-p2hv-vw6x"
+ignoreUntil = 2025-09-10 # Optional exception expiry date
+# I'm wating until inspec-core removes the ">= 0.20", "< 1.3.0" version pinning.
+# See details in https://github.com/inspec/inspec/blob/main/inspec-core.gemspec#L38
+reason = "The fix is not available yet."
