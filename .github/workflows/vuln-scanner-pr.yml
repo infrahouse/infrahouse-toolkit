@@ -2,45 +2,20 @@
 name: OSV-Scanner PR Scan
 
 on:  # yamllint disable-line rule:truthy
-    pull_request:
-        branches: [main]
-    merge_group:
-        branches: [main]
+  pull_request:
+    branches: [main]
 
 permissions:
-    contents: read
-    pull-requests: write
-
-env:
-    GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+  # Required to upload SARIF file to CodeQL. See: https://github.com/github/codeql-action/issues/2117
+  actions: read
+  # Require writing security events to upload SARIF file to security tab
+  security-events: write
+  # Only need to read contents
+  contents: read
 
 jobs:
-    vulnerability-check:
-        runs-on: ["self-hosted", "Linux", "noble"]
-        steps:
-            - uses: actions/checkout@v5
-            - name: Detect vulnerabilities
-              run: |
-                ih-github scan \
-                  --repo ${{ github.repository }} \
-                  --pull-request ${{ github.event.pull_request.number }}
-
-    sast-check:
-        runs-on: ["self-hosted", "Linux", "noble"]
-        steps:
-            - uses: actions/checkout@v5
-            - name: Set up Python
-              uses: actions/setup-python@v6
-              with:
-                  python-version: "3.11"
-
-            - name: Install dependencies
-              run: |
-                make bootstrap
-
-            - name: SAST
-              run: |
-                ih-github run \
-                  ${{ github.repository }} \
-                  ${{ github.event.pull_request.number }} \
-                  semgrep scan --error
+  vulnerability-check:
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v1.9.2"
+    with:
+      scan-args: --config osv-scanner.toml
+      upload-sarif: false
