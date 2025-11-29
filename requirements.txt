@@ -4,7 +4,7 @@ cached-property ~= 2.0
 certbot ~=4.1
 certbot-dns-route53 ~=4.1
 click ~= 8.1
-cryptography ~=45.0, >=45.0.4
+cryptography ~=46.0, >=46.0.3
 diskcache ~= 5.6
 ec2-metadata ~= 2.13
 elastic-transport ~= 8.12.0
