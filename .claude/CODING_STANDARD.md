@@ -292,20 +292,82 @@ This document defines coding standards for InfraHouse projects.
 * **README.md (required):**
   - Must include terraform-docs markers: `<!-- BEGIN_TF_DOCS -->` and `<!-- END_TF_DOCS -->`
   - Pre-commit hook uses terraform-docs to auto-generate documentation
-  - Must have badges:
-    - Terraform Registry URL
-    - License
-    - CD status
-    - Relevant documentation (e.g., `[![AWS Lambda](https://img.shields.io/badge/AWS-Lambda-orange?logo=awslambda)]
-      (https://aws.amazon.com/lambda/)`)
-  - Module description
-  - Usage examples
+  - **Required badges** (in this order):
+    - Terraform Registry: `[![Registry](https://img.shields.io/badge/terraform-registry-623CE4?logo=terraform)](registry-url)`
+    - Latest Release: `[![GitHub release](https://img.shields.io/github/v/release/infrahouse/repo-name)](release-url)`
+    - License: `[![License](https://img.shields.io/github/license/infrahouse/repo-name)](LICENSE)`
+    - Documentation: `[![Docs](https://img.shields.io/badge/docs-github.io-blue)](https://infrahouse.github.io/repo-name/)`
+    - Security: `[![Security](https://github.com/infrahouse/repo-name/actions/workflows/vuln-scanner-pr.yml/badge.svg)](workflow-url)`
+    - AWS Service Badge(s): Link to relevant AWS service(s) the module uses
+    - Contact: `[![Need Help?](https://img.shields.io/badge/Need%20Help%3F-Contact%20Us-0066CC)](https://infrahouse.com/contact)`
+  - **Required sections:**
+    1. Brief description (what it does, why it exists)
+    2. Features (bullet list)
+    3. Quick Start (minimal working example)
+    4. Documentation (links to GitHub Pages)
+    5. Requirements (Terraform version, providers)
+    6. Usage (terraform-docs auto-generated)
+    7. Examples (link to examples/)
+    8. Contributing (link to CONTRIBUTING.md)
+    9. License (link to LICENSE)
 * **examples/ directory:**
   - Desired but optional
   - Provide working examples when included
 * **terraform-docs configuration:**
   - `.terraform-docs.yml` is managed by github-control
   - README.md uses centrally-managed configuration
+
+### GitHub Pages Documentation (terraform_module)
+* **Deployment:** Automated via `.github/workflows/docs.yml` (managed by github-control)
+* **Built with:** MkDocs with Material theme
+* **Required pages:**
+  - `docs/index.md` - Overview, features, quick start
+  - `docs/getting-started.md` - Prerequisites, first deployment
+  - `docs/configuration.md` - All variables explained with examples
+* **Recommended pages:**
+  - `docs/architecture.md` - How it works, diagrams
+  - `docs/examples.md` - Common use cases with explanations
+  - `docs/troubleshooting.md` - Common issues and solutions
+  - `docs/changelog.md` - Or link to CHANGELOG.md
+* **Optional pages:**
+  - `docs/comparison.md` - vs alternatives
+  - `docs/security.md` - Security considerations
+  - `docs/monitoring.md` - Observability setup
+  - `docs/upgrading.md` - Migration guides between versions
+
+### Repository Files
+* **Must have:**
+  - `README.md` - Module documentation (see above)
+  - `LICENSE` - Apache 2.0 (recommended for patent protection and enterprise adoption)
+  - `CHANGELOG.md` - Auto-generated with git-cliff
+  - `.terraform-docs.yml` - Managed by github-control
+  - `mkdocs.yml` - MkDocs configuration (managed by github-control)
+  - `cliff.toml` - git-cliff configuration (managed by github-control)
+  - `.github/workflows/release.yml` - Auto-create GitHub Releases from tags (managed by github-control)
+  - `examples/` directory - Working examples
+* **Should have:**
+  - `CONTRIBUTING.md` - Contribution guidelines
+  - `SECURITY.md` - Security policy, how to report vulnerabilities
+  - `CODEOWNERS` - Auto-assign reviewers
+  - `.github/ISSUE_TEMPLATE/` - Bug report, feature request templates
+  - `.github/PULL_REQUEST_TEMPLATE.md` - PR template
+
+### Release Automation
+* **Automated via `.github/workflows/release.yml`** (managed by github-control)
+* **Trigger:** Push of version tags (e.g., `0.1.0`, `v1.0.0`)
+* **Process:**
+  1. git-cliff generates changelog for the release
+  2. GitHub Release is created automatically with release notes
+  3. "Latest Release" badge in README reflects the new version
+* **Manual release process** (via Makefile targets):
+  ```makefile
+  release-patch:
+  	git-cliff --tag $(shell bumpversion --dry-run --list patch | grep new_version | cut -d= -f2) -o CHANGELOG.md
+  	bumpversion patch
+  	git push && git push --tags
+  	# GitHub Actions workflow automatically creates the release
+  ```
+* **Available targets:** `release-patch`, `release-minor`, `release-major`
 
 ### Resource Organization
 * **`count` vs `for_each`:**
