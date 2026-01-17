@@ -293,13 +293,13 @@ This document defines coding standards for InfraHouse projects.
   - Must include terraform-docs markers: `<!-- BEGIN_TF_DOCS -->` and `<!-- END_TF_DOCS -->`
   - Pre-commit hook uses terraform-docs to auto-generate documentation
   - **Required badges** (in this order):
-    - Terraform Registry: `[![Registry](https://img.shields.io/badge/terraform-registry-623CE4?logo=terraform)](registry-url)`
-    - Latest Release: `[![GitHub release](https://img.shields.io/github/v/release/infrahouse/repo-name)](release-url)`
-    - License: `[![License](https://img.shields.io/github/license/infrahouse/repo-name)](LICENSE)`
-    - Documentation: `[![Docs](https://img.shields.io/badge/docs-github.io-blue)](https://infrahouse.github.io/repo-name/)`
-    - Security: `[![Security](https://github.com/infrahouse/repo-name/actions/workflows/vuln-scanner-pr.yml/badge.svg)](workflow-url)`
-    - AWS Service Badge(s): Link to relevant AWS service(s) the module uses
     - Contact: `[![Need Help?](https://img.shields.io/badge/Need%20Help%3F-Contact%20Us-0066CC)](https://infrahouse.com/contact)`
+    - Documentation: `[![Docs](https://img.shields.io/badge/docs-github.io-blue)](https://infrahouse.github.io/repo-name/)`
+    - Terraform Registry: `[![Registry](https://img.shields.io/badge/Terraform-Registry-purple?logo=terraform)](https://registry.terraform.io/modules/infrahouse/module-name/aws/latest)`
+    - Latest Release: `[![Release](https://img.shields.io/github/release/infrahouse/repo-name.svg)](https://github.com/infrahouse/repo-name/releases/latest)`
+    - AWS Service Badge(s): `[![AWS EC2](https://img.shields.io/badge/AWS-EC2-orange?logo=amazonec2)](https://aws.amazon.com/ec2/)` (link to relevant AWS service(s))
+    - Security: `[![Security](https://img.shields.io/github/actions/workflow/status/infrahouse/repo-name/vuln-scanner-pr.yml?label=Security)](https://github.com/infrahouse/repo-name/actions/workflows/vuln-scanner-pr.yml)`
+    - License: `[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)`
   - **Required sections:**
     1. Brief description (what it does, why it exists)
     2. Features (bullet list)
