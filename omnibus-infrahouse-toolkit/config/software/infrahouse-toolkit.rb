@@ -31,6 +31,7 @@ build do
   link "#{install_dir}/embedded/bin/ih-ec2", "#{scripts_dir}/ih-ec2"
   link "#{install_dir}/embedded/bin/ih-elastic", "#{scripts_dir}/ih-elastic"
   link "#{install_dir}/embedded/bin/ih-github", "#{scripts_dir}/ih-github"
+  link "#{install_dir}/embedded/bin/ih-mysql", "#{scripts_dir}/ih-mysql"
   link "#{install_dir}/embedded/bin/ih-openvpn", "#{scripts_dir}/ih-openvpn"
   link "#{install_dir}/embedded/bin/ih-plan", "#{scripts_dir}/ih-plan"
   link "#{install_dir}/embedded/bin/ih-puppet", "#{scripts_dir}/ih-puppet"

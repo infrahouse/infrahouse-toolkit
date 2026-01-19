@@ -178,6 +178,10 @@ docker:  ## Run a docker container with Ubuntu for local development.
 	-w /infrahouse-toolkit \
 	python:3.11 bash -l
 
+.PHONY: install
+install: ## Install infrahouse-toolkit to the embedded Python
+	/opt/infrahouse-toolkit/embedded/bin/pip3 install .
+
 .PHONY: venv
 venv: ## Create local python virtual environment
 	python3 -m venv .venv
