@@ -35,6 +35,7 @@ console_scripts = [
     "ih-ec2=infrahouse_toolkit.cli.ih_ec2:ih_ec2",
     "ih-elastic=infrahouse_toolkit.cli.ih_elastic:ih_elastic",
     "ih-github=infrahouse_toolkit.cli.ih_github:ih_github",
+    "ih-mysql=infrahouse_toolkit.cli.ih_mysql:ih_mysql",
     "ih-openvpn=infrahouse_toolkit.cli.ih_openvpn:ih_openvpn",
     "ih-plan=infrahouse_toolkit.cli.ih_plan:ih_plan",
     "ih-puppet=infrahouse_toolkit.cli.ih_puppet:ih_puppet",
