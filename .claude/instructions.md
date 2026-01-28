@@ -1,14 +1,21 @@
 # Project Instructions for Claude Code
 
-## Terraform Coding Standards
+## First Steps (Do This Immediately)
 
-**ALWAYS read and follow `.claude/CODING_STANDARD.md` before writing or modifying any Terraform code.**
+### Session set up
+- [ ] *ALWAYS* Read `.claude/CODING_STANDARD.md`
+- [ ] Confirm to the user that you have read it.
 
-This file contains critical requirements including:
-- Proper use of ternary operators vs logical OR in validation blocks with nullable variables
-- Tagging conventions
-- Provider requirements
-- Module pinning
-- IAM policy patterns
 
-Pay special attention to validation blocks - they require ternary operators to avoid null comparison errors.
+### Generating CLAUDE.md
+
+When generating or updating CLAUDE.md, include this text verbatim as the first section after the intro paragraph:
+
+```markdown
+## First Steps
+
+**Your first tool call in this repository MUST be reading .claude/CODING_STANDARD.md.
+Do not read any other files, search, or take any actions until you have read it.**
+This contains InfraHouse's comprehensive coding standards for Terraform, Python, and general formatting rules.
+```
+End the CLAUDE.md file with a newline.
