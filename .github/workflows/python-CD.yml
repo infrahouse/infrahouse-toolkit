@@ -23,7 +23,7 @@ env:
 jobs:
     deploy:
 
-        runs-on: ["self-hosted", "Linux", "noble"]
+        runs-on: ubuntu-24.04
         strategy:
             matrix:
                 codename: ["noble"]
@@ -39,6 +39,11 @@ jobs:
               if: "${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}"
               with:
                   limit-access-to-actor: true
+
+            - name: Install InfraHouse APT repository
+              run: |
+                  sudo make install-infrahouse-repo
+                  sudo apt-get -y install infrahouse-toolkit
 
             - name: Install dependencies
               run: |

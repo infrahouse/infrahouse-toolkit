@@ -24,7 +24,7 @@ def cmd_scale_in(**kwargs):
     scale-in EC2 instance from scale-in event.
     """
     try:
-        instance = ASGInstance(kwargs["instance_id"])  # pylint: disable=too-many-function-args
+        instance = ASGInstance(instance_id=kwargs["instance_id"])
         if kwargs["action"] == "enable-protection":
             instance.protect()
             LOG.info("Instance %s is protected from scale-in", instance.instance_id)
