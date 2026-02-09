@@ -69,8 +69,27 @@ jobs:
               run: |
                   python -m build
 
+            - name: Smoke-test built package in clean venv
+              if: env.PUBLISH == 'yes'
+              run: |
+                  python -m venv /tmp/smoke-venv
+                  /tmp/smoke-venv/bin/pip install --quiet dist/*.whl
+                  for cmd in ih-aws ih-certbot ih-ec2 ih-elastic ih-github \
+                             ih-mysql ih-openvpn ih-plan ih-puppet \
+                             ih-registry ih-s3 ih-s3-reprepro ih-secrets \
+                             ih-skeema; do
+                    echo "--- $cmd --help ---"
+                    /tmp/smoke-venv/bin/$cmd --help
+                  done
+                  for cmd in ih-aws ih-ec2 ih-elastic ih-github ih-mysql \
+                             ih-plan ih-puppet ih-registry ih-s3 ih-secrets; do
+                    echo "--- $cmd --version ---"
+                    /tmp/smoke-venv/bin/$cmd --version
+                  done
+                  rm -rf /tmp/smoke-venv
+
             - name: Publish Python package
-              if: ${{ env.PUBLISH == 'yes' && matrix.codename == 'jammy' }}
+              if: ${{ env.PUBLISH == 'yes' && matrix.codename == 'noble' }}
               uses: pypa/gh-action-pypi-publish@ab69e431e9c9f48a3310be0a56527c679f56e04d
               with:
                   user: __token__
