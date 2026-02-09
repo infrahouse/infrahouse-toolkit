@@ -10,6 +10,7 @@ Subpackages
    infrahouse_toolkit.cli.ih_aws.cmd_autoscaling
    infrahouse_toolkit.cli.ih_aws.cmd_credentials
    infrahouse_toolkit.cli.ih_aws.cmd_ecs
+   infrahouse_toolkit.cli.ih_aws.cmd_resources
 
 Module contents
 ---------------
