@@ -52,6 +52,14 @@ infrahouse\_toolkit.aws.exceptions module
    :undoc-members:
    :show-inheritance:
 
+infrahouse\_toolkit.aws.resource\_discovery module
+--------------------------------------------------
+
+.. automodule:: infrahouse_toolkit.aws.resource_discovery
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

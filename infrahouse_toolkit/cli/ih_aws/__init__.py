@@ -18,6 +18,7 @@ from infrahouse_toolkit.aws.config import AWSConfig
 from infrahouse_toolkit.cli.ih_aws.cmd_autoscaling import cmd_autoscaling
 from infrahouse_toolkit.cli.ih_aws.cmd_credentials import cmd_credentials
 from infrahouse_toolkit.cli.ih_aws.cmd_ecs import cmd_ecs
+from infrahouse_toolkit.cli.ih_aws.cmd_resources import cmd_resources
 
 AWS_DEFAULT_REGION = "us-west-1"
 LOG = getLogger(__name__)
@@ -79,6 +80,7 @@ for cmd in [
     cmd_credentials,
     cmd_ecs,
     cmd_autoscaling,
+    cmd_resources,
 ]:
     # noinspection PyTypeChecker
     ih_aws.add_command(cmd)

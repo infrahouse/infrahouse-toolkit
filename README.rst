@@ -111,6 +111,108 @@ then you can get credentials for a specific profile.
         "Arn": "arn:aws:sts::303467602807:assumed-role/AWSReservedSSO_AWSAdministratorAccess_422821c726d81c14/aleks"
     }
 
+``ih-aws resources``: discover and manage AWS resources by tags
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``ih-aws resources`` finds AWS resources by tag key/value pairs using the
+`Resource Groups Tagging API <https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/overview.html>`_.
+
+``ih-aws resources list``: list tagged resources
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    $ ih-aws resources list --help
+    Usage: ih-aws resources list [OPTIONS]
+
+      List AWS resources matching the given tag filters.
+
+    Options:
+      -t, --tag TEXT                Tag filter in key=value format.  May be
+                                    repeated; multiple tags use AND logic.
+      --service TEXT                Shorthand for --tag service=VALUE.
+      --environment TEXT            Shorthand for --tag environment=VALUE.
+      -o, --output [table|json|arns]
+                                    Output format.  [default: table]
+      --no-verify                   Skip per-resource existence checks (faster,
+                                    may show stale entries).
+      --no-tags                     Hide tags column in table output.
+      --help                        Show this message and exit.
+
+Find all resources created by a specific Terraform module:
+
+.. code-block:: bash
+
+    $ ih-aws --aws-profile infrahouse-admin-cicd resources list \
+        -t created_by=infrahouse/terraform-aws-ecs --no-verify
+    +---------------------+-------------------------------------------+---------------------------------------------+
+    | Service/Type        | ARN                                       | Tags                                        |
+    +=====================+===========================================+=============================================+
+    | ecs/task-definition | arn:aws:ecs:us-west-2:303467602807:task-  | {                                            |
+    |                     | definition/test-terraform-aws-ecs-cw-     |     "created_by": "infrahouse/terraform-     |
+    |                     | agent-daemon:1                            |     aws-ecs",                                |
+    |                     |                                           |     "environment": "development",            |
+    |                     |                                           |     "service": "test-terraform-aws-ecs"      |
+    |                     |                                           | }                                            |
+    +---------------------+-------------------------------------------+---------------------------------------------+
+    | iam/role            | arn:aws:iam::303467602807:role/task-      | {                                            |
+    |                     | 20251202052012326100000001                |     "created_by": "infrahouse/terraform-     |
+    |                     |                                           |     aws-ecs"                                 |
+    |                     |                                           | }                                            |
+    +---------------------+-------------------------------------------+---------------------------------------------+
+
+Multiple tag filters use AND logic. Use ``--no-tags`` for a compact view or ``-o json``/``-o arns``
+for machine-readable output.
+
+``ih-aws resources delete``: delete tagged resources
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    $ ih-aws resources delete --help
+    Usage: ih-aws resources delete [OPTIONS]
+
+      Delete AWS resources matching the given tag filters.
+
+      By default the command prompts interactively for each resource. Use --yes
+      to skip prompts or --dry-run to preview without deleting.
+
+    Options:
+      -t, --tag TEXT       Tag filter in key=value format.  May be repeated;
+                           multiple tags use AND logic.
+      --service TEXT       Shorthand for --tag service=VALUE.
+      --environment TEXT   Shorthand for --tag environment=VALUE.
+      -y, --yes            Non-interactive mode -- delete all matching resources
+                           without prompting.
+      --dry-run            Show what would be deleted without actually deleting
+                           anything.
+      --help               Show this message and exit.
+
+Interactively delete leftover resources from a Terraform module:
+
+.. code-block:: bash
+
+    $ ih-aws --aws-region us-west-2 --aws-profile infrahouse-admin-cicd \
+        resources delete -t created_by=infrahouse/terraform-aws-http-redirect
+    Found 5 resource(s) to delete.
+
+    [1/5] arn:aws:s3:::qwcepb-ci-cd-infrahouse-com-cloudfront-logs
+        Purpose: CloudFront access logs
+        created_by: infrahouse/terraform-aws-http-redirect
+      Delete this resource? [y/n/q] [n]: y
+      Deleting ...
+      OK: S3Bucket deleted.
+
+    [2/5] arn:aws:acm:us-west-2:303467602807:certificate/81365c06-...
+        created_by: infrahouse/terraform-aws-http-redirect
+      Delete this resource? [y/n/q] [n]: y
+      Deleting ...
+      OK: ACMCertificate deleted.
+
+    Done. Deleted 5, failed 0, skipped 0.
+
+Use ``--dry-run`` to preview what would be deleted, or ``--yes`` to skip prompts.
+
 ``ih-aws ecs``: ECS helpers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
