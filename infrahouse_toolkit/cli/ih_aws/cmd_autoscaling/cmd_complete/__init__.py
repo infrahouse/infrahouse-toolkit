@@ -32,7 +32,7 @@ def cmd_complete(**kwargs):
     Complete a lifecycle action for a given hook name and a local or remote EC2 instance.
     """
     try:
-        instance = ASGInstance(kwargs["instance_id"])  # pylint: disable=too-many-function-args
+        instance = ASGInstance(instance_id=kwargs["instance_id"])
         ASG(instance.asg_name).complete_lifecycle_action(
             kwargs["hook_name"], result=kwargs["result"], instance_id=instance.instance_id
         )
