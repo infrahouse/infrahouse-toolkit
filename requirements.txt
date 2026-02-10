@@ -2,7 +2,7 @@ boto3 ~= 1.26
 botocore ~= 1.29
 cached-property ~= 2.0
 certbot ~=4.1
-certbot-dns-route53 ~=4.1
+certbot-dns-route53 ~=5.3
 click ~= 8.1
 cryptography ~=45.0, >=45.0.4
 diskcache ~= 5.6
