@@ -9,6 +9,7 @@
     {
       "matchManagers": ["github-actions"],
       "matchFileNames": [
+        ".github/workflows/checkov.yml",
         ".github/workflows/terraform-CI.yml",
         ".github/workflows/terraform-CD.yml",
         ".github/workflows/vuln-scanner-pr-public.yml",
