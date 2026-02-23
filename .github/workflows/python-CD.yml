@@ -70,7 +70,7 @@ jobs:
                   python -m build
 
             - name: Publish Python package
-              if: ${{ env.PUBLISH == 'yes' && matrix.codename == 'jammy' }}
+              if: ${{ env.PUBLISH == 'yes' && matrix.codename == 'noble' }}
               uses: pypa/gh-action-pypi-publish@ab69e431e9c9f48a3310be0a56527c679f56e04d
               with:
                   user: __token__
