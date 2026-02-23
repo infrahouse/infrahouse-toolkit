@@ -71,7 +71,7 @@ jobs:
 
             - name: Publish Python package
               if: ${{ env.PUBLISH == 'yes' && matrix.codename == 'noble' }}
-              uses: pypa/gh-action-pypi-publish@ab69e431e9c9f48a3310be0a56527c679f56e04d
+              uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b
               with:
                   user: __token__
                   password: ${{ secrets.PYPI_API_TOKEN }}
