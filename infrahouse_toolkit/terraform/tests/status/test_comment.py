@@ -600,3 +600,34 @@ def test_comment_none():
     )
     assert isinstance(status.comment, str)
     print(status.comment)
+
+
+def test_comment_sensitive_user_data():
+    """Test that sensitive user_data in terraform plan doesn't crash with binascii.Error."""
+    stdout = """\
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  ~ update in-place
+
+Terraform will perform the following actions:
+
+  # module.website.aws_launch_template.website will be updated in-place
+  ~ resource "aws_launch_template" "website" {
+        id                                   = "lt-042ea5dd55b0fff3b"
+      ~ latest_version                       = 8 -> (known after apply)
+        name                                 = "web20231125205151213200000001"
+        tags                                 = {}
+      ~ user_data                            = (sensitive value)
+        # (16 unchanged attributes hidden)
+    }
+
+Plan: 0 to add, 1 to change, 0 to destroy.
+"""
+    status = TFStatus(
+        TFS3Backend("foo_backet", "path/to/tf.state"),
+        True,
+        RunResult(0, 1, 0),
+        RunOutput(stdout, None),
+    )
+    assert isinstance(status.comment, str)
+    assert "(sensitive value)" in status.comment
