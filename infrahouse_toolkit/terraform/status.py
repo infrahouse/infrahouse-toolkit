@@ -2,6 +2,7 @@
 Module for :py:class:`TFStatus`, Terraform plan run status class.
 """
 
+import binascii
 import json
 import logging
 import re
@@ -208,7 +209,7 @@ class TFStatus:
                     ):
                         result_lines.append(diff_line)
                     result_lines.append("EOF userdata changes.")
-                except UnicodeDecodeError as err:
+                except (UnicodeDecodeError, binascii.Error) as err:
                     LOG.warning("Failed to decode userdata: %s", err)
             idx += 1
 
