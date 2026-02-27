@@ -91,6 +91,70 @@ def parse_arn(arn: str) -> Optional[Dict[str, Optional[str]]]:
 # ---------------------------------------------------------------------------
 
 
+class LaunchTemplate:
+    """Minimal wrapper for EC2 launch templates."""
+
+    def __init__(self, template_id: str, region: str = None, session: boto3.Session = None):
+        self._template_id = template_id
+        self._region = region
+        self._session = session
+        self._client_instance = None
+
+    @property
+    def _client(self):
+        """Lazy-initialise the EC2 client."""
+        if self._client_instance is None:
+            self._client_instance = (self._session or boto3).client("ec2", region_name=self._region)
+        return self._client_instance
+
+    @property
+    def exists(self) -> bool:
+        """Return ``True`` if the launch template still exists."""
+        try:
+            resp = self._client.describe_launch_templates(LaunchTemplateIds=[self._template_id])
+            return bool(resp.get("LaunchTemplates"))
+        except ClientError as exc:
+            if exc.response["Error"]["Code"] == "InvalidLaunchTemplateId.NotFound":
+                return False
+            raise
+
+    def delete(self) -> None:
+        """Delete the launch template."""
+        self._client.delete_launch_template(LaunchTemplateId=self._template_id)
+
+
+class KeyPair:
+    """Minimal wrapper for EC2 key pairs."""
+
+    def __init__(self, key_pair_id: str, region: str = None, session: boto3.Session = None):
+        self._key_pair_id = key_pair_id
+        self._region = region
+        self._session = session
+        self._client_instance = None
+
+    @property
+    def _client(self):
+        """Lazy-initialise the EC2 client."""
+        if self._client_instance is None:
+            self._client_instance = (self._session or boto3).client("ec2", region_name=self._region)
+        return self._client_instance
+
+    @property
+    def exists(self) -> bool:
+        """Return ``True`` if the key pair still exists."""
+        try:
+            resp = self._client.describe_key_pairs(KeyPairIds=[self._key_pair_id])
+            return bool(resp.get("KeyPairs"))
+        except ClientError as exc:
+            if exc.response["Error"]["Code"] == "InvalidKeyPair.NotFound":
+                return False
+            raise
+
+    def delete(self) -> None:
+        """Delete the key pair."""
+        self._client.delete_key_pair(KeyPairId=self._key_pair_id)
+
+
 class NetworkInterface:
     """Minimal wrapper for EC2 network interfaces.
 
@@ -244,6 +308,39 @@ class SecurityGroupRule:
                 GroupId=group_id,
                 SecurityGroupRuleIds=[self._rule_id],
             )
+
+
+class ECSCapacityProvider:
+    """Minimal wrapper for ECS capacity providers."""
+
+    def __init__(self, name: str, region: str = None, session: boto3.Session = None):
+        self._name = name
+        self._region = region
+        self._session = session
+        self._client_instance = None
+
+    @property
+    def _client(self):
+        """Lazy-initialise the ECS client."""
+        if self._client_instance is None:
+            self._client_instance = (self._session or boto3).client("ecs", region_name=self._region)
+        return self._client_instance
+
+    @property
+    def exists(self) -> bool:
+        """Return ``True`` if the capacity provider is ACTIVE."""
+        try:
+            resp = self._client.describe_capacity_providers(capacityProviders=[self._name])
+            for cp in resp.get("capacityProviders", []):
+                if cp["status"] == "ACTIVE":
+                    return True
+            return False
+        except ClientError:
+            return False
+
+    def delete(self) -> None:
+        """Delete the capacity provider."""
+        self._client.delete_capacity_provider(capacityProvider=self._name)
 
 
 class ECSCluster:
@@ -426,6 +523,10 @@ def resource_for_arn(
             return SecurityGroupRule(resource_id, region=arn_region, session=session)
         if resource_type == "volume":
             return EBSVolume(resource_id, region=arn_region, session=session)
+        if resource_type == "key-pair":
+            return KeyPair(resource_id, region=arn_region, session=session)
+        if resource_type == "launch-template":
+            return LaunchTemplate(resource_id, region=arn_region, session=session)
         return None
 
     # IAM (global — no region)
@@ -514,6 +615,8 @@ def resource_for_arn(
                 return ECSService(cluster=parts[0], service_name=parts[1], region=arn_region, session=session)
         if resource_type == "cluster":
             return ECSCluster(cluster_name=resource_id, region=arn_region, session=session)
+        if resource_type == "capacity-provider":
+            return ECSCapacityProvider(name=resource_id, region=arn_region, session=session)
         return None
 
     return None

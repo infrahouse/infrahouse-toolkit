@@ -29,9 +29,12 @@ from infrahouse_core.aws import (
 
 from infrahouse_toolkit.aws.resource_discovery import (
     EBSVolume,
+    ECSCapacityProvider,
     ECSCluster,
     ECSService,
     ECSTaskDefinition,
+    KeyPair,
+    LaunchTemplate,
     NetworkInterface,
     SecurityGroupRule,
     resource_for_arn,
@@ -47,6 +50,8 @@ from infrahouse_toolkit.aws.resource_discovery import (
         ("arn:aws:ec2:us-east-1:123456789012:network-interface/eni-0abcdef1234567890", NetworkInterface),
         ("arn:aws:ec2:us-east-1:123456789012:security-group-rule/sgr-0abcdef1234567890", SecurityGroupRule),
         ("arn:aws:ec2:us-east-1:123456789012:volume/vol-0abcdef1234567890", EBSVolume),
+        ("arn:aws:ec2:us-east-1:123456789012:key-pair/key-0abcdef1234567890", KeyPair),
+        ("arn:aws:ec2:us-east-1:123456789012:launch-template/lt-0abcdef1234567890", LaunchTemplate),
         ("arn:aws:iam::123456789012:role/my-role", IAMRole),
         ("arn:aws:iam::123456789012:policy/my-policy", IAMPolicy),
         ("arn:aws:iam::123456789012:instance-profile/my-profile", IAMInstanceProfile),
@@ -93,6 +98,10 @@ from infrahouse_toolkit.aws.resource_discovery import (
         (
             "arn:aws:ecs:us-east-1:303467602807:cluster/my-cluster",
             ECSCluster,
+        ),
+        (
+            "arn:aws:ecs:us-east-1:303467602807:capacity-provider/my-cp",
+            ECSCapacityProvider,
         ),
     ],
 )
