@@ -91,6 +91,341 @@ def parse_arn(arn: str) -> Optional[Dict[str, Optional[str]]]:
 # ---------------------------------------------------------------------------
 
 
+class LaunchTemplate:
+    """Minimal wrapper for EC2 launch templates."""
+
+    def __init__(self, template_id: str, region: str = None, session: boto3.Session = None):
+        self._template_id = template_id
+        self._region = region
+        self._session = session
+        self._client_instance = None
+
+    @property
+    def _client(self):
+        """Lazy-initialise the EC2 client."""
+        if self._client_instance is None:
+            self._client_instance = (self._session or boto3).client("ec2", region_name=self._region)
+        return self._client_instance
+
+    @property
+    def exists(self) -> bool:
+        """Return ``True`` if the launch template still exists."""
+        try:
+            resp = self._client.describe_launch_templates(LaunchTemplateIds=[self._template_id])
+            return bool(resp.get("LaunchTemplates"))
+        except ClientError as exc:
+            if exc.response["Error"]["Code"] == "InvalidLaunchTemplateId.NotFound":
+                return False
+            raise
+
+    def delete(self) -> None:
+        """Delete the launch template."""
+        self._client.delete_launch_template(LaunchTemplateId=self._template_id)
+
+
+class KeyPair:
+    """Minimal wrapper for EC2 key pairs."""
+
+    def __init__(self, key_pair_id: str, region: str = None, session: boto3.Session = None):
+        self._key_pair_id = key_pair_id
+        self._region = region
+        self._session = session
+        self._client_instance = None
+
+    @property
+    def _client(self):
+        """Lazy-initialise the EC2 client."""
+        if self._client_instance is None:
+            self._client_instance = (self._session or boto3).client("ec2", region_name=self._region)
+        return self._client_instance
+
+    @property
+    def exists(self) -> bool:
+        """Return ``True`` if the key pair still exists."""
+        try:
+            resp = self._client.describe_key_pairs(KeyPairIds=[self._key_pair_id])
+            return bool(resp.get("KeyPairs"))
+        except ClientError as exc:
+            if exc.response["Error"]["Code"] == "InvalidKeyPair.NotFound":
+                return False
+            raise
+
+    def delete(self) -> None:
+        """Delete the key pair."""
+        self._client.delete_key_pair(KeyPairId=self._key_pair_id)
+
+
+class NetworkInterface:
+    """Minimal wrapper for EC2 network interfaces.
+
+    Supports existence checks and deletion with automatic force-detach
+    when the ENI is still attached.
+    """
+
+    def __init__(self, eni_id: str, region: str = None, session: boto3.Session = None):
+        self._eni_id = eni_id
+        self._region = region
+        self._session = session
+        self._client_instance = None
+
+    @property
+    def _client(self):
+        """Lazy-initialise the EC2 client."""
+        if self._client_instance is None:
+            self._client_instance = (self._session or boto3).client("ec2", region_name=self._region)
+        return self._client_instance
+
+    def _describe(self) -> Optional[Dict]:
+        """Return the ENI description dict or ``None`` if not found."""
+        try:
+            resp = self._client.describe_network_interfaces(NetworkInterfaceIds=[self._eni_id])
+            interfaces = resp.get("NetworkInterfaces", [])
+            return interfaces[0] if interfaces else None
+        except ClientError as exc:
+            if exc.response["Error"]["Code"] == "InvalidNetworkInterfaceID.NotFound":
+                return None
+            raise
+
+    @property
+    def exists(self) -> bool:
+        """Return ``True`` if the network interface still exists."""
+        return self._describe() is not None
+
+    def delete(self) -> None:
+        """Detach (if attached) and delete the network interface."""
+        info = self._describe()
+        if info is None:
+            return
+        attachment = info.get("Attachment")
+        if attachment and info.get("Status") == "in-use":
+            self._client.detach_network_interface(
+                AttachmentId=attachment["AttachmentId"],
+                Force=True,
+            )
+            LOG.info("Detached %s (attachment %s)", self._eni_id, attachment["AttachmentId"])
+            waiter = self._client.get_waiter("network_interface_available")
+            waiter.wait(NetworkInterfaceIds=[self._eni_id])
+        self._client.delete_network_interface(NetworkInterfaceId=self._eni_id)
+
+
+class EBSVolume:
+    """Minimal wrapper for EBS volumes."""
+
+    def __init__(self, volume_id: str, region: str = None, session: boto3.Session = None):
+        self._volume_id = volume_id
+        self._region = region
+        self._session = session
+        self._client_instance = None
+
+    @property
+    def _client(self):
+        """Lazy-initialise the EC2 client."""
+        if self._client_instance is None:
+            self._client_instance = (self._session or boto3).client("ec2", region_name=self._region)
+        return self._client_instance
+
+    def _describe(self) -> Optional[Dict]:
+        """Return the volume description dict or ``None`` if not found."""
+        try:
+            resp = self._client.describe_volumes(VolumeIds=[self._volume_id])
+            volumes = resp.get("Volumes", [])
+            return volumes[0] if volumes else None
+        except ClientError as exc:
+            if exc.response["Error"]["Code"] == "InvalidVolume.NotFound":
+                return None
+            raise
+
+    @property
+    def exists(self) -> bool:
+        """Return ``True`` if the volume still exists and is not deleted."""
+        info = self._describe()
+        if info is None:
+            return False
+        return info.get("State") != "deleted"
+
+    def delete(self) -> None:
+        """Detach (if attached) and delete the volume."""
+        info = self._describe()
+        if info is None:
+            return
+        if info.get("State") == "in-use":
+            for attachment in info.get("Attachments", []):
+                self._client.detach_volume(
+                    VolumeId=self._volume_id,
+                    InstanceId=attachment["InstanceId"],
+                    Force=True,
+                )
+            waiter = self._client.get_waiter("volume_available")
+            waiter.wait(VolumeIds=[self._volume_id])
+        self._client.delete_volume(VolumeId=self._volume_id)
+
+
+class SecurityGroupRule:
+    """Minimal wrapper for EC2 security group rules."""
+
+    def __init__(self, rule_id: str, region: str = None, session: boto3.Session = None):
+        self._rule_id = rule_id
+        self._region = region
+        self._session = session
+        self._client_instance = None
+
+    @property
+    def _client(self):
+        """Lazy-initialise the EC2 client."""
+        if self._client_instance is None:
+            self._client_instance = (self._session or boto3).client("ec2", region_name=self._region)
+        return self._client_instance
+
+    def _describe(self) -> Optional[Dict]:
+        """Return the rule description dict or ``None`` if not found."""
+        try:
+            resp = self._client.describe_security_group_rules(SecurityGroupRuleIds=[self._rule_id])
+            rules = resp.get("SecurityGroupRules", [])
+            return rules[0] if rules else None
+        except ClientError as exc:
+            if exc.response["Error"]["Code"] == "InvalidSecurityGroupRuleId.NotFound":
+                return None
+            raise
+
+    @property
+    def exists(self) -> bool:
+        """Return ``True`` if the security group rule still exists."""
+        return self._describe() is not None
+
+    def delete(self) -> None:
+        """Delete the security group rule."""
+        info = self._describe()
+        if info is None:
+            return
+        group_id = info["GroupId"]
+        if info.get("IsEgress"):
+            self._client.revoke_security_group_egress(
+                GroupId=group_id,
+                SecurityGroupRuleIds=[self._rule_id],
+            )
+        else:
+            self._client.revoke_security_group_ingress(
+                GroupId=group_id,
+                SecurityGroupRuleIds=[self._rule_id],
+            )
+
+
+class ECSCapacityProvider:
+    """Minimal wrapper for ECS capacity providers."""
+
+    def __init__(self, name: str, region: str = None, session: boto3.Session = None):
+        self._name = name
+        self._region = region
+        self._session = session
+        self._client_instance = None
+
+    @property
+    def _client(self):
+        """Lazy-initialise the ECS client."""
+        if self._client_instance is None:
+            self._client_instance = (self._session or boto3).client("ecs", region_name=self._region)
+        return self._client_instance
+
+    @property
+    def exists(self) -> bool:
+        """Return ``True`` if the capacity provider is ACTIVE."""
+        try:
+            resp = self._client.describe_capacity_providers(capacityProviders=[self._name])
+            for cp in resp.get("capacityProviders", []):
+                if cp["status"] == "ACTIVE":
+                    return True
+            return False
+        except ClientError:
+            return False
+
+    def delete(self) -> None:
+        """Delete the capacity provider."""
+        self._client.delete_capacity_provider(capacityProvider=self._name)
+
+
+class ECSCluster:
+    """Minimal wrapper for ECS clusters."""
+
+    def __init__(self, cluster_name: str, region: str = None, session: boto3.Session = None):
+        self._cluster_name = cluster_name
+        self._region = region
+        self._session = session
+        self._client_instance = None
+
+    @property
+    def _client(self):
+        """Lazy-initialise the ECS client."""
+        if self._client_instance is None:
+            self._client_instance = (self._session or boto3).client("ecs", region_name=self._region)
+        return self._client_instance
+
+    @property
+    def exists(self) -> bool:
+        """Return ``True`` if the cluster is ACTIVE."""
+        try:
+            resp = self._client.describe_clusters(clusters=[self._cluster_name])
+            for cluster in resp.get("clusters", []):
+                if cluster["status"] == "ACTIVE":
+                    return True
+            return False
+        except ClientError:
+            return False
+
+    def delete(self) -> None:
+        """Delete the cluster."""
+        self._client.delete_cluster(cluster=self._cluster_name)
+
+
+class ECSService:
+    """Minimal wrapper for ECS services.
+
+    Deletion sets ``desiredCount`` to 0, then deletes the service with
+    ``force=True`` to remove it even when tasks are still running.
+    """
+
+    def __init__(self, cluster: str, service_name: str, region: str = None, session: boto3.Session = None):
+        self._cluster = cluster
+        self._service_name = service_name
+        self._region = region
+        self._session = session
+        self._client_instance = None
+
+    @property
+    def _client(self):
+        """Lazy-initialise the ECS client."""
+        if self._client_instance is None:
+            self._client_instance = (self._session or boto3).client("ecs", region_name=self._region)
+        return self._client_instance
+
+    @property
+    def exists(self) -> bool:
+        """Return ``True`` if the service is ACTIVE or DRAINING."""
+        try:
+            resp = self._client.describe_services(cluster=self._cluster, services=[self._service_name])
+            for svc in resp.get("services", []):
+                if svc["status"] in ("ACTIVE", "DRAINING"):
+                    return True
+            return False
+        except ClientError:
+            return False
+
+    def delete(self) -> None:
+        """Scale to zero and force-delete the service."""
+        try:
+            self._client.update_service(
+                cluster=self._cluster,
+                service=self._service_name,
+                desiredCount=0,
+            )
+        except ClientError:
+            pass  # Service may already be draining or inactive.
+        self._client.delete_service(
+            cluster=self._cluster,
+            service=self._service_name,
+            force=True,
+        )
+
+
 class ECSTaskDefinition:
     """Minimal wrapper for ECS task definitions.
 
@@ -182,6 +517,16 @@ def resource_for_arn(
             return SecurityGroup(resource_id, region=arn_region, role_arn=role_arn, session=session)
         if resource_type == "natgateway":
             return NATGateway(resource_id, region=arn_region, role_arn=role_arn, session=session)
+        if resource_type == "network-interface":
+            return NetworkInterface(resource_id, region=arn_region, session=session)
+        if resource_type == "security-group-rule":
+            return SecurityGroupRule(resource_id, region=arn_region, session=session)
+        if resource_type == "volume":
+            return EBSVolume(resource_id, region=arn_region, session=session)
+        if resource_type == "key-pair":
+            return KeyPair(resource_id, region=arn_region, session=session)
+        if resource_type == "launch-template":
+            return LaunchTemplate(resource_id, region=arn_region, session=session)
         return None
 
     # IAM (global — no region)
@@ -259,9 +604,20 @@ def resource_for_arn(
     if service == "route53" and resource_type == "hostedzone":
         return Zone(zone_id=resource_id, role_arn=role_arn, session=session)
 
-    # ECS task definitions (lightweight — handled locally)
-    if service == "ecs" and resource_type == "task-definition":
-        return ECSTaskDefinition(arn, region=arn_region, session=session)
+    # ECS
+    if service == "ecs":
+        if resource_type == "task-definition":
+            return ECSTaskDefinition(arn, region=arn_region, session=session)
+        if resource_type == "service":
+            # resource_id is "cluster-name/service-name"
+            parts = resource_id.split("/", 1)
+            if len(parts) == 2:
+                return ECSService(cluster=parts[0], service_name=parts[1], region=arn_region, session=session)
+        if resource_type == "cluster":
+            return ECSCluster(cluster_name=resource_id, region=arn_region, session=session)
+        if resource_type == "capacity-provider":
+            return ECSCapacityProvider(name=resource_id, region=arn_region, session=session)
+        return None
 
     return None
 
@@ -326,6 +682,9 @@ def _check_exists(arn: str, region: str = None, session: boto3.Session = None) -
     except ClientError as exc:
         LOG.debug("Error checking existence of %s: %s", arn, exc)
         return True
+    except IndexError:
+        LOG.debug("Resource %s not found (empty API response) — treating as deleted", arn)
+        return False
 
 
 def _tag_filter_matches(tags: Dict[str, str], tag_filter: Dict) -> bool:
