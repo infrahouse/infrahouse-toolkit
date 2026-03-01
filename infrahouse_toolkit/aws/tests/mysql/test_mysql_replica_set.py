@@ -76,11 +76,17 @@ class TestBootstrap:
         rs.bootstrap()
         mock_ec2_cls.assert_not_called()
 
+    @patch("infrahouse_toolkit.aws.mysql.replica_set.ASGInstance")
     @patch("infrahouse_toolkit.aws.mysql.replica_set.EC2Instance")
     @patch.object(MySQLReplicaSet, "get_master_instance_id", return_value=None)
     @patch.object(MySQLReplicaSet, "_bootstrap_as_master")
     def test_becomes_master(
-        self, mock_master: MagicMock, mock_get_master: MagicMock, mock_ec2_cls: MagicMock, tmp_path
+        self,
+        mock_master: MagicMock,
+        mock_get_master: MagicMock,
+        mock_ec2_cls: MagicMock,
+        mock_asg_inst_cls: MagicMock,
+        tmp_path,
     ) -> None:
         """First instance becomes master when no master exists."""
         mock_ec2 = mock_ec2_cls.return_value
@@ -104,16 +110,25 @@ class TestBootstrap:
         mock_master.assert_called_once()
         # Verify the EC2 instance was tagged with mysql_role=master
         mock_ec2.add_tag.assert_called_once_with(key="mysql_role", value="master")
+        # Verify scale-in protection was enabled
+        mock_asg_inst_cls.assert_called_once_with(instance_id="i-new")
+        mock_asg_inst_cls.return_value.protect.assert_called_once()
         # Marker is written as the very last step
         assert os.path.exists(marker)
         with open(marker, encoding="utf-8") as fh:
             assert fh.read() == "master\n"
 
+    @patch("infrahouse_toolkit.aws.mysql.replica_set.ASGInstance")
     @patch("infrahouse_toolkit.aws.mysql.replica_set.EC2Instance")
     @patch.object(MySQLReplicaSet, "get_master_instance_id", return_value="i-existing-master")
     @patch.object(MySQLReplicaSet, "_bootstrap_as_replica")
     def test_becomes_replica(
-        self, mock_replica: MagicMock, mock_get_master: MagicMock, mock_ec2_cls: MagicMock, tmp_path
+        self,
+        mock_replica: MagicMock,
+        mock_get_master: MagicMock,
+        mock_ec2_cls: MagicMock,
+        mock_asg_inst_cls: MagicMock,
+        tmp_path,
     ) -> None:
         """Subsequent instance becomes replica when master exists."""
         mock_ec2 = mock_ec2_cls.return_value
@@ -139,6 +154,8 @@ class TestBootstrap:
         assert args[1] == "i-existing-master"
         # Verify the EC2 instance was tagged with mysql_role=replica
         mock_ec2.add_tag.assert_called_once_with(key="mysql_role", value="replica")
+        # Verify scale-in protection was NOT enabled for replica
+        mock_asg_inst_cls.assert_not_called()
         # Marker is written as the very last step
         assert os.path.exists(marker)
         with open(marker, encoding="utf-8") as fh:

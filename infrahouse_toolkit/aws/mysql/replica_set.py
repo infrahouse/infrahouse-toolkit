@@ -9,6 +9,7 @@ import os
 from logging import getLogger
 from typing import List, Optional
 
+from infrahouse_core.aws.asg_instance import ASGInstance
 from infrahouse_core.aws.dynamodb import DynamoDBTable
 from infrahouse_core.aws.ec2_instance import EC2Instance
 from infrahouse_core.aws.exceptions import IHItemNotFound
@@ -127,6 +128,7 @@ class MySQLReplicaSet:  # pylint: disable=too-many-instance-attributes
         4. Perform role-specific bootstrap.
         5. Tag the EC2 instance with ``mysql_role``.
         6. Register with ELB target groups.
+        7. Enable scale-in protection for the master.
 
         :raises MySQLBootstrapError: If any step fails.
         :raises RuntimeError: If the distributed lock cannot be acquired.
@@ -162,6 +164,11 @@ class MySQLReplicaSet:  # pylint: disable=too-many-instance-attributes
         role = "master" if is_master else "replica"
         mysql_instance.tag_role(role)
         mysql_instance.register_target_groups(self._aws_region, self._read_tg_arn, self._write_tg_arn, is_master)
+
+        if is_master:
+            asg_instance = ASGInstance(instance_id=mysql_instance.instance_id)
+            asg_instance.protect()
+            LOG.info("Scale-in protection enabled for master %s", mysql_instance.instance_id)
 
         mysql_instance.write_marker(self._bootstrap_marker, f"{role}\n")
         LOG.info("Bootstrap complete, marker written to %s", self._bootstrap_marker)
