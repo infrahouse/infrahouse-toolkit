@@ -104,7 +104,7 @@ isort: ## reformat imports
 
 .PHONY: reqsort
 reqsort: ## sort requirements files
-	for f in requirements.txt requirements_dev.txt; do tmp_file=$$(tempfile) && sort $$f > "$$tmp_file" && mv "$$tmp_file" $$f; done
+	for f in requirements.txt requirements_dev.txt; do tmp_file=$$(tempfile) && sort -f $$f > "$$tmp_file" && mv "$$tmp_file" $$f; done
 
 .PHONY: mdformat
 mdformat: ## format markdown files
