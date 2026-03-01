@@ -68,7 +68,7 @@ class MySQLInstance:
         """
         MySQL credentials from Secrets Manager (cached after first fetch).
 
-        :return: Credentials dictionary with keys ``replication``, ``backup``, ``monitor``.
+        :return: Credentials dictionary with keys ``replication``, ``backup``, ``monitor``, ``orchestrator``.
         :rtype: Dict[str, str]
         :raises MySQLBootstrapError: If credentials cannot be retrieved or are invalid.
         """
@@ -81,7 +81,7 @@ class MySQLInstance:
             except IHSecretNotFound as err:
                 raise MySQLBootstrapError(f"Failed to get credentials: {err}") from err
 
-            required_keys = ["replication", "backup", "monitor"]
+            required_keys = ["replication", "backup", "monitor", "orchestrator"]
             missing_keys = [key for key in required_keys if key not in value]
             if missing_keys:
                 raise MySQLBootstrapError(f"Missing required keys in credentials: {', '.join(missing_keys)}")
@@ -329,6 +329,12 @@ class MySQLInstance:
                 "host": vpc_cidr,
                 "password": credentials["monitor"],
                 "grants": "PROCESS, REPLICATION CLIENT, SELECT",
+            },
+            {
+                "username": "orchestrator",
+                "host": vpc_cidr,
+                "password": credentials["orchestrator"],
+                "grants": "SUPER, PROCESS, REPLICATION SLAVE, RELOAD, SELECT",
             },
         ]
 

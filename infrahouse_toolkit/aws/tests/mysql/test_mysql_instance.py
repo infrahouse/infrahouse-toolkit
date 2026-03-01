@@ -9,7 +9,7 @@ from infrahouse_core.aws.exceptions import IHSecretNotFound
 
 from infrahouse_toolkit.aws.mysql import MySQLBootstrapError, MySQLInstance
 
-MOCK_CREDENTIALS = {"replication": "rpass", "backup": "bpass", "monitor": "mpass"}
+MOCK_CREDENTIALS = {"replication": "rpass", "backup": "bpass", "monitor": "mpass", "orchestrator": "opass"}
 
 
 @pytest.fixture()
@@ -62,9 +62,9 @@ class TestCredentials:
     @patch("infrahouse_toolkit.aws.mysql.instance.Secret")
     def test_valid_credentials(self, mock_secret_cls: MagicMock, mysql_instance: MySQLInstance) -> None:
         """Returns credentials when secret is valid."""
-        mock_secret_cls.return_value.value = {"replication": "r", "backup": "b", "monitor": "m"}
+        mock_secret_cls.return_value.value = {"replication": "r", "backup": "b", "monitor": "m", "orchestrator": "o"}
         creds = mysql_instance.credentials
-        assert creds == {"replication": "r", "backup": "b", "monitor": "m"}
+        assert creds == {"replication": "r", "backup": "b", "monitor": "m", "orchestrator": "o"}
 
     @patch("infrahouse_toolkit.aws.mysql.instance.Secret")
     def test_secret_not_found(self, mock_secret_cls: MagicMock, mysql_instance: MySQLInstance) -> None:
@@ -90,7 +90,7 @@ class TestCredentials:
     @patch("infrahouse_toolkit.aws.mysql.instance.Secret")
     def test_cached(self, mock_secret_cls: MagicMock, mysql_instance: MySQLInstance) -> None:
         """Credentials are fetched only once and cached."""
-        mock_secret_cls.return_value.value = {"replication": "r", "backup": "b", "monitor": "m"}
+        mock_secret_cls.return_value.value = {"replication": "r", "backup": "b", "monitor": "m", "orchestrator": "o"}
         _ = mysql_instance.credentials
         _ = mysql_instance.credentials
         mock_secret_cls.assert_called_once()
@@ -366,15 +366,15 @@ class TestCreateMySQLUsers:
     def test_all_users_created(
         self, mock_create: MagicMock, mock_creds: MagicMock, mysql_instance: MySQLInstance
     ) -> None:
-        """Calls create_user_if_not_exists for all four users."""
+        """Calls create_user_if_not_exists for all five users."""
         mysql_instance.create_mysql_users()
-        assert mock_create.call_count == 4
+        assert mock_create.call_count == 5
 
     @patch.object(MySQLInstance, "credentials", new_callable=PropertyMock, return_value=MOCK_CREDENTIALS)
     @patch.object(MySQLInstance, "create_user_if_not_exists")
     def test_failure_raises(self, mock_create: MagicMock, mock_creds: MagicMock, mysql_instance: MySQLInstance) -> None:
         """Raises MySQLBootstrapError when any user creation fails."""
-        mock_create.side_effect = [None, MySQLBootstrapError("failed"), None, None]
+        mock_create.side_effect = [None, MySQLBootstrapError("failed"), None, None, None]
         with pytest.raises(MySQLBootstrapError):
             mysql_instance.create_mysql_users()
 
