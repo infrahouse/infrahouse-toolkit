@@ -15,7 +15,10 @@ from infrahouse_core.aws.ec2_instance import EC2Instance
 from infrahouse_core.aws.exceptions import IHItemNotFound
 
 from infrahouse_toolkit.aws.asg import ASG
-from infrahouse_toolkit.aws.mysql.exceptions import MySQLBootstrapError
+from infrahouse_toolkit.aws.mysql.exceptions import (
+    MySQLBootstrapError,
+    MySQLInstanceNotFound,
+)
 from infrahouse_toolkit.aws.mysql.instance import MySQLInstance
 
 LOG = getLogger(__name__)
@@ -68,6 +71,7 @@ class MySQLReplicaSet:  # pylint: disable=too-many-instance-attributes
         self._read_tg_arn = read_tg_arn
         self._write_tg_arn = write_tg_arn
         self._table_instance: Optional[DynamoDBTable] = None
+        self.__asg = None
 
     # --- Public properties (alphabetical) ---
 
@@ -82,7 +86,6 @@ class MySQLReplicaSet:  # pylint: disable=too-many-instance-attributes
         :return: List of all MySQL instances in the cluster.
         :rtype: List[MySQLInstance]
         """
-        asg = ASG(self._cluster_id)
         return [
             MySQLInstance(
                 EC2Instance(instance_id=i.instance_id, region=self._aws_region),
@@ -91,7 +94,7 @@ class MySQLReplicaSet:  # pylint: disable=too-many-instance-attributes
                 vpc_cidr=self._vpc_cidr,
                 aws_region=self._aws_region,
             )
-            for i in asg.instances
+            for i in self._asg.instances
         ]
 
     @property
@@ -186,6 +189,49 @@ class MySQLReplicaSet:  # pylint: disable=too-many-instance-attributes
         except IHItemNotFound:
             return None
 
+    def handle_failover(self, failed_host: str, successor_host: str) -> None:
+        """
+        Handle Orchestrator post-failover topology update.
+
+        Updates the DynamoDB master record, NLB target groups, EC2 tags,
+        and scale-in protection to reflect the new master.
+
+        :param failed_host: Hostname of the failed master as provided by
+            Orchestrator (e.g. ``ip-10-1-101-136``).
+        :type failed_host: str
+        :param successor_host: Hostname of the promoted replica as provided
+            by Orchestrator (e.g. ``ip-10-1-100-162``).
+        :type successor_host: str
+        :raises MySQLBootstrapError: If the successor instance cannot be
+            found in the ASG.
+        """
+        try:
+            failed_instance = self._find_instance_by_hostname(failed_host)
+        except MySQLInstanceNotFound:
+            LOG.warning("Failed instance %s not found in ASG, may have been terminated", failed_host)
+            failed_instance = None
+
+        successor_instance = self._find_instance_by_hostname(successor_host)
+
+        LOG.info("Failover: %s -> %s", failed_host, successor_host)
+
+        self.register_master(successor_instance.instance_id)
+
+        if self._write_tg_arn:
+            successor_instance.register_with_target_group(self._write_tg_arn, self._aws_region)
+            if failed_instance:
+                failed_instance.deregister_from_target_group(self._write_tg_arn, self._aws_region)
+
+        successor_instance.tag_role("master")
+        if failed_instance:
+            failed_instance.tag_role("replica")
+
+        asg_successor = ASGInstance(instance_id=successor_instance.instance_id)
+        asg_successor.protect()
+        if failed_instance:
+            asg_failed = ASGInstance(instance_id=failed_instance.instance_id)
+            asg_failed.unprotect()
+
     def register_master(self, instance_id: str) -> None:
         """
         Register an instance as master in DynamoDB.
@@ -226,6 +272,17 @@ class MySQLReplicaSet:  # pylint: disable=too-many-instance-attributes
         return self._table_instance
 
     # --- Private methods (alphabetical) ---
+    @property
+    def _asg(self) -> ASG:
+        """
+        Lazy-initialise the ASG wrapper for this instance's Auto Scaling group.
+
+        :return: ASG instance.
+        :rtype: ASG
+        """
+        if self.__asg is None:
+            self.__asg = ASG(ASGInstance().asg_name)
+        return self.__asg
 
     def _bootstrap_as_master(self, mysql_instance: MySQLInstance) -> None:
         """
@@ -273,15 +330,31 @@ class MySQLReplicaSet:  # pylint: disable=too-many-instance-attributes
 
         LOG.info("Master IP: %s", master_ip)
 
-        if mysql_instance.s3_bucket:
-            LOG.info("Restoring from backup at s3://%s/%s/", mysql_instance.s3_bucket, self._cluster_id)
-            mysql_instance.restore_from_s3()
-        else:
-            LOG.info("No percona:s3_bucket tag found, skipping restore")
+        if not mysql_instance.s3_bucket:
+            raise MySQLBootstrapError("percona:s3_bucket tag is not set, cannot restore backup for replica")
+
+        LOG.info("Restoring from backup at s3://%s/%s/", mysql_instance.s3_bucket, self._cluster_id)
+        mysql_instance.restore_from_s3()
 
         mysql_instance.configure_replication(master_ip)
         mysql_instance.wait_for_replication_sync()
+        mysql_instance.set_super_read_only()
         LOG.info("Configured as replica of %s, replication caught up", master_ip)
+
+    def _find_instance_by_hostname(self, hostname: str) -> MySQLInstance:
+        """
+        Find a cluster instance by its private hostname.
+
+        :param hostname: Private hostname (e.g. ``ip-10-1-101-136``).
+        :type hostname: str
+        :return: The matching instance.
+        :rtype: MySQLInstance
+        :raises MySQLInstanceNotFound: If no instance matches.
+        """
+        for instance in self.instances:
+            if instance.hostname == hostname:
+                return instance
+        raise MySQLInstanceNotFound(f"No instance found with hostname {hostname}")
 
     def _instances_by_role(self, role: str) -> List[MySQLInstance]:
         """

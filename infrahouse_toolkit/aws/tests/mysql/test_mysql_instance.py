@@ -403,6 +403,49 @@ class TestConfigureReplication:
             mysql_instance.configure_replication("10.0.1.1")
 
 
+class TestSetReadOnly:
+    """Tests for MySQLInstance.set_read_only, set_super_read_only, set_writable."""
+
+    @patch.object(MySQLInstance, "execute_sql")
+    def test_set_read_only(self, mock_sql: MagicMock, mysql_instance: MySQLInstance) -> None:
+        """Executes SET GLOBAL read_only = ON."""
+        mysql_instance.set_read_only()
+        mock_sql.assert_called_once_with("SET GLOBAL read_only = ON;")
+
+    @patch.object(MySQLInstance, "execute_sql")
+    def test_set_read_only_failure(self, mock_sql: MagicMock, mysql_instance: MySQLInstance) -> None:
+        """Raises MySQLBootstrapError when SQL fails."""
+        mock_sql.side_effect = MySQLBootstrapError("SQL execution failed")
+        with pytest.raises(MySQLBootstrapError):
+            mysql_instance.set_read_only()
+
+    @patch.object(MySQLInstance, "execute_sql")
+    def test_set_super_read_only(self, mock_sql: MagicMock, mysql_instance: MySQLInstance) -> None:
+        """Executes SET GLOBAL super_read_only = ON."""
+        mysql_instance.set_super_read_only()
+        mock_sql.assert_called_once_with("SET GLOBAL super_read_only = ON;")
+
+    @patch.object(MySQLInstance, "execute_sql")
+    def test_set_super_read_only_failure(self, mock_sql: MagicMock, mysql_instance: MySQLInstance) -> None:
+        """Raises MySQLBootstrapError when SQL fails."""
+        mock_sql.side_effect = MySQLBootstrapError("SQL execution failed")
+        with pytest.raises(MySQLBootstrapError):
+            mysql_instance.set_super_read_only()
+
+    @patch.object(MySQLInstance, "execute_sql")
+    def test_set_writable(self, mock_sql: MagicMock, mysql_instance: MySQLInstance) -> None:
+        """Disables both super_read_only and read_only."""
+        mysql_instance.set_writable()
+        mock_sql.assert_called_once_with("SET GLOBAL super_read_only = OFF;\nSET GLOBAL read_only = OFF;")
+
+    @patch.object(MySQLInstance, "execute_sql")
+    def test_set_writable_failure(self, mock_sql: MagicMock, mysql_instance: MySQLInstance) -> None:
+        """Raises MySQLBootstrapError when SQL fails."""
+        mock_sql.side_effect = MySQLBootstrapError("SQL execution failed")
+        with pytest.raises(MySQLBootstrapError):
+            mysql_instance.set_writable()
+
+
 class TestReplicaStatusProperties:
     """Tests for replica_io_running, replica_sql_running, seconds_behind_source."""
 
@@ -536,6 +579,30 @@ class TestTagRole:
         """Tags the instance with mysql_role=replica."""
         mysql_instance.tag_role("replica")
         mock_ec2.add_tag.assert_called_once_with(key="mysql_role", value="replica")
+
+
+class TestDeregisterFromTargetGroup:
+    """Tests for MySQLInstance.deregister_from_target_group."""
+
+    @patch("infrahouse_toolkit.aws.mysql.instance.boto3")
+    def test_success(self, mock_boto3: MagicMock, mysql_instance: MySQLInstance) -> None:
+        """Calls deregister_targets with instance ID."""
+        mysql_instance.deregister_from_target_group("arn:tg", "us-east-1")
+        mock_elbv2 = mock_boto3.client.return_value
+        mock_elbv2.deregister_targets.assert_called_once_with(
+            TargetGroupArn="arn:tg",
+            Targets=[{"Id": "i-1234567890abcdef0"}],
+        )
+
+    @patch("infrahouse_toolkit.aws.mysql.instance.boto3")
+    def test_raises_on_error(self, mock_boto3: MagicMock, mysql_instance: MySQLInstance) -> None:
+        """Raises ClientError when deregistration fails."""
+        mock_elbv2 = mock_boto3.client.return_value
+        mock_elbv2.deregister_targets.side_effect = ClientError(
+            {"Error": {"Code": "TargetGroupNotFound", "Message": "Not found"}}, "DeregisterTargets"
+        )
+        with pytest.raises(ClientError):
+            mysql_instance.deregister_from_target_group("arn:tg", "us-east-1")
 
 
 class TestRegisterTargetGroups:

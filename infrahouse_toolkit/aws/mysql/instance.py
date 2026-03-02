@@ -27,7 +27,7 @@ from infrahouse_toolkit.aws.mysql.exceptions import MySQLBootstrapError
 LOG = getLogger(__name__)
 
 
-class MySQLInstance:
+class MySQLInstance:  # pylint: disable=too-many-public-methods
     """
     Represents a MySQL/Percona server running on an EC2 instance.
 
@@ -88,6 +88,14 @@ class MySQLInstance:
 
             self._credentials = value
         return self._credentials
+
+    @property
+    def hostname(self) -> Optional[str]:
+        """
+        :return: The private hostname of the EC2 instance (e.g. ``ip-10-0-0-1``).
+        :rtype: Optional[str]
+        """
+        return self._ec2_instance.hostname
 
     @property
     def instance_id(self) -> str:
@@ -293,6 +301,42 @@ class MySQLInstance:
         self.execute_sql(sql)
         LOG.info("Replication configured successfully")
 
+    def set_read_only(self) -> None:
+        """
+        Set the MySQL instance to read-only mode.
+
+        Executes ``SET GLOBAL read_only = ON``.  This blocks writes from
+        non-SUPER users but still allows SUPER users to write.
+
+        :raises MySQLBootstrapError: If the SQL statement fails.
+        """
+        self.execute_sql("SET GLOBAL read_only = ON;")
+        LOG.info("Instance %s set to read_only", self.instance_id)
+
+    def set_super_read_only(self) -> None:
+        """
+        Set the MySQL instance to super-read-only mode.
+
+        Executes ``SET GLOBAL super_read_only = ON``, which implicitly
+        enables ``read_only`` as well.  All writes are blocked, including
+        those from SUPER users.
+
+        :raises MySQLBootstrapError: If the SQL statement fails.
+        """
+        self.execute_sql("SET GLOBAL super_read_only = ON;")
+        LOG.info("Instance %s set to super_read_only", self.instance_id)
+
+    def set_writable(self) -> None:
+        """
+        Set the MySQL instance to writable mode.
+
+        Disables both ``super_read_only`` and ``read_only``.
+
+        :raises MySQLBootstrapError: If the SQL statement fails.
+        """
+        self.execute_sql("SET GLOBAL super_read_only = OFF;\nSET GLOBAL read_only = OFF;")
+        LOG.info("Instance %s set to writable", self.instance_id)
+
     def create_mysql_users(self) -> None:
         """
         Create MySQL users for replication, backup, and monitoring.
@@ -414,6 +458,27 @@ class MySQLInstance:
         return stdout
 
     # --- Public methods (alphabetical, EC2/AWS group) ---
+
+    def deregister_from_target_group(self, target_group_arn: str, region: str = None) -> None:
+        """
+        Deregister this instance from an ELB target group.
+
+        :param target_group_arn: ARN of the target group.
+        :type target_group_arn: str
+        :param region: AWS region.
+        :type region: str
+        :raises ClientError: If deregistration fails.
+        """
+        elbv2_client = boto3.client("elbv2", region_name=region)
+        try:
+            elbv2_client.deregister_targets(
+                TargetGroupArn=target_group_arn,
+                Targets=[{"Id": self.instance_id}],
+            )
+            LOG.info("Deregistered instance %s from target group %s", self.instance_id, target_group_arn)
+        except ClientError as err:
+            LOG.error("Failed to deregister from target group %s: %s", target_group_arn, err)
+            raise
 
     def register_target_groups(
         self, region: str, read_tg_arn: Optional[str], write_tg_arn: Optional[str], is_master: bool
