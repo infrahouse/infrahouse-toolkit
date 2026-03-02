@@ -14,6 +14,7 @@ from infrahouse_core.logging import setup_logging
 
 from infrahouse_toolkit.aws.config import AWSConfig
 from infrahouse_toolkit.cli.ih_mysql.cmd_bootstrap import cmd_bootstrap
+from infrahouse_toolkit.cli.ih_mysql.cmd_failover import cmd_failover
 
 LOG = getLogger(__name__)
 
@@ -62,3 +63,5 @@ def ih_mysql(ctx, **kwargs):
 
 # noinspection PyTypeChecker
 ih_mysql.add_command(cmd_bootstrap)
+# noinspection PyTypeChecker
+ih_mysql.add_command(cmd_failover)
