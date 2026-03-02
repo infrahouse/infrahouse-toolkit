@@ -166,9 +166,12 @@ class TestBootstrap:
 class TestInstanceDiscovery:
     """Tests for instances, master, and replicas properties."""
 
+    @patch("infrahouse_toolkit.aws.mysql.replica_set.ASGInstance")
     @patch("infrahouse_toolkit.aws.mysql.replica_set.ASG")
     @patch("infrahouse_toolkit.aws.mysql.replica_set.EC2Instance")
-    def test_instances(self, mock_ec2_cls: MagicMock, mock_asg_cls: MagicMock, replica_set: MySQLReplicaSet) -> None:
+    def test_instances(
+        self, mock_ec2_cls: MagicMock, mock_asg_cls: MagicMock, mock_asg_inst: MagicMock, replica_set: MySQLReplicaSet
+    ) -> None:
         """Returns MySQLInstance for each ASG instance."""
         asg_inst1 = MagicMock()
         asg_inst1.instance_id = "i-aaa"
@@ -179,11 +182,14 @@ class TestInstanceDiscovery:
         result = replica_set.instances
         assert len(result) == 2
         assert all(isinstance(i, MySQLInstance) for i in result)
-        mock_asg_cls.assert_called_once_with("test-cluster")
+        mock_asg_cls.assert_called_once_with(mock_asg_inst.return_value.asg_name)
 
+    @patch("infrahouse_toolkit.aws.mysql.replica_set.ASGInstance")
     @patch("infrahouse_toolkit.aws.mysql.replica_set.ASG")
     @patch("infrahouse_toolkit.aws.mysql.replica_set.EC2Instance")
-    def test_master_found(self, mock_ec2_cls: MagicMock, mock_asg_cls: MagicMock, replica_set: MySQLReplicaSet) -> None:
+    def test_master_found(
+        self, mock_ec2_cls: MagicMock, mock_asg_cls: MagicMock, mock_asg_inst: MagicMock, replica_set: MySQLReplicaSet
+    ) -> None:
         """Returns the instance tagged as master."""
         asg_master = MagicMock()
         asg_master.instance_id = "i-master"
@@ -201,10 +207,11 @@ class TestInstanceDiscovery:
         assert master is not None
         assert master.instance_id == ec2_master.instance_id
 
+    @patch("infrahouse_toolkit.aws.mysql.replica_set.ASGInstance")
     @patch("infrahouse_toolkit.aws.mysql.replica_set.ASG")
     @patch("infrahouse_toolkit.aws.mysql.replica_set.EC2Instance")
     def test_master_not_found(
-        self, mock_ec2_cls: MagicMock, mock_asg_cls: MagicMock, replica_set: MySQLReplicaSet
+        self, mock_ec2_cls: MagicMock, mock_asg_cls: MagicMock, mock_asg_inst: MagicMock, replica_set: MySQLReplicaSet
     ) -> None:
         """Returns None when no instance is tagged as master."""
         asg_inst = MagicMock()
@@ -217,9 +224,12 @@ class TestInstanceDiscovery:
 
         assert replica_set.master is None
 
+    @patch("infrahouse_toolkit.aws.mysql.replica_set.ASGInstance")
     @patch("infrahouse_toolkit.aws.mysql.replica_set.ASG")
     @patch("infrahouse_toolkit.aws.mysql.replica_set.EC2Instance")
-    def test_replicas(self, mock_ec2_cls: MagicMock, mock_asg_cls: MagicMock, replica_set: MySQLReplicaSet) -> None:
+    def test_replicas(
+        self, mock_ec2_cls: MagicMock, mock_asg_cls: MagicMock, mock_asg_inst: MagicMock, replica_set: MySQLReplicaSet
+    ) -> None:
         """Returns only instances tagged as replica."""
         asg_master = MagicMock()
         asg_master.instance_id = "i-master"
@@ -244,9 +254,12 @@ class TestInstanceDiscovery:
 class TestFindInstanceByHostname:
     """Tests for MySQLReplicaSet._find_instance_by_hostname."""
 
+    @patch("infrahouse_toolkit.aws.mysql.replica_set.ASGInstance")
     @patch("infrahouse_toolkit.aws.mysql.replica_set.ASG")
     @patch("infrahouse_toolkit.aws.mysql.replica_set.EC2Instance")
-    def test_found(self, mock_ec2_cls: MagicMock, mock_asg_cls: MagicMock, replica_set: MySQLReplicaSet) -> None:
+    def test_found(
+        self, mock_ec2_cls: MagicMock, mock_asg_cls: MagicMock, mock_asg_inst: MagicMock, replica_set: MySQLReplicaSet
+    ) -> None:
         """Returns the instance matching the given hostname."""
         asg_inst1 = MagicMock()
         asg_inst1.instance_id = "i-aaa"
@@ -264,10 +277,11 @@ class TestFindInstanceByHostname:
         assert result is not None
         assert result.hostname == "ip-10-0-1-2"
 
+    @patch("infrahouse_toolkit.aws.mysql.replica_set.ASGInstance")
     @patch("infrahouse_toolkit.aws.mysql.replica_set.ASG")
     @patch("infrahouse_toolkit.aws.mysql.replica_set.EC2Instance")
     def test_not_found_raises(
-        self, mock_ec2_cls: MagicMock, mock_asg_cls: MagicMock, replica_set: MySQLReplicaSet
+        self, mock_ec2_cls: MagicMock, mock_asg_cls: MagicMock, mock_asg_inst: MagicMock, replica_set: MySQLReplicaSet
     ) -> None:
         """Raises MySQLBootstrapError when no instance matches."""
         asg_inst1 = MagicMock()
