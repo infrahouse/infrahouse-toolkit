@@ -27,13 +27,15 @@ LOG = getLogger()
 )
 @click.argument("hook_name")
 @click.argument("instance_id", required=False)
-def cmd_complete(**kwargs):
+@click.pass_context
+def cmd_complete(ctx, **kwargs):
     """
     Complete a lifecycle action for a given hook name and a local or remote EC2 instance.
     """
     try:
-        instance = ASGInstance(instance_id=kwargs["instance_id"])
-        ASG(instance.asg_name).complete_lifecycle_action(
+        session = ctx.obj["aws_session"]
+        instance = ASGInstance(instance_id=kwargs["instance_id"], session=session)
+        ASG(instance.asg_name, session=session).complete_lifecycle_action(
             kwargs["hook_name"], result=kwargs["result"], instance_id=instance.instance_id
         )
         LOG.info("Lifecycle hook %s is complete with result %s", kwargs["hook_name"], kwargs["result"])
