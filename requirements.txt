@@ -14,6 +14,7 @@ infrahouse-core ~= 0.22, >= 0.22.1
 PyGithub ~= 2.4
 pyhcl ~= 0.4
 pyjwt ~= 2.9
+pymysql ~= 1.1
 requests ~= 2.32, >= 2.32.4
 tabulate ~= 0.9
 wcwidth ~= 0.2
