@@ -1,0 +1,20 @@
+---
+name: Notify Homebrew tap
+
+on:  # yamllint disable-line rule:truthy
+  release:
+    types: [published]
+
+jobs:
+  notify:
+    name: Notify homebrew-infrahouse-toolkit
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Send repository dispatch
+        env:
+          GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          gh api repos/infrahouse/homebrew-infrahouse-toolkit/dispatches \
+              --method POST \
+              -f event_type=new-release \
+              -f "client_payload[tag]=${{ github.event.release.tag_name }}"
