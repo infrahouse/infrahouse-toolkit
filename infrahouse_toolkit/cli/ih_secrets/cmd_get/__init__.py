@@ -11,8 +11,7 @@ from logging import getLogger
 
 import click
 from botocore.exceptions import ClientError
-
-from infrahouse_toolkit.aws import get_secret
+from infrahouse_core.aws import get_secret
 
 LOG = getLogger(__name__)
 
