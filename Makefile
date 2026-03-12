@@ -156,6 +156,22 @@ docs: ## generate Sphinx HTML documentation, including API docs
 release: dist ## Build a Python packager and upload a release to PyPI
 	twine upload dist/*
 
+.PHONY: release-patch
+release-patch: ## Release a patch version (0.19.0 -> 0.19.1)
+	bump2version patch
+	git push origin main --tags
+
+.PHONY: release-minor
+release-minor: ## Release a minor version (0.19.0 -> 0.20.0)
+	bump2version minor
+	git push origin main --tags
+
+.PHONY: release-major
+release-major: ## Release a major version (0.19.0 -> 1.0.0)
+	bump2version major
+	git push origin main --tags
+
+
 .PHONY: package
 package:
 	docker run \
