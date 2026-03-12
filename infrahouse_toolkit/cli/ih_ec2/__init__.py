@@ -11,10 +11,10 @@ from logging import getLogger
 
 import click
 from botocore.exceptions import NoRegionError
+from infrahouse_core.aws import get_aws_client, get_aws_session
+from infrahouse_core.aws.config import AWSConfig
 from infrahouse_core.logging import setup_logging
 
-from infrahouse_toolkit.aws import get_aws_client, get_aws_session
-from infrahouse_toolkit.aws.config import AWSConfig
 from infrahouse_toolkit.cli.ih_ec2.cmd_instance_types import cmd_instance_types
 from infrahouse_toolkit.cli.ih_ec2.cmd_launch import cmd_launch
 from infrahouse_toolkit.cli.ih_ec2.cmd_launch_templates import cmd_launch_templates

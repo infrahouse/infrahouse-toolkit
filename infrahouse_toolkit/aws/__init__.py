@@ -1,9 +1,13 @@
 """
 AWS classes.
+
+.. deprecated::
+    Use ``infrahouse_core.aws`` instead. Functions in this module will be removed in a future release.
 """
 
 import sys
 import time
+import warnings
 import webbrowser
 from logging import getLogger
 from os import environ
@@ -66,6 +70,9 @@ def get_aws_client(service_name: str, profile: str, region: str, session=None):
     """
     Get a client instance for an AWS service.
 
+    .. deprecated::
+        Use ``infrahouse_core.aws.get_aws_client`` instead.
+
     :param service_name: AWS service e.g. ``ec2``.
     :param profile: AWS profile for authentication.
     :param region: AWS region.
@@ -73,6 +80,11 @@ def get_aws_client(service_name: str, profile: str, region: str, session=None):
     :type session: Session
     :return: A client instance.
     """
+    warnings.warn(
+        "infrahouse_toolkit.aws.get_aws_client() is deprecated, use infrahouse_core.aws.get_aws_client() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     session = session or Session(region_name=region, profile_name=profile)
     return session.client(service_name)
 
@@ -80,11 +92,19 @@ def get_aws_client(service_name: str, profile: str, region: str, session=None):
 def get_aws_session(aws_config: AWSConfig, aws_profile: str, aws_region: str) -> Session:
     """
 
+    .. deprecated::
+        Use ``infrahouse_core.aws.get_aws_session`` instead.
+
     :param aws_config:
     :param aws_profile:
     :param aws_region:
     :return: Authenticated AWS session, or None if boto3 can connect to AWS without extra steps.
     """
+    warnings.warn(
+        "infrahouse_toolkit.aws.get_aws_session() is deprecated, use infrahouse_core.aws.get_aws_session() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     if aws_profile is None and "default" in aws_config.profiles:
         aws_profile = "default"
 
