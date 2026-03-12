@@ -156,20 +156,67 @@ docs: ## generate Sphinx HTML documentation, including API docs
 release: dist ## Build a Python packager and upload a release to PyPI
 	twine upload dist/*
 
+# Internal function to handle version release
+# Args: $(1) = major|minor|patch
+define do_release
+	@echo "Checking if bumpversion is installed..."
+	@command -v bump2version >/dev/null 2>&1 || { \
+		echo ""; \
+		echo "Error: bump2version is not installed."; \
+		echo ""; \
+		echo "Please install it using:"; \
+		echo "  make bootstrap"; \
+		echo ""; \
+		exit 1; \
+	}
+	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	if [ "$$BRANCH" != "main" ]; then \
+		echo "Error: You must be on the 'main' branch to release."; \
+		echo "Current branch: $$BRANCH"; \
+		exit 1; \
+	fi; \
+	CURRENT=$$(grep ^current_version setup.cfg | head -1 | cut -d= -f2 | tr -d ' '); \
+	echo "Current version: $$CURRENT"; \
+	MAJOR=$$(echo $$CURRENT | cut -d. -f1); \
+	MINOR=$$(echo $$CURRENT | cut -d. -f2); \
+	PATCH=$$(echo $$CURRENT | cut -d. -f3); \
+	if [ "$(1)" = "major" ]; then \
+		NEW_VERSION=$$((MAJOR + 1)).0.0; \
+	elif [ "$(1)" = "minor" ]; then \
+		NEW_VERSION=$$MAJOR.$$((MINOR + 1)).0; \
+	elif [ "$(1)" = "patch" ]; then \
+		NEW_VERSION=$$MAJOR.$$MINOR.$$((PATCH + 1)); \
+	fi; \
+	echo "New version will be: $$NEW_VERSION"; \
+	printf "Continue? (y/n) "; \
+	read -r REPLY; \
+	case "$$REPLY" in \
+		[Yy]|[Yy][Ee][Ss]) \
+			echo "Bumping version with bump2version..."; \
+			bump2version --new-version $$NEW_VERSION $(1); \
+			echo ""; \
+			echo "Released version $$NEW_VERSION"; \
+			echo ""; \
+			echo "Next steps:"; \
+			echo "  git push && git push --tags"; \
+			;; \
+		*) \
+			echo "Release cancelled"; \
+			;; \
+	esac
+endef
+
 .PHONY: release-patch
-release-patch: ## Release a patch version (0.19.0 -> 0.19.1)
-	bump2version patch
-	git push origin main --tags
+release-patch: ## Release a patch version (x.x.PATCH)
+	$(call do_release,patch)
 
 .PHONY: release-minor
-release-minor: ## Release a minor version (0.19.0 -> 0.20.0)
-	bump2version minor
-	git push origin main --tags
+release-minor: ## Release a minor version (x.MINOR.0)
+	$(call do_release,minor)
 
 .PHONY: release-major
-release-major: ## Release a major version (0.19.0 -> 1.0.0)
-	bump2version major
-	git push origin main --tags
+release-major: ## Release a major version (MAJOR.0.0)
+	$(call do_release,major)
 
 
 .PHONY: package
