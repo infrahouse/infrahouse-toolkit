@@ -100,6 +100,37 @@ This document defines coding standards for InfraHouse projects.
         # Fix the problem if you can handle it
         return default_value
     ```
+* **Never return booleans or exit codes to signal errors**
+  - Returning `(True/False, result)` tuples for error signaling is an anti-pattern
+  - Callers can forget to check the return value, silently ignoring failures
+  - Exceptions propagate naturally up the call stack with full context (message, traceback)
+  - CLI entry points (`@click.command`) should be the only place that catches exceptions and converts them
+    to `sys.exit()`
+  - Example:
+    ```python
+    # WRONG - returning booleans to signal errors:
+    def execute_sql(sql: str) -> Tuple[bool, str]:
+        exit_code, stdout, stderr = run_command(sql)
+        if exit_code != 0:
+            return False, stderr      # caller must remember to check
+        return True, stdout
+
+    # Caller:
+    success, output = execute_sql(sql)
+    if not success:
+        LOG.error("Failed: %s", output)
+        sys.exit(1)
+
+    # CORRECT - raise exceptions on failure:
+    def execute_sql(sql: str) -> str:
+        exit_code, stdout, stderr = run_command(sql)
+        if exit_code != 0:
+            raise SQLExecutionError(f"SQL failed: {stderr}")
+        return stdout
+
+    # Caller — no need to check, exception propagates:
+    output = execute_sql(sql)
+    ```
 
 ### Logging
 * **Use `setup_logging()` from infrahouse-core**
@@ -602,7 +633,6 @@ This document defines coding standards for InfraHouse projects.
   - Provides AWS and infrastructure helper classes
 
 #### Test Coverage Requirements
-* Must test **two AWS provider versions** at all times (currently versions 5 and 6)
 * Test both happy path and edge cases
 * Validate resource creation, outputs, and behavior
 
@@ -693,7 +723,6 @@ All InfraHouse projects (Python libraries, Terraform modules, etc.) must include
 #### `test`
 * Runs the full test suite
 * Should run all tests with default configuration
-* For Terraform modules: runs tests against all supported AWS provider versions
 
 #### `test-keep`
 * Runs tests and keeps infrastructure for debugging
