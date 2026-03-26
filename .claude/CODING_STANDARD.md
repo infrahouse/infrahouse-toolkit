@@ -132,14 +132,57 @@ This document defines coding standards for InfraHouse projects.
     output = execute_sql(sql)
     ```
 
+### Class Member Ordering
+* **Order members by visibility, then by type**
+  - By visibility (top to bottom): public, protected (`_`), private (`__`)
+  - By type within each visibility group: properties first, then methods
+  - Within each group, order alphabetically unless grouping related methods makes more sense
+  - Example:
+    ```python
+    class MyService:
+        def __init__(self, client):
+            self._client = client
+
+        # --- Public properties ---
+
+        @property
+        def name(self) -> str:
+            ...
+
+        @property
+        def status(self) -> str:
+            ...
+
+        # --- Public methods ---
+
+        def connect(self) -> None:
+            ...
+
+        def disconnect(self) -> None:
+            ...
+
+        # --- Private properties ---
+
+        @property
+        def _endpoint(self) -> str:
+            ...
+
+        # --- Private methods ---
+
+        def _validate(self) -> bool:
+            ...
+    ```
+
 ### Logging
 * **Use `setup_logging()` from infrahouse-core**
   - Provides consistent logging configuration across projects
   - Example:
     ```python
+    import logging
     from infrahouse_core.logging import setup_logging
 
-    LOG = setup_logging(__name__)
+    LOG = logging.getLogger(__name__)
+    setup_logging(LOG)
 
     def my_function():
         LOG.info("Starting operation")
