@@ -398,11 +398,10 @@ This document defines coding standards for InfraHouse projects.
   - `docs/index.md` - Overview, features, quick start
   - `docs/getting-started.md` - Prerequisites, first deployment
   - `docs/configuration.md` - All variables explained with examples
-* **Recommended pages:**
   - `docs/architecture.md` - How it works, diagrams
   - `docs/examples.md` - Common use cases with explanations
   - `docs/troubleshooting.md` - Common issues and solutions
-  - `docs/changelog.md` - Or link to CHANGELOG.md
+  - `docs/changelog.md` - Symlink to CHANGELOG.md (`ln -fs ../CHANGELOG.md docs/changelog.md`)
 * **Optional pages:**
   - `docs/comparison.md` - vs alternatives
   - `docs/security.md` - Security considerations
@@ -423,8 +422,6 @@ This document defines coding standards for InfraHouse projects.
   - `CONTRIBUTING.md` - Contribution guidelines
   - `SECURITY.md` - Security policy, how to report vulnerabilities
   - `CODEOWNERS` - Auto-assign reviewers
-  - `.github/ISSUE_TEMPLATE/` - Bug report, feature request templates
-  - `.github/PULL_REQUEST_TEMPLATE.md` - PR template
 
 ### Release Automation
 * **Automated via `.github/workflows/release.yml`** (managed by github-control)
