@@ -74,8 +74,7 @@ def test_parse_trace(trace, expected_actions, tmpdir):
     "trace_content, expected_permissions",
     [
         (
-            dedent(
-                """
+            dedent("""
                 {"aws.operation": "HeadBucket","aws.service": "S3"}
                 {"rpc.method": "HeadObject", "rpc.service": "S3"}
                 {"aws.operation": "GetBucketAccelerateConfiguration","aws.service": "S3"}
@@ -84,8 +83,7 @@ def test_parse_trace(trace, expected_actions, tmpdir):
                 {"aws.operation": "GetBucketLifecycleConfiguration","aws.service": "S3"}
                 {"aws.operation": "GetBucketReplication","aws.service": "S3"}
                 {"aws.operation": "GetObjectLockConfiguration","aws.service": "S3"}
-                """
-            ),
+                """),
             [
                 "s3:GetAccelerateConfiguration",
                 "s3:GetBucketCORS",
@@ -98,42 +96,34 @@ def test_parse_trace(trace, expected_actions, tmpdir):
             ],
         ),
         (
-            dedent(
-                """
+            dedent("""
                 {"rpc.method": "CreateBucket", "rpc.service": "S3"}
                 {"rpc.method": "CreateTable", "rpc.service": "DynamoDB"}
-                """
-            ),
+                """),
             ["s3:CreateBucket", "dynamodb:CreateTable", "s3:PutBucketTagging"],
         ),
         (
-            dedent(
-                """
+            dedent("""
                 {"aws.operation": "DeletePublicAccessBlock","aws.service": "S3"}
                 {"aws.operation": "GetPublicAccessBlock","aws.service": "S3"}
                 {"aws.operation": "PutPublicAccessBlock","aws.service": "S3"}
-                """
-            ),
+                """),
             ["s3:PutBucketPublicAccessBlock", "s3:GetBucketPublicAccessBlock"],
         ),
         (
-            dedent(
-                """
+            dedent("""
                 {"tf_resource_type": "aws_s3_bucket_versioning","tf_rpc": "ApplyResourceChange"}
                 {"tf_resource_type": "aws_s3_bucket_server_side_encryption_configuration","tf_rpc": "ApplyResourceChange"}
                 some garbage
-                """
-            ),
+                """),
             ["s3:PutBucketVersioning", "s3:PutEncryptionConfiguration"],
         ),
         (
-            dedent(
-                """
+            dedent("""
                 {"tf_resource_type": "aws_s3_bucket_versioning","tf_rpc": "ApplyResourceChange"}
                 {"tf_resource_type": "aws_s3_bucket_versioning","tf_rpc": "ApplyResourceChange"}
                 some garbage
-                """
-            ),
+                """),
             ["s3:PutBucketVersioning"],
         ),
     ],

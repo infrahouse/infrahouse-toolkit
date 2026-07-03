@@ -4,15 +4,13 @@ import pytest
 
 from infrahouse_toolkit.aws import AWSConfig
 
-CONTENT = dedent(
-    """
+CONTENT = dedent("""
     [default]
     sso_account_id = 123
 
     [profile foo]
     sso_account_id = 456
-    """
-)
+    """)
 
 
 @pytest.mark.parametrize(

@@ -10,21 +10,17 @@ from infrahouse_toolkit.aws.config import AWSConfig
     [
         ("", []),
         (
-            dedent(
-                """
+            dedent("""
                 [default]
-                """
-            ),
+                """),
             ["default"],
         ),
         (
-            dedent(
-                """
+            dedent("""
                 [default]
                 [profile foo]
                 [other section]
-                """
-            ),
+                """),
             ["default", "foo"],
         ),
     ],
