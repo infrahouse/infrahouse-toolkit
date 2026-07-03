@@ -32,7 +32,7 @@ help:
 
 .PHONY: pip
 pip:
-	pip install -U "pip ~= 25.1"
+	pip install -U "pip ~= 26.1"
 
 .PHONY: pip-tools
 pip-tools: pip
@@ -144,6 +144,10 @@ test: ## run tests quickly with the default Python
 	pytest --cov \
 		--cov-report=term-missing --cov-report=xml  \
 		-xvvs infrahouse_toolkit
+
+.PHONY: tox
+tox: ## run tests across Python 3.11 - 3.14 with tox
+	tox
 
 .PHONY: docs
 docs: ## generate Sphinx HTML documentation, including API docs

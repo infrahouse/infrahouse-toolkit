@@ -15,9 +15,7 @@ def terraform_tf(tmp_path):
     :return: A temporary file with the Terraform backend configuration.
     """
     tf_backend = tmp_path / "terraform.tf"
-    tf_backend.write_text(
-        dedent(
-            """
+    tf_backend.write_text(dedent("""
             terraform {
               backend "s3" {
                 bucket = "infrahouse-foo"
@@ -25,7 +23,5 @@ def terraform_tf(tmp_path):
               }
               required_providers {}
             }
-            """
-        )
-    )
+            """))
     return tf_backend

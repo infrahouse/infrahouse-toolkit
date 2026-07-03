@@ -11,8 +11,7 @@ from infrahouse_toolkit.terraform.status import strip_lines
         ("foo", "bar", "foo"),
         ("", "bar", ""),
         (
-            dedent(
-                """
+            dedent("""
                 test line 1
                 test line 2
                 test line 3
@@ -20,16 +19,13 @@ from infrahouse_toolkit.terraform.status import strip_lines
                 ::debug::stdout: module.jumphost
                 ::debug::stderr:
                 ::debug::exitcode: 0
-                """
-            ),
+                """),
             "::debug::",
-            dedent(
-                """
+            dedent("""
                 test line 1
                 test line 2
                 test line 3
-                """
-            ),
+                """),
         ),
     ],
 )

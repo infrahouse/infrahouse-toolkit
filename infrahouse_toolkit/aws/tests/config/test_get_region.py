@@ -4,8 +4,7 @@ import pytest
 
 from infrahouse_toolkit.aws import AWSConfig
 
-CONTENT = dedent(
-    """
+CONTENT = dedent("""
     [default]
     region = us-west-123
 
@@ -13,17 +12,14 @@ CONTENT = dedent(
     region = us-west-345
 
     [profile bar]
-    """
-)
+    """)
 
-CONTENT_2 = dedent(
-    """
+CONTENT_2 = dedent("""
     [profile foo]
     region = us-west-345
 
     [profile bar]
-    """
-)
+    """)
 
 
 @pytest.mark.parametrize(
