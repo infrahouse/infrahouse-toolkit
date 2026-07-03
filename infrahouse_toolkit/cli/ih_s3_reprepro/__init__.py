@@ -19,6 +19,7 @@ from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_deleteunreferenced import (
 from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_dumpunreferenced import (
     cmd_dumpunreferenced,
 )
+from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_export import cmd_export
 from infrahouse_toolkit.cli.ih_s3_reprepro.cmd_get_secret_value import (
     cmd_get_secret_value,
 )
@@ -103,6 +104,7 @@ for cmd in [
     cmd_check,
     cmd_remove,
     cmd_includedeb,
+    cmd_export,
     cmd_dumpunreferenced,
     cmd_deleteunreferenced,
     cmd_set_secret_value,
