@@ -1,11 +1,20 @@
 """Unit tests for :py:mod:`infrahouse_toolkit.cli.ih_s3_reprepro.cmd_export`."""
 
+import sys
 from contextlib import contextmanager
 from unittest import mock
 
 from click.testing import CliRunner
 
 from infrahouse_toolkit.cli.ih_s3_reprepro import ih_s3_reprepro
+
+# The package ``__init__`` binds the name ``cmd_export`` to the click Command object
+# (``from ...cmd_export import cmd_export``), which shadows the same-named submodule in
+# the package namespace. So neither the dotted patch target
+# "...cmd_export.repo_env" nor ``import ...cmd_export as m`` reaches the module -- both
+# resolve to the Command object. Grab the real module from ``sys.modules`` and patch it
+# with ``patch.object`` instead.
+_CMD_EXPORT = sys.modules["infrahouse_toolkit.cli.ih_s3_reprepro.cmd_export"]
 
 
 @contextmanager
@@ -33,10 +42,9 @@ def _run(args):
         "--gpg-passphrase-secret-id",
         "packager-passphrase-noble",
     ]
-    with mock.patch("infrahouse_toolkit.cli.ih_s3_reprepro.check_dependencies"), mock.patch(
-        "infrahouse_toolkit.cli.ih_s3_reprepro.cmd_export.repo_env",
-        _fake_repo_env,
-    ), mock.patch("infrahouse_toolkit.cli.ih_s3_reprepro.cmd_export.execute") as mock_execute:
+    with mock.patch("infrahouse_toolkit.cli.ih_s3_reprepro.check_dependencies"), mock.patch.object(
+        _CMD_EXPORT, "repo_env", _fake_repo_env
+    ), mock.patch.object(_CMD_EXPORT, "execute") as mock_execute:
         result = CliRunner().invoke(ih_s3_reprepro, base + args, catch_exceptions=False)
     assert result.exit_code == 0, result.output
     return mock_execute
