@@ -40,6 +40,7 @@ LOG = getLogger()
     default="/opt/infrahouse-toolkit/embedded/bin/certbot",
     show_default=True,
 )
+@click.version_option()
 @click.pass_context
 def ih_certbot(ctx, *args, **kwargs):  # pylint: disable=unused-argument
     """
