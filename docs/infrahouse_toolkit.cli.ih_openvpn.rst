@@ -9,6 +9,7 @@ Subpackages
 
    infrahouse_toolkit.cli.ih_openvpn.cmd_list
    infrahouse_toolkit.cli.ih_openvpn.cmd_revoke
+   infrahouse_toolkit.cli.ih_openvpn.cmd_sync_google_users
 
 Module contents
 ---------------

@@ -13,13 +13,14 @@ import click
 from tabulate import tabulate
 
 from infrahouse_toolkit import DEFAULT_OPEN_ENCODING
+from infrahouse_toolkit.cli.ih_openvpn.lib import index_path
 
 LOG = logging.getLogger()
 
 
 @click.command(name="list-clients")
 @click.pass_context
-def cmd_list_clients(ctx, *args, **kwargs):
+def cmd_list_clients(ctx: click.Context, *args, **kwargs):
     """
     List OpenVPN clients.
     """
@@ -28,7 +29,7 @@ def cmd_list_clients(ctx, *args, **kwargs):
     LOG.debug(ctx.args)
     header = ["Valid", "Created at", "Revoked at", "Serial", "State", "Certificate"]
     users = []
-    with open("/etc/openvpn/pki/index.txt", encoding=DEFAULT_OPEN_ENCODING) as fp:
+    with open(index_path(ctx.obj["config_dir"]), encoding=DEFAULT_OPEN_ENCODING) as fp:
         lines = fp.read().splitlines()
         for line in lines:
             cells = line.split("\t")
