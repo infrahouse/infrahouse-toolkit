@@ -13,6 +13,7 @@ from subprocess import CalledProcessError
 
 import click
 
+from infrahouse_toolkit.cli.ih_openvpn.exceptions import GoogleNotConfigured
 from infrahouse_toolkit.cli.ih_openvpn.lib import (
     index_path,
     revoke_client,
@@ -34,6 +35,7 @@ DIRECTORY_SCOPE = "https://www.googleapis.com/auth/admin.directory.user.readonly
 CLOUD_PLATFORM_SCOPE = "https://www.googleapis.com/auth/cloud-platform"
 
 
+# noinspection PyPackageRequirements,PyUnresolvedReferences
 def _directory_client(service_account, admin_subject):
     """
     Build a Directory API client authenticated keylessly for ``admin_subject``.
@@ -51,8 +53,11 @@ def _directory_client(service_account, admin_subject):
     :return: A ready ``admin`` / ``directory_v1`` client.
     :raise GoogleNotConfigured: if credentials cannot be resolved yet.
     """
-    # Imported lazily so that the rest of ih-openvpn keeps working on hosts
-    # without the google libraries installed. The disable covers the whole block
+    # Imported here rather than at module top so the other ih-openvpn
+    # subcommands (list-clients, revoke-client) do not pay to load the google
+    # stack they never use. The libraries are declared dependencies, so a failed
+    # import is a broken install and is left to propagate loudly -- not caught
+    # and disguised as "not configured yet". The disable covers the whole block
     # because black rewrites trailing per-line comments into the parentheses,
     # where pylint no longer honours them.
     # pylint: disable=import-outside-toplevel
@@ -79,6 +84,7 @@ def _directory_client(service_account, admin_subject):
     return build("admin", "directory_v1", credentials=delegated, cache_discovery=False)
 
 
+# noinspection PyPackageRequirements,PyUnresolvedReferences
 def get_active_directory_users(service_account, admin_subject):
     """
     List the primary email addresses of all non-suspended Google Workspace users.
@@ -131,17 +137,6 @@ def get_active_directory_users(service_account, admin_subject):
         raise
 
     return users
-
-
-class GoogleNotConfigured(Exception):
-    """
-    The Google Workspace side of the integration is not set up yet.
-
-    Raised for conditions an operator is expected to hit *before* finishing
-    setup -- delegation not authorized, scope not granted, subject not an admin
-    -- and never for failures that appear after a working deployment. The
-    command maps it to :py:const:`EX_CONFIG`.
-    """
 
 
 @click.command(name="sync-google-users")
@@ -228,9 +223,6 @@ def cmd_sync_google_users(ctx: click.Context, **kwargs):
         active_users = get_active_directory_users(service_account, admin_subject)
     except GoogleNotConfigured as err:
         LOG.info("Google Workspace is not configured yet: %s", err)
-        sys.exit(EX_CONFIG)
-    except ImportError as err:
-        LOG.info("google libraries are not installed yet: %s", err)
         sys.exit(EX_CONFIG)
 
     # An empty directory response would make every certificate look orphaned.

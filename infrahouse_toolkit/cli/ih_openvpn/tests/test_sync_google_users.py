@@ -141,13 +141,6 @@ def test_default_credentials_error_becomes_not_configured():
             get_active_directory_users("sa@example.iam.gserviceaccount.com", "admin@infrahouse.com")
 
 
-def test_exits_ex_config_when_google_libraries_missing(config_dir):
-    """A host without the google libraries is un-provisioned, not broken."""
-    with mock.patch.object(sync_module, "get_active_directory_users", side_effect=ImportError("no google.auth")):
-        result = run(config_dir)
-    assert result.exit_code == EX_CONFIG
-
-
 def test_exits_ex_config_without_service_account(config_dir):
     """Missing configuration is the pre-deployment state, not a usage error."""
     result = CliRunner().invoke(
