@@ -46,6 +46,7 @@ LOG = getLogger()
     default=DEFAULT_CONFIG_DIR,
     show_default=True,
 )
+@click.version_option()
 @click.pass_context
 def ih_openvpn(ctx, **kwargs):  # pylint: disable=unused-argument
     """

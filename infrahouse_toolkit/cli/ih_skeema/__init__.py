@@ -56,6 +56,7 @@ LOG = getLogger()
     "The secret value must be a JSON with keys 'username' and 'password'.",
     default=None,
 )
+@click.version_option()
 @click.pass_context
 def ih_skeema(ctx, **kwargs):  # pylint: disable=unused-argument
     """

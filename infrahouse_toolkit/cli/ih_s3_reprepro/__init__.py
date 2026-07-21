@@ -89,6 +89,7 @@ LOG = getLogger()
         ]
     ),
 )
+@click.version_option()
 @click.pass_context
 def ih_s3_reprepro(*args, **kwargs):  # pylint: disable=unused-argument
     """
