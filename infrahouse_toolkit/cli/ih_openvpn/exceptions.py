@@ -18,3 +18,14 @@ class GoogleNotConfigured(IHOpenVPNError):
     -- and never for failures that appear after a working deployment. The
     command maps it to the ``EX_CONFIG`` (78) exit status.
     """
+
+
+class EmptyDirectory(IHOpenVPNError):
+    """
+    A Workspace answered a directory listing with no active users at all.
+
+    A live query that returns nobody is a failed lookup, not the news that every
+    employee was deactivated: acting on it would revoke every certificate. Unlike
+    :py:class:`GoogleNotConfigured` this is not an expected pre-deployment state,
+    so the command maps it to exit status 1.
+    """

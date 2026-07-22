@@ -47,20 +47,36 @@ def _config_dir(tmp_path):
     return str(tmp_path)
 
 
-def run(config_dir, extra_args=None, **kwargs):
+def run(config_dir, extra_args=None, subjects=("admin@infrahouse.com",), **kwargs):
     """Invoke the command with the context the ih-openvpn group would normally supply."""
+    admin_args = []
+    for subject in subjects:
+        admin_args += ["--admin-subject", subject]
     return CliRunner().invoke(
         cmd_sync_google_users,
-        [
-            "--service-account",
-            "sa@example.iam.gserviceaccount.com",
-            "--admin-subject",
-            "admin@infrahouse.com",
-        ]
-        + (extra_args or []),
+        ["--service-account", "sa@example.iam.gserviceaccount.com"] + admin_args + (extra_args or []),
         obj={"easyrsa_path": "/usr/share/easy-rsa/easyrsa", "config_dir": config_dir},
         **kwargs,
     )
+
+
+def by_subject(directories):
+    """
+    Build a ``get_active_directory_users`` stub answering per impersonated admin.
+
+    :param directories: Active users keyed by the admin subject that reads them.
+                        A value that is an exception is raised instead.
+    :type directories: dict
+    :return: A callable with the signature of ``get_active_directory_users``.
+    """
+
+    def _stub(_service_account, admin_subject):
+        answer = directories[admin_subject]
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+    return _stub
 
 
 def test_dry_run_revokes_nothing(config_dir):
@@ -205,6 +221,179 @@ def test_case_insensitive_match(config_dir):
             result = run(config_dir)
     assert result.exit_code == 0
     revoke.assert_not_called()
+
+
+def test_unions_active_users_across_workspaces(config_dir):
+    """
+    A certificate is stale only when its owner is inactive in *every* Workspace.
+
+    alice is active in the first tenant and absent from the second; she must
+    survive. bob is in neither, so only bob is revoked.
+    """
+    with mock.patch.object(
+        sync_module,
+        "get_active_directory_users",
+        side_effect=by_subject(
+            {
+                "admin@infrahouse.com": {"alice@infrahouse.com"},
+                "admin@infrahouse.solutions": {"carol@infrahouse.solutions"},
+            }
+        ),
+    ):
+        with mock.patch.object(sync_module, "revoke_client") as revoke:
+            result = run(config_dir, subjects=("admin@infrahouse.com", "admin@infrahouse.solutions"))
+    assert result.exit_code == 0
+    revoke.assert_called_once_with("/usr/share/easy-rsa/easyrsa", "bob@infrahouse.com", config_dir)
+
+
+def test_one_unreadable_workspace_revokes_nothing(config_dir):
+    """
+    A Workspace that cannot be read aborts the whole run -- the mis-revocation guard.
+
+    Continuing with a partial union would diff every certificate against the
+    first tenant alone, so every active user of the unreadable tenant would look
+    deactivated and lose VPN access. Nothing may be revoked, and the exit status
+    stays 78 so the cron wrapper keeps quiet while delegation is authorized.
+    """
+    with mock.patch.object(
+        sync_module,
+        "get_active_directory_users",
+        side_effect=by_subject(
+            {
+                "admin@infrahouse.com": {"carol@infrahouse.com"},
+                "admin@infrahouse.solutions": GoogleNotConfigured("domain-wide delegation is not authorized"),
+            }
+        ),
+    ):
+        with mock.patch.object(sync_module, "revoke_client") as revoke:
+            result = run(config_dir, subjects=("admin@infrahouse.com", "admin@infrahouse.solutions"))
+    # Both alice and bob are stale against the first tenant alone -- exactly what
+    # must not happen.
+    assert result.exit_code == EX_CONFIG
+    revoke.assert_not_called()
+
+
+def test_one_empty_workspace_revokes_nothing(config_dir):
+    """
+    An empty answer from one tenant is a failed lookup, not a mass deactivation.
+
+    The other tenants' users would hide it in the union, so the refusal is per
+    Workspace. Exit 1, because unlike unauthorized delegation this is not a
+    known-incomplete-setup state and deserves an operator's attention.
+    """
+    with mock.patch.object(
+        sync_module,
+        "get_active_directory_users",
+        side_effect=by_subject(
+            {
+                "admin@infrahouse.com": {"alice@infrahouse.com"},
+                "admin@infrahouse.solutions": set(),
+            }
+        ),
+    ):
+        with mock.patch.object(sync_module, "revoke_client") as revoke:
+            result = run(config_dir, subjects=("admin@infrahouse.com", "admin@infrahouse.solutions"))
+    assert result.exit_code == 1
+    revoke.assert_not_called()
+
+
+def test_repeated_subject_is_queried_once(config_dir):
+    """The same admin given twice costs one directory query, not two."""
+    with mock.patch.object(
+        sync_module, "get_active_directory_users", return_value={"alice@infrahouse.com"}
+    ) as directory:
+        with mock.patch.object(sync_module, "revoke_client"):
+            result = run(config_dir, subjects=("admin@infrahouse.com", "admin@infrahouse.com"))
+    assert result.exit_code == 0
+    directory.assert_called_once_with("sa@example.iam.gserviceaccount.com", "admin@infrahouse.com")
+
+
+def test_deprecated_singular_env_var_still_works(config_dir, monkeypatch):
+    """
+    An instance whose Terraform still writes only WIF_ADMIN_SUBJECT behaves as before.
+
+    Back-compat matters because this package ships ahead of the module that
+    starts emitting the plural variable.
+    """
+    monkeypatch.delenv("WIF_ADMIN_SUBJECTS", raising=False)
+    monkeypatch.setenv("WIF_SA_EMAIL", "sa@example.iam.gserviceaccount.com")
+    monkeypatch.setenv("WIF_ADMIN_SUBJECT", "admin@infrahouse.com")
+
+    with mock.patch.object(
+        sync_module, "get_active_directory_users", return_value={"alice@infrahouse.com"}
+    ) as directory:
+        with mock.patch.object(sync_module, "revoke_client") as revoke:
+            result = CliRunner().invoke(
+                cmd_sync_google_users,
+                [],
+                obj={"easyrsa_path": "/usr/share/easy-rsa/easyrsa", "config_dir": config_dir},
+            )
+    assert result.exit_code == 0
+    directory.assert_called_once_with("sa@example.iam.gserviceaccount.com", "admin@infrahouse.com")
+    revoke.assert_called_once_with("/usr/share/easy-rsa/easyrsa", "bob@infrahouse.com", config_dir)
+
+
+def test_plural_env_var_wins_over_the_singular(config_dir, monkeypatch):
+    """WIF_ADMIN_SUBJECTS is authoritative; the deprecated singular is ignored beside it."""
+    monkeypatch.setenv("WIF_SA_EMAIL", "sa@example.iam.gserviceaccount.com")
+    monkeypatch.setenv("WIF_ADMIN_SUBJECT", "stale@infrahouse.com")
+    monkeypatch.setenv("WIF_ADMIN_SUBJECTS", " admin@infrahouse.com , admin@infrahouse.solutions ")
+
+    with mock.patch.object(
+        sync_module,
+        "get_active_directory_users",
+        side_effect=by_subject(
+            {
+                "admin@infrahouse.com": {"alice@infrahouse.com"},
+                "admin@infrahouse.solutions": {"bob@infrahouse.com"},
+            }
+        ),
+    ) as directory:
+        with mock.patch.object(sync_module, "revoke_client") as revoke:
+            result = CliRunner().invoke(
+                cmd_sync_google_users,
+                [],
+                obj={"easyrsa_path": "/usr/share/easy-rsa/easyrsa", "config_dir": config_dir},
+            )
+    assert result.exit_code == 0
+    assert [call.args[1] for call in directory.call_args_list] == [
+        "admin@infrahouse.com",
+        "admin@infrahouse.solutions",
+    ]
+    revoke.assert_not_called()
+
+
+def test_single_element_plural_env_var(config_dir, monkeypatch):
+    """One admin in WIF_ADMIN_SUBJECTS is just the single-Workspace case."""
+    monkeypatch.setenv("WIF_SA_EMAIL", "sa@example.iam.gserviceaccount.com")
+    monkeypatch.delenv("WIF_ADMIN_SUBJECT", raising=False)
+    monkeypatch.setenv("WIF_ADMIN_SUBJECTS", "admin@infrahouse.com")
+
+    with mock.patch.object(
+        sync_module, "get_active_directory_users", return_value={"alice@infrahouse.com"}
+    ) as directory:
+        with mock.patch.object(sync_module, "revoke_client") as revoke:
+            result = CliRunner().invoke(
+                cmd_sync_google_users,
+                [],
+                obj={"easyrsa_path": "/usr/share/easy-rsa/easyrsa", "config_dir": config_dir},
+            )
+    assert result.exit_code == 0
+    directory.assert_called_once_with("sa@example.iam.gserviceaccount.com", "admin@infrahouse.com")
+    revoke.assert_called_once_with("/usr/share/easy-rsa/easyrsa", "bob@infrahouse.com", config_dir)
+
+
+def test_exits_ex_config_without_any_admin_subject(config_dir, monkeypatch):
+    """Neither environment variable set is the pre-deployment state, not a usage error."""
+    monkeypatch.delenv("WIF_ADMIN_SUBJECTS", raising=False)
+    monkeypatch.delenv("WIF_ADMIN_SUBJECT", raising=False)
+
+    result = CliRunner().invoke(
+        cmd_sync_google_users,
+        ["--service-account", "sa@example.iam.gserviceaccount.com"],
+        obj={"easyrsa_path": "/usr/share/easy-rsa/easyrsa", "config_dir": config_dir},
+    )
+    assert result.exit_code == EX_CONFIG
 
 
 def test_continues_after_a_failed_revocation(config_dir):
