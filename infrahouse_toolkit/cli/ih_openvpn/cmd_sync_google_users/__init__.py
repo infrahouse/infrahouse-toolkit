@@ -10,10 +10,14 @@ import logging
 import os
 import sys
 from subprocess import CalledProcessError
+from typing import Iterable, Set, Tuple
 
 import click
 
-from infrahouse_toolkit.cli.ih_openvpn.exceptions import GoogleNotConfigured
+from infrahouse_toolkit.cli.ih_openvpn.exceptions import (
+    EmptyDirectory,
+    GoogleNotConfigured,
+)
 from infrahouse_toolkit.cli.ih_openvpn.lib import (
     index_path,
     revoke_client,
@@ -139,6 +143,59 @@ def get_active_directory_users(service_account, admin_subject):
     return users
 
 
+def active_users_across_workspaces(service_account: str, admin_subjects: Iterable[str]) -> Set[str]:
+    """
+    Union the active users of every Workspace, or fail without a partial answer.
+
+    The caller revokes certificates whose owner is missing from the returned set,
+    so an incomplete union is worse than no answer at all: users of a Workspace
+    that was skipped would look deactivated and lose their VPN access. Hence a
+    failure to read any single Workspace fails the whole call.
+
+    :param service_account: Email of the directory-reader service account. The
+                            same account impersonates every subject.
+    :type service_account: str
+    :param admin_subjects: Workspace admins to impersonate, one per tenant.
+    :type admin_subjects: Iterable(str)
+    :return: Primary email addresses of users active in at least one Workspace.
+    :rtype: set(str)
+    :raise GoogleNotConfigured: if any Workspace is not readable yet.
+    :raise EmptyDirectory: if any Workspace reports no active users.
+    """
+    active_users = set()
+    for admin_subject in admin_subjects:
+        workspace_users = get_active_directory_users(service_account, admin_subject)
+        # Refused per Workspace, not on the union: the other tenants' users would
+        # otherwise mask an empty one and its certificates would all be revoked.
+        if not workspace_users:
+            raise EmptyDirectory(f"the directory of {admin_subject} returned no active users")
+
+        LOG.info("Workspace of %s has %d active user(s).", admin_subject, len(workspace_users))
+        active_users |= workspace_users
+
+    return active_users
+
+
+def _default_admin_subjects() -> Tuple[str, ...]:
+    """
+    Resolve the admin subjects to impersonate from the environment.
+
+    ``WIF_ADMIN_SUBJECTS`` (comma-separated, one admin per Workspace tenant) is
+    authoritative. ``WIF_ADMIN_SUBJECT`` is the deprecated single-tenant spelling
+    and is honoured only when the plural variable is absent, so an instance whose
+    Terraform has not been re-applied yet keeps working unchanged.
+
+    :return: Admin subjects in the order they were configured.
+    :rtype: tuple(str)
+    """
+    plural = os.environ.get("WIF_ADMIN_SUBJECTS")
+    if plural:
+        return tuple(subject.strip() for subject in plural.split(",") if subject.strip())
+
+    singular = os.environ.get("WIF_ADMIN_SUBJECT")
+    return (singular,) if singular else ()
+
+
 @click.command(name="sync-google-users")
 @click.option(
     "--service-account",
@@ -147,8 +204,13 @@ def get_active_directory_users(service_account, admin_subject):
 )
 @click.option(
     "--admin-subject",
-    help="Workspace admin to impersonate. Defaults to $WIF_ADMIN_SUBJECT.",
-    default=lambda: os.environ.get("WIF_ADMIN_SUBJECT"),
+    "admin_subjects",
+    help=(
+        "Workspace admin to impersonate; repeatable, one per Workspace tenant. "
+        "Defaults to $WIF_ADMIN_SUBJECTS (comma-separated) or $WIF_ADMIN_SUBJECT."
+    ),
+    multiple=True,
+    default=_default_admin_subjects,
 )
 @click.option(
     "--dry-run",
@@ -166,7 +228,17 @@ def cmd_sync_google_users(ctx: click.Context, **kwargs):
     user certificate whose owner is suspended, deleted or otherwise absent is
     revoked. The server's own certificate is never a candidate.
 
-    CONFIGURATION comes from three environment variables, which on a
+    MULTIPLE WORKSPACES are supported: allowed VPN users may live in separate
+    Google Workspace tenants, so --admin-subject is repeatable -- one admin per
+    tenant. The single service account impersonates each admin in turn (its
+    client id must be authorized for domain-wide delegation in every tenant),
+    and the active users of all tenants are unioned before anything is compared.
+
+    That union is all-or-nothing: if any one tenant cannot be read, the whole run
+    aborts and revokes nothing. Proceeding on a partial union would make every
+    active user of the unreadable tenant look deactivated and revoke them all.
+
+    CONFIGURATION comes from environment variables, which on a
     module-provisioned instance are written by Terraform to
     /opt/openvpn-wif/wif.env (the file holds no secret -- the credential it
     points at is a keyless federation config, not a key):
@@ -174,7 +246,10 @@ def cmd_sync_google_users(ctx: click.Context, **kwargs):
     \b
       GOOGLE_APPLICATION_CREDENTIALS  path to the WIF credential config
       WIF_SA_EMAIL                    directory-reader service account
-      WIF_ADMIN_SUBJECT               Workspace admin to impersonate
+      WIF_ADMIN_SUBJECTS              Workspace admins to impersonate,
+                                      comma-separated, one per tenant
+      WIF_ADMIN_SUBJECT               deprecated single-tenant spelling, used
+                                      only when WIF_ADMIN_SUBJECTS is unset
 
     So a by-hand run on an instance is source-then-invoke. --dry-run first is
     the safe habit: it prints exactly who would be revoked and touches nothing.
@@ -195,18 +270,21 @@ def cmd_sync_google_users(ctx: click.Context, **kwargs):
     when the Google side is not usable yet (most often domain-wide delegation
     not authorized), any other code on a genuine failure. Point --config-dir at
     a different OpenVPN installation, or override the service account / admin
-    subject, with the options below.
+    subjects, with the options below.
     """
     config_dir = ctx.obj["config_dir"]
     service_account = kwargs["service_account"]
-    admin_subject = kwargs["admin_subject"]
+    # Repeats and the same admin arriving from both the option and the
+    # environment only cost a duplicate directory query; dict.fromkeys drops them
+    # while keeping the configured order for readable logs.
+    admin_subjects = tuple(dict.fromkeys(kwargs["admin_subjects"]))
     dry_run = kwargs["dry_run"]
 
     # Absent configuration is the pre-deployment state, not a usage error, so it
     # exits EX_CONFIG rather than click's UsageError.
     for name, value in (
         ("--service-account/$WIF_SA_EMAIL", service_account),
-        ("--admin-subject/$WIF_ADMIN_SUBJECT", admin_subject),
+        ("--admin-subject/$WIF_ADMIN_SUBJECTS", admin_subjects),
     ):
         if not value:
             LOG.info("%s is not set; the Google integration is not configured yet.", name)
@@ -220,15 +298,17 @@ def cmd_sync_google_users(ctx: click.Context, **kwargs):
         sys.exit(EX_CONFIG)
 
     try:
-        active_users = get_active_directory_users(service_account, admin_subject)
+        active_users = active_users_across_workspaces(service_account, admin_subjects)
     except GoogleNotConfigured as err:
+        # A single Workspace we cannot read makes the union incomplete, and every
+        # active user in it would then look deactivated. Abort the whole run
+        # rather than revoke from a partial picture.
         LOG.info("Google Workspace is not configured yet: %s", err)
         sys.exit(EX_CONFIG)
-
-    # An empty directory response would make every certificate look orphaned.
-    # Treat it as a failed lookup rather than as "everyone was deactivated".
-    if not active_users:
-        LOG.error("The directory returned no active users; refusing to revoke every certificate.")
+    except EmptyDirectory as err:
+        # A live query answering with nobody is a failed lookup, not "everyone
+        # was deactivated".
+        LOG.error("%s; refusing to revoke every certificate.", err)
         sys.exit(1)
 
     stale = sorted(certificate for certificate in certificates if certificate.lower() not in active_users)
