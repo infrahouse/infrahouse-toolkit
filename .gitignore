@@ -105,4 +105,5 @@ ENV/
 .vscode/
 .idea/
 /.claude/*.local.json
+.claude/plans/*.local.md
 nul
