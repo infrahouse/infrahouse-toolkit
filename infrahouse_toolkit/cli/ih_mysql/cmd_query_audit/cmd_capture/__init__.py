@@ -58,18 +58,19 @@ DIGEST_REPORTS = [
 )
 @click.option(
     "--max-log-size",
-    help="Stop after the capture has written this many megabytes of slow log.",
+    help="Stop after the capture has written this many megabytes of slow log. Defaults to 1024, or 5% of "
+    "the instance's current allocated storage when that is smaller. 5% is a hard ceiling — a larger value "
+    "is refused, because a full-size capture must not push free storage under the reserve.",
     type=int,
-    default=1024,
-    show_default=True,
+    default=None,
 )
 @click.option(
     "--min-free-storage",
-    help="Stop if instance free storage drops to this many gigabytes. RDS keeps log files on the data "
-    "volume, so this is what stands between a capture and a storage-full outage.",
+    help="Stop if instance free storage drops to this many gigabytes. Defaults to 10% of the instance's "
+    "current allocated storage, which is the point where RDS starts autoextending the volume. Log files "
+    "live on the data volume, so this is what keeps a capture from provoking that.",
     type=int,
-    default=20,
-    show_default=True,
+    default=None,
 )
 @click.option(
     "--poll-interval",
@@ -86,7 +87,7 @@ DIGEST_REPORTS = [
 )
 @click.option(
     "--state-file",
-    help="Where to record pre-capture parameter values. Defaults to restore-state.json in the output " "directory.",
+    help="Where to record pre-capture parameter values. Defaults to restore-state.json in the output directory.",
     default=None,
 )
 @click.option(
@@ -146,10 +147,21 @@ def cmd_capture(ctx, **kwargs):  # pylint: disable=too-many-locals
     ``ih-mysql query-audit restore --state-file``.
 
     Omitting INSTANCE_ID lists the MySQL instances in the region.
+
+    \b
+    Known limitation: connections opened before the change keep their old
+    long_query_time, and this command cannot measure how many. It holds no
+    MySQL credentials, and performance_schema — the only place a session's
+    own threshold is visible — is off by default on RDS. So an empty capture
+    cannot be told apart from an idle instance from here. Compare the Queries
+    and Slow_queries counters in SHOW GLOBAL STATUS across the window to tell
+    which it was.
     """
     max_run_time = int(kwargs["max_run_time"] * 3600)
-    max_log_size = kwargs["max_log_size"] * 1024**2
-    min_free_storage = kwargs["min_free_storage"] * 1024**3
+    # Left as None so the capture can size them against the instance's own
+    # allocated storage; a flat default cannot suit both a 10 GiB and a 2 TiB volume.
+    max_log_size = None if kwargs["max_log_size"] is None else kwargs["max_log_size"] * 1024**2
+    min_free_storage = None if kwargs["min_free_storage"] is None else kwargs["min_free_storage"] * 1024**3
 
     try:
         session = ctx.obj["aws_session"]
@@ -170,6 +182,11 @@ def cmd_capture(ctx, **kwargs):  # pylint: disable=too-many-locals
         # Fail on a missing pt-query-digest now, not after an hour of capturing.
         if kwargs["digest"]:
             check_dependencies([PT_QUERY_DIGEST])
+
+        # Size the storage limits against this instance before they are used for
+        # the plan, the preflight and the watchdog alike.
+        max_log_size = capture.default_max_log_size if max_log_size is None else max_log_size
+        min_free_storage = capture.default_min_free_storage if min_free_storage is None else min_free_storage
 
         capture.preflight(max_log_size=max_log_size, min_free_storage=min_free_storage)
         _print_plan(capture, max_run_time, max_log_size, min_free_storage, output_dir)
@@ -196,16 +213,22 @@ def cmd_capture(ctx, **kwargs):  # pylint: disable=too-many-locals
                 reason = "interrupted"
         LOG.info("Capture finished: %s", reason)
 
-        log_files = capture.download(output_dir)
-        if not log_files:
-            LOG.error("Nothing was captured. Were the application's connections opened before the change?")
+        digest = QueryDigest(capture.download(output_dir), since=capture.started_at)
+        events = digest.event_count
+        if not events:
+            LOG.error(
+                "No queries were logged during the capture window. RDS writes a log file header even "
+                "when nothing is captured, so an empty capture still produces a file."
+            )
+            LOG.error(
+                "Connections opened before the change keep their old long_query_time. Give the client "
+                "pool time to recycle, or capture for longer."
+            )
             sys.exit(1)
+        LOG.info("Captured %d queries", events)
 
-        reports = []
-        if kwargs["digest"]:
-            reports = _run_digests(log_files, capture.started_at, output_dir)
-
-        _print_summary(output_dir, log_files, reports)
+        reports = _run_digests(digest, output_dir) if kwargs["digest"] else []
+        _print_summary(output_dir, digest.log_files, reports)
 
     except click.Abort:
         LOG.info("Aborted, nothing was changed")
@@ -246,14 +269,44 @@ def _print_plan(capture, max_run_time, max_log_size, min_free_storage, output_di
     rows = [
         [name, group.value_of(name), group.parameters[name].get("Source"), desired[name]] for name in CAPTURE_PARAMETERS
     ]
-    print(f"\nParameter group {group.name} on {capture.instance.db_instance_id}:\n")
+    gib = 1024**3
+    instance = capture.instance
+    allocated = instance.allocated_storage_bytes
+    free = instance.free_storage_bytes
+
+    print(f"\nParameter group {group.name} on {instance.db_instance_id}:\n")
     print(tabulate(rows, headers=["parameter", "current", "source", "capture sets"]))
     print(
+        f"\nStorage : {free / gib:.1f} GiB free of {allocated / gib:.0f} GiB allocated. "
+        f"Capture writes at most {max_log_size / gib:.1f} GiB, leaving "
+        f"{(free - max_log_size) / gib:.1f} GiB against a {min_free_storage / gib:.1f} GiB reserve."
+    )
+    print(
+        f"          The reserve is RDS's autoextend trigger — staying above it means the volume "
+        f"is never grown{_autoscaling_note(instance)}."
+    )
+    print(
         f"\nStops at: {max_run_time}s, or {max_log_size / 1024 ** 2:.0f} MiB of slow log, "
-        f"or {min_free_storage / 1024 ** 3:.0f} GiB free storage remaining."
+        f"or {min_free_storage / gib:.1f} GiB free storage remaining."
     )
     print(f"Output  : {output_dir}")
     print(f"Undo    : ih-mysql query-audit restore --state-file {capture.state_file}\n")
+
+
+def _autoscaling_note(instance) -> str:
+    """
+    Describe the autoextend ceiling the capture is staying clear of.
+
+    :param instance: The instance being captured on.
+    :type instance: RDSMySQLInstance
+    :return: A clause naming the threshold, or an empty string when storage
+        autoscaling is off.
+    :rtype: str
+    """
+    ceiling = instance.max_allocated_storage_bytes
+    if ceiling is None:
+        return " (autoscaling is off, so a full volume would be an outage)"
+    return f" (autoscaling is on, up to {ceiling / 1024 ** 3:.0f} GiB — deliberately unused)"
 
 
 def _print_summary(output_dir, log_files, reports) -> None:
@@ -275,21 +328,17 @@ def _print_summary(output_dir, log_files, reports) -> None:
         print(f"  {path}")
 
 
-def _run_digests(log_files, since, output_dir) -> list:
+def _run_digests(digest, output_dir) -> list:
     """
     Run the standard set of pt-query-digest reports over a capture.
 
-    :param log_files: Downloaded slow log files.
-    :type log_files: list
-    :param since: Capture start, used to exclude events that RDS had already
-        written to a log file before the capture began.
-    :type since: datetime
+    :param digest: The capture's log files, already scoped to the window.
+    :type digest: QueryDigest
     :param output_dir: Directory to write reports into.
     :type output_dir: str
     :return: Paths of the generated reports.
     :rtype: list
     """
-    digest = QueryDigest(log_files, since=since)
     paths = []
     for report in DIGEST_REPORTS:
         paths.append(

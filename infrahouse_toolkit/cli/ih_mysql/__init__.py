@@ -29,8 +29,8 @@ LOG = getLogger(__name__)
     show_default=True,
 )
 @click.option(
-    "--verbose",
-    help="Print INFO and WARNING level messages.",
+    "--quiet",
+    help="Suppress informational and warning messages, output errors only. Overrides --debug.",
     is_flag=True,
     default=False,
     show_default=True,
@@ -53,10 +53,15 @@ LOG = getLogger(__name__)
 @click.pass_context
 def ih_mysql(ctx, **kwargs):
     """MySQL/Percona Server management commands."""
-    setup_logging(debug=kwargs["debug"], quiet=not kwargs["verbose"])
+    # Three levels, with the useful one in the middle: --debug is everything,
+    # no flag prints INFO and WARNING, --quiet drops to errors only. Warnings
+    # here carry the safety findings, so suppressing them is opt-in.
+    quiet = kwargs["quiet"]
+    debug = kwargs["debug"] and not quiet
+    setup_logging(debug=debug, quiet=quiet)
 
     ctx.obj = {
-        "debug": kwargs["debug"],
+        "debug": debug,
         "aws_profile": kwargs["aws_profile"],
         "aws_region": kwargs["aws_region"],
     }

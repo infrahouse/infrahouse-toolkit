@@ -138,6 +138,21 @@ class RDSMySQLInstance(RDSInstance):
         return int(latest["Minimum"])
 
     @property
+    def max_allocated_storage_bytes(self) -> Optional[int]:
+        """
+        The ceiling storage autoscaling may grow this volume to.
+
+        Reported for context only.  A capture sizes its limits against
+        :attr:`allocated_storage_bytes`, because provoking an autoextend is
+        what it is trying to avoid, not a resource it may draw on.
+
+        :return: Bytes, or ``None`` when storage autoscaling is disabled.
+        :rtype: Optional[int]
+        """
+        ceiling = self.description.get("MaxAllocatedStorage")
+        return ceiling * 1024**3 if ceiling else None
+
+    @property
     def parameter_apply_status(self) -> str:
         """
         :return: ``ParameterApplyStatus`` of the attached parameter group,
