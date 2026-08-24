@@ -42,6 +42,25 @@ class QueryDigest:
     # --- Public properties ---
 
     @property
+    def event_count(self) -> int:
+        """
+        How many query events the log files actually contain.
+
+        Not the same as "the files are non-empty": MySQL writes a few hundred
+        bytes of preamble when it creates the slow log, so a capture that logged
+        nothing at all still produces a file.  Counting ``# Query_time:`` lines
+        is what distinguishes a real capture from an empty one.
+
+        :return: Number of logged queries across all log files.
+        :rtype: int
+        """
+        count = 0
+        for path in self._log_files:
+            with open(path, encoding=DEFAULT_OPEN_ENCODING, errors="replace") as descriptor:
+                count += sum(1 for line in descriptor if line.startswith("# Query_time:"))
+        return count
+
+    @property
     def log_files(self) -> List[str]:
         """
         :return: Slow log files being digested.

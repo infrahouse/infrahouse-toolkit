@@ -1,6 +1,7 @@
 """Tests for :class:`infrahouse_toolkit.aws.rds.SlowLogCapture`."""
 
 import json
+from datetime import datetime, timezone
 from os import path as osp
 from unittest.mock import MagicMock, patch
 
@@ -43,6 +44,8 @@ def instance() -> MagicMock:
     mock.engine_version = "8.0.45"
     mock.status = "available"
     mock.free_storage_bytes = 180 * GIB
+    mock.allocated_storage_bytes = 200 * GIB
+    mock.max_allocated_storage_bytes = 500 * GIB
     mock.slow_log_files = []
     mock.cloudwatch_log_exports = []
     mock.parameter_group = group
@@ -125,11 +128,11 @@ def test_preflight_allows_shared_group_when_asked(instance: MagicMock, tmp_path)
 
 
 def test_preflight_rejects_insufficient_storage(instance: MagicMock, capture: SlowLogCapture) -> None:
-    """A capture must not be able to fill the data volume."""
+    """A capture must not be able to push free space under the reserve."""
     instance.free_storage_bytes = 21 * GIB
     with pytest.raises(SlowLogCaptureError) as exc_info:
         capture.preflight(max_log_size=5 * GIB, min_free_storage=20 * GIB)
-    assert "headroom" in str(exc_info.value)
+    assert "under the 20.00 GiB reserve" in str(exc_info.value)
 
 
 def test_preflight_rejects_unknown_storage(instance: MagicMock, capture: SlowLogCapture) -> None:
@@ -342,3 +345,139 @@ def test_start_rollback_keeps_state_file_when_it_also_fails(capture: SlowLogCapt
     with pytest.raises(RDSError):
         capture.start()
     assert osp.exists(capture.state_file)
+
+
+@pytest.mark.parametrize(
+    "given, expected",
+    [
+        (0, "0"),
+        (0.0, "0"),  # click hands capture a float; status uses the int default
+        (2, "2"),
+        (2.0, "2"),
+        (10.0, "10"),
+        (0.5, "0.5"),
+        (1.25, "1.25"),
+        (0.000001, "0.000001"),  # str() would render this as 1e-06
+    ],
+)
+def test_long_query_time_renders_consistently(instance: MagicMock, given, expected) -> None:
+    """The same threshold renders identically whether it arrives as int or float."""
+    capture = SlowLogCapture(instance, long_query_time=given)
+    assert capture.desired_parameters["long_query_time"] == expected
+
+
+def test_reserve_scales_with_the_volume(instance: MagicMock, capture: SlowLogCapture) -> None:
+    """The reserve is a share of allocated storage, so it means the same on any volume."""
+    instance.allocated_storage_bytes = 200 * GIB
+    assert capture.default_min_free_storage == 20 * GIB
+
+    instance.allocated_storage_bytes = 10 * GIB
+    assert capture.default_min_free_storage == 1 * GIB
+
+
+def test_default_log_size_is_a_working_size_not_the_ceiling(instance: MagicMock, capture: SlowLogCapture) -> None:
+    """5% of a big volume is a ceiling, not something anyone wants to download."""
+    instance.allocated_storage_bytes = 2048 * GIB
+    assert capture.max_log_size_ceiling == 102 * GIB + int(0.4 * GIB)
+    assert capture.default_max_log_size == 1 * GIB
+
+
+def test_default_log_size_yields_to_the_ceiling_on_small_volumes(instance: MagicMock, capture: SlowLogCapture) -> None:
+    """On a 10 GiB volume 5% is under a gigabyte, and the ceiling wins."""
+    instance.allocated_storage_bytes = 10 * GIB
+    assert capture.max_log_size_ceiling == 0.5 * GIB
+    assert capture.default_max_log_size == 0.5 * GIB
+
+
+def test_defaults_fit_a_small_volume(instance: MagicMock, capture: SlowLogCapture) -> None:
+    """The 20 GiB flat default was unsatisfiable on a 10 GiB instance; the ratio is not."""
+    instance.allocated_storage_bytes = 10 * GIB
+    instance.free_storage_bytes = 1.7 * GIB
+    capture.preflight()
+
+
+def test_defaults_scale_up_to_a_large_volume(instance: MagicMock, capture: SlowLogCapture) -> None:
+    """On a 2 TiB volume a 20 GiB reserve would have been far too thin."""
+    instance.allocated_storage_bytes = 2048 * GIB
+    instance.free_storage_bytes = 400 * GIB
+    capture.preflight()
+    assert capture.default_min_free_storage == 204 * GIB + int(0.8 * GIB)
+
+
+def test_preflight_refuses_an_oversized_log_cap(instance: MagicMock, capture: SlowLogCapture) -> None:
+    """An explicit --max-log-size above 5% of the volume is refused, not clamped."""
+    instance.allocated_storage_bytes = 10 * GIB
+    instance.free_storage_bytes = 9 * GIB
+    with pytest.raises(SlowLogCaptureError) as exc_info:
+        capture.preflight(max_log_size=2 * GIB)
+    assert "more than 5%" in str(exc_info.value)
+
+
+def test_preflight_allows_a_smaller_log_cap(instance: MagicMock, capture: SlowLogCapture) -> None:
+    """Asking for less than the ceiling is always fine."""
+    instance.allocated_storage_bytes = 10 * GIB
+    instance.free_storage_bytes = 9 * GIB
+    capture.preflight(max_log_size=100 * 1024**2)
+
+
+def test_preflight_allows_up_to_the_ceiling_above_the_default(instance: MagicMock, capture: SlowLogCapture) -> None:
+    """The 1 GiB default is a default; the 5% ceiling is what is enforced."""
+    instance.allocated_storage_bytes = 2048 * GIB
+    instance.free_storage_bytes = 900 * GIB
+    capture.preflight(max_log_size=50 * GIB)
+
+
+def test_preflight_ignores_autoscaling_headroom(instance: MagicMock, capture: SlowLogCapture) -> None:
+    """Room the volume could grow into is not room the capture may spend."""
+    instance.allocated_storage_bytes = 10 * GIB
+    instance.max_allocated_storage_bytes = 150 * GIB
+    instance.free_storage_bytes = 0.9 * GIB  # under the 1 GiB reserve
+    with pytest.raises(SlowLogCaptureError) as exc_info:
+        capture.preflight()
+    assert "autoextending" in str(exc_info.value)
+
+
+def test_reserve_is_the_autoextend_threshold(instance: MagicMock, capture: SlowLogCapture) -> None:
+    """The reserve is RDS's own 10% trigger, not a round number."""
+    instance.allocated_storage_bytes = 137 * GIB
+    assert capture.default_min_free_storage == int(137 * GIB * 0.10)
+
+
+def test_clock_starts_after_the_parameters_land(capture: SlowLogCapture, instance: MagicMock) -> None:
+    """RDS takes ~a minute to report in-sync; that must not come out of the window."""
+    stamps = []
+
+    def slow_apply(_values):
+        stamps.append("apply")
+
+    def slow_wait(*args, **kwargs):  # pylint: disable=unused-argument
+        stamps.append("wait")
+
+    instance.parameter_group.apply.side_effect = slow_apply
+    instance.wait_parameters_in_sync.side_effect = slow_wait
+
+    before = datetime.now(timezone.utc)
+    capture.start()
+
+    assert stamps == ["apply", "wait"]
+    # started_at is stamped after both, so the window is measured from the point
+    # queries are actually being logged.
+    assert capture.started_at >= before
+
+
+def test_state_file_timestamp_survives_a_failed_apply(capture: SlowLogCapture, instance: MagicMock) -> None:
+    """The state file is written before the apply, so it records the request time."""
+    instance.wait_parameters_in_sync.side_effect = RDSError("timed out")
+    with pytest.raises(RDSError):
+        capture.start()
+    # start() rolled back and removed the state file, but it existed with a
+    # timestamp even though started_at was never reached.
+    assert capture.started_at is None
+
+
+def test_watch_measures_from_when_logging_began(capture: SlowLogCapture, instance: MagicMock) -> None:
+    """The deadline runs from started_at, which is post-in-sync."""
+    capture.start()
+    assert capture.started_at is not None
+    reason = capture.watch(max_run_time=0, max_log_size=100 * GIB, min_free_storage=GIB)
+    assert "time limit" in reason

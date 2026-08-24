@@ -69,3 +69,48 @@ def test_report_when_digest_fails(tmp_path) -> None:
         with pytest.raises(QueryDigestError) as exc_info:
             QueryDigest(["slow.log"]).report(str(tmp_path / "digest.txt"))
     assert "bad --filter" in str(exc_info.value)
+
+
+# What RDS leaves in a freshly created slow log file before any query is logged.
+HEADER = (
+    "/rdsdbbin/mysql/bin/mysqld, Version: 8.0.45 (Source distribution). started with:\n"
+    "Tcp port: 3306  Unix socket: /tmp/mysql.sock\n"
+    "Time                 Id Command    Argument\n"
+)
+
+EVENT = (
+    "# Time: 2026-08-24T17:40:00.000000Z\n"
+    "# User@Host: app[app] @  [10.0.0.1]  Id:    42\n"
+    "# Query_time: 0.000512  Lock_time: 0.000001 Rows_sent: 1  Rows_examined: 1\n"
+    "SET timestamp=1756056000;\n"
+    "SELECT 1;\n"
+)
+
+
+def test_event_count_ignores_the_header(tmp_path) -> None:
+    """A capture that logged nothing still leaves a non-empty file — that is not a capture."""
+    log = tmp_path / "slow.log"
+    log.write_text(HEADER)
+    assert log.stat().st_size > 0
+    assert QueryDigest([str(log)]).event_count == 0
+
+
+def test_event_count_counts_queries(tmp_path) -> None:
+    """Each logged query is one event."""
+    log = tmp_path / "slow.log"
+    log.write_text(HEADER + EVENT + EVENT)
+    assert QueryDigest([str(log)]).event_count == 2
+
+
+def test_event_count_across_rotated_files(tmp_path) -> None:
+    """RDS rotates hourly, so a long capture spans several files."""
+    first = tmp_path / "slow.log.1"
+    first.write_text(HEADER + EVENT)
+    second = tmp_path / "slow.log.2"
+    second.write_text(HEADER + EVENT + EVENT)
+    assert QueryDigest([str(first), str(second)]).event_count == 3
+
+
+def test_event_count_without_log_files() -> None:
+    """No files means no events, not an error."""
+    assert QueryDigest([]).event_count == 0
