@@ -5,9 +5,13 @@ from unittest.mock import MagicMock, patch
 import click
 import pytest
 
+from infrahouse_toolkit.cli.ih_mysql.cmd_query_audit import instance_list
 from infrahouse_toolkit.cli.ih_mysql.cmd_query_audit.instance_list import InstanceList
 
-LIST_INSTANCES = "infrahouse_toolkit.cli.ih_mysql.cmd_query_audit.instance_list.RDSMySQLInstance.list_instances"
+# Patch through the imported module rather than a dotted string. ih_mysql/__init__.py binds the
+# name cmd_query_audit to the click group, which shadows the submodule of the same name on the
+# package, so a string target resolves to a Group and fails on Python 3.10 -- 3.11 switched
+# mock to pkgutil.resolve_name and no longer walks attributes.
 
 
 def make_instance(identifier: str, tags: dict = None) -> MagicMock:
@@ -30,7 +34,7 @@ def listing() -> InstanceList:
         make_instance("mysql-two", {"service": "second-service"}),
     ]
     result = InstanceList(MagicMock())
-    with patch(LIST_INSTANCES, return_value=instances):
+    with patch.object(instance_list.RDSMySQLInstance, "list_instances", return_value=instances):
         _ = result.instances
     return result
 
@@ -58,7 +62,7 @@ def test_table_has_no_selection_numbers(listing: InstanceList) -> None:
 
 def test_require_resolves_a_given_identifier(listing: InstanceList) -> None:
     """A supplied identifier is used directly, without listing anything."""
-    with patch("infrahouse_toolkit.cli.ih_mysql.cmd_query_audit.instance_list.RDSMySQLInstance") as mock_instance:
+    with patch.object(instance_list, "RDSMySQLInstance") as mock_instance:
         assert listing.require("some-db") is mock_instance.return_value
     mock_instance.assert_called_once()
 
@@ -76,7 +80,7 @@ def test_require_without_identifier_lists_choices(listing: InstanceList) -> None
 def test_require_without_identifier_and_no_instances() -> None:
     """An empty region says so rather than printing an empty table."""
     listing = InstanceList(MagicMock())
-    with patch(LIST_INSTANCES, return_value=[]):
+    with patch.object(instance_list.RDSMySQLInstance, "list_instances", return_value=[]):
         with pytest.raises(click.UsageError) as exc_info:
             listing.require(None)
     assert "no RDS for MySQL instances were found" in str(exc_info.value)
