@@ -8,9 +8,15 @@
 
 import logging
 import sys
+from os import defpath, environ
 from subprocess import Popen
 
 import click
+
+from infrahouse_toolkit.cli.ih_skeema.defaults_file import (
+    DEFAULTS_FILE_VARIABLE,
+    mysql_defaults_file,
+)
 
 LOG = logging.getLogger()
 
@@ -43,10 +49,17 @@ def cmd_run(ctx, *args, **kwargs):
     cmd = [ctx.obj["skeema_path"], "--user", ctx.obj["username"], kwargs["skeema_command"]]
     cmd.extend(ctx.args)
     try:
-        with Popen(cmd, env={"MYSQL_PWD": ctx.obj["password"]}) as proc:
-            LOG.info("Launched command: %s", " ".join(cmd))
-            proc.communicate()
-            sys.exit(proc.returncode)
+        with mysql_defaults_file(ctx.obj["username"], ctx.obj["password"]) as defaults_path:
+            env = {
+                "MYSQL_PWD": ctx.obj["password"],
+                DEFAULTS_FILE_VARIABLE: defaults_path,
+                # pt-online-schema-change is #!/usr/bin/env perl and needs a PATH.
+                "PATH": environ.get("PATH", defpath),
+            }
+            with Popen(cmd, env=env) as proc:
+                LOG.info("Launched command: %s", " ".join(cmd))
+                proc.communicate()
+                sys.exit(proc.returncode)
 
     except FileNotFoundError as err:
         LOG.error("Command `%s` failed to start.", " ".join(cmd))
