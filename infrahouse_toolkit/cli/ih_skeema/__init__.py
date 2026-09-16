@@ -17,7 +17,9 @@ from infrahouse_core.logging import setup_logging
 
 from infrahouse_toolkit import DEFAULT_ENCODING
 from infrahouse_toolkit.cli.ih_secrets.cmd_get import get_secret
+from infrahouse_toolkit.cli.ih_skeema.cmd_preflight import cmd_preflight
 from infrahouse_toolkit.cli.ih_skeema.cmd_run import cmd_run
+from infrahouse_toolkit.skeema import Skeema
 
 LOG = getLogger()
 
@@ -78,9 +80,7 @@ def ih_skeema(ctx, **kwargs):  # pylint: disable=unused-argument
             password = credentials["password"]
 
         ctx.obj = {
-            "skeema_path": kwargs["skeema_path"],
-            "username": username,
-            "password": password,
+            "skeema": Skeema(kwargs["skeema_path"], username, password),
         }
 
     except FileNotFoundError as err:
@@ -89,6 +89,6 @@ def ih_skeema(ctx, **kwargs):  # pylint: disable=unused-argument
         sys.exit(1)
 
 
-for cmd in [cmd_run]:
+for cmd in [cmd_preflight, cmd_run]:
     # noinspection PyTypeChecker
     ih_skeema.add_command(cmd)

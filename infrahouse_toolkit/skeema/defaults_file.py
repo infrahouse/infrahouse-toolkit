@@ -1,5 +1,5 @@
 """
-.. topic:: ``infrahouse_toolkit.cli.ih_skeema.defaults_file``
+.. topic:: ``infrahouse_toolkit.skeema.defaults_file``
 
     A MySQL client defaults file for tools Skeema shells out to.
 
