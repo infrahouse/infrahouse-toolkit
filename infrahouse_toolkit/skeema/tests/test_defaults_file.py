@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-from infrahouse_toolkit.cli.ih_skeema.defaults_file import (
+from infrahouse_toolkit.skeema.defaults_file import (
     mysql_defaults_file,
     quote_option_value,
 )

@@ -919,10 +919,12 @@ AWS Secrets Manager to provide database credentials.
       --credentials-secret TEXT  If specified, read username and password from AWS
                                  secrets manager. The secret value must be a JSON
                                  with keys 'username' and 'password'.
+      --version                  Show the version and exit.
       --help                     Show this message and exit.
 
     Commands:
-      run  Run a skeema command.
+      preflight  Report what a push would do and what it would cost.
+      run        Run a skeema command.
 
 
 ``ih-skeema`` is designed to be used in CI/CD workflows. For example, here it runs skeema diff and publishes result
@@ -955,6 +957,72 @@ to a pull request.
               ih-github run ${{ github.repository }} ${{ github.event.pull_request.number }} \
               ih-skeema --credentials-secret ${{ env.CREDENTIALS_SECRET }} run diff sandbox || \
                 ( RESULT=$? ; if [ $RESULT -gt 1 ]; then echo "Error occured"; exit $RESULT ; fi )
+
+The same DDL can be a metadata-only change or hours of copying a table, depending on whether skeema hands it to
+the ``alter-wrapper``, and the diff doesn't say which. ``ih-skeema preflight`` runs the diff and reports, for
+every changed table, its size and whether skeema wraps it. It also reports tables and triggers an interrupted
+``pt-online-schema-change`` left behind, ``Threads_running`` of every server, and a digest of the pending
+changes. The report is Markdown, and exit codes follow ``skeema diff``: 0 for no differences, 1 for differences,
+2 or more for errors.
+
+.. code-block:: bash
+
+    $ ih-skeema preflight --help
+    Usage: ih-skeema preflight [OPTIONS] ENVIRONMENT
+
+      Report what skeema push to ENVIRONMENT would do and what it would cost.
+
+      Prints a Markdown report to stdout: for every table change, the table size
+      and whether skeema hands it to the alter-wrapper; leftovers of an
+      interrupted pt-online-schema-change; Threads_running of every server; the
+      diff itself and its digest.
+
+      Extra arguments go to skeema diff. Pass the ones the push will get, or the
+      digest won't match.
+
+      Exits with the codes skeema diff uses: 0 for no differences, 1 for
+      differences, 2 or more for errors. The report is still printed when skeema
+      diff fails.
+
+    Options:
+      --digest-file TEXT  Also write the digest of the pending changes to this
+                          file, for ih-skeema run push --expect-digest.
+      --help              Show this message and exit.
+
+Pass the digest to ``ih-skeema run push --expect-digest`` to push only if nothing changed since the report was
+approved. The digest detects a change but doesn't pin the changes: the push works out the diff again when it
+runs.
+
+.. code-block:: yaml
+
+    jobs:
+      preflight:
+        runs-on: ["self-hosted", "Linux", "skeema"]
+        outputs:
+          digest: "${{ steps.preflight.outputs.digest }}"
+        steps:
+          - uses: "actions/checkout@v4"
+
+          - id: "preflight"
+            name: "Preflight"
+            run: |
+              ih-skeema --credentials-secret ${{ env.CREDENTIALS_SECRET }} \
+                preflight production --digest-file digest >> "$GITHUB_STEP_SUMMARY" || \
+                ( RESULT=$? ; if [ $RESULT -gt 1 ]; then exit $RESULT ; fi )
+              echo "digest=$(cat digest)" >> "$GITHUB_OUTPUT"
+
+      push:
+        needs: "preflight"
+        runs-on: ["self-hosted", "Linux", "skeema"]
+        # Required reviewers of the environment approve the preflight report.
+        environment: "production"
+        steps:
+          - uses: "actions/checkout@v4"
+
+          - name: "Push"
+            run: |
+              ih-skeema --credentials-secret ${{ env.CREDENTIALS_SECRET }} \
+                run push production --expect-digest ${{ needs.preflight.outputs.digest }}
 
 
 Credits
