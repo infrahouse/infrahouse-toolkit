@@ -365,7 +365,7 @@ This document defines coding standards for InfraHouse projects.
   - Document non-obvious decisions and reasoning
 * **README.md (required):**
   - Must include terraform-docs markers: `<!-- BEGIN_TF_DOCS -->` and `<!-- END_TF_DOCS -->`
-  - Pre-commit hook uses terraform-docs to auto-generate documentation
+  - The `hooks/pre-commit` git hook runs terraform-docs to regenerate that section
   - **Required badges** (in this order):
     - Contact: `[![Need Help?](https://img.shields.io/badge/Need%20Help%3F-Contact%20Us-0066CC)](https://infrahouse.com/contact)`
     - Documentation: `[![Docs](https://img.shields.io/badge/docs-github.io-blue)](https://infrahouse.github.io/repo-name/)`
@@ -751,13 +751,14 @@ All InfraHouse projects (Python libraries, Terraform modules, etc.) must include
   ```
 
 #### `install-hooks`
-* Installs pre-commit hooks and commit-msg hook
-* The `hooks/commit-msg` file is managed by github-control
+* Installs the repo's git hooks from `hooks/` (`hooks/pre-commit`, `hooks/commit-msg`) into `.git/hooks`
+* Terraform module repos get both hooks from github-control
+* Do not use the pre-commit framework: no `.pre-commit-config.yaml`, no `pre-commit install`
 * Example:
   ```makefile
   install-hooks:
-  	pre-commit install
-  	pre-commit install --hook-type commit-msg
+  	ln -sf ../../hooks/pre-commit .git/hooks/pre-commit
+  	ln -sf ../../hooks/commit-msg .git/hooks/commit-msg
   ```
 
 #### `test`
