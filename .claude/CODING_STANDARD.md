@@ -390,6 +390,10 @@ This document defines coding standards for InfraHouse projects.
 * **terraform-docs configuration:**
   - `.terraform-docs.yml` is managed by github-control
   - README.md uses centrally-managed configuration
+  - It sets `lockfile: false`, so README's Providers table shows the constraints from `terraform.tf`
+    (e.g. `>= 5.11, < 7.0.0`), not the versions a local `.terraform.lock.hcl` resolved (e.g. `6.60.0`)
+  - The pre-commit hook regenerates README.md during `git commit` and stages the change, so the commit can
+    differ from the diff reviewed before it: check it with `git show --stat`
 
 ### GitHub Pages Documentation (terraform_module)
 * **Deployment:** Automated via `.github/workflows/docs.yml` (managed by github-control)
