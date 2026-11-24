@@ -1,0 +1,47 @@
+---
+# Builds the standalone Debian package for noble on amd64 and arm64, each on a native runner,
+# smoke-tests it on a clean ubuntu:noble container and uploads it as a workflow artifact.
+# It publishes nothing. Called by python-CI.yml and python-CD.yml.
+name: Standalone package
+
+on:  # yamllint disable-line rule:truthy
+    workflow_call:
+
+permissions:
+    contents: read
+
+jobs:
+    package:
+        name: "noble ${{ matrix.arch }}"
+        runs-on: ${{ matrix.runner }}
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - arch: amd64
+                      runner: ubuntu-24.04
+                    - arch: arm64
+                      runner: ubuntu-24.04-arm
+        steps:
+            - uses: actions/checkout@v5
+
+            - name: Check the runner is native ${{ matrix.arch }}
+              run: |
+                  uname -m
+                  dpkg --print-architecture
+                  test "$(dpkg --print-architecture)" = "${{ matrix.arch }}"
+
+            - name: Build the package
+              run: |
+                  make package-standalone
+
+            - name: Smoke-test the package on a clean ubuntu:noble
+              run: |
+                  make package-smoke-test
+
+            - name: Upload the package
+              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+              with:
+                  name: infrahouse-toolkit-noble-${{ matrix.arch }}
+                  path: dist/infrahouse-toolkit_*.deb
+                  if-no-files-found: error

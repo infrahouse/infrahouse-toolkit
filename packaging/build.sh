@@ -7,7 +7,7 @@
 #   * Package: assembled by nfpm from packaging/nfpm.yaml.
 #
 # The toolkit is installed at its final path, /opt/infrahouse-toolkit, so entry-point
-# shebangs need no rewriting. Run it in a disposable container (see `make package`),
+# shebangs need no rewriting. Run it in a disposable container (see `make package-standalone`),
 # never on a workstation: it writes to /opt and /usr/local/bin.
 #
 # Environment:

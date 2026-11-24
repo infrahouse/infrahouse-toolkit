@@ -22,8 +22,12 @@ export PRINT_HELP_PYSCRIPT
 
 BROWSER := python -c "$$BROWSER_PYSCRIPT"
 OS_VERSION ?= jammy
+# The Ubuntu release that package-smoke-test installs the standalone package on.
+STANDALONE_OS_VERSION ?= noble
 # Python files outside the infrahouse_toolkit package that the linters check.
 TOOLING_PY := setup.py packaging/smoke_test.py scripts
+# Test tools that bootstrap-lowest installs, at the versions in requirements_dev.txt.
+TEST_TOOLS := moto pylint pytest pytest-cov pytest-timeout
 
 PWD := $(shell pwd)
 ARCH := $(shell uname -m)
@@ -54,6 +58,18 @@ hooks:
 bootstrap: hooks pip setuptools ## bootstrap the development environment
 	pip install -r requirements.txt -r requirements_dev.txt
 	pip install --editable .
+
+.PHONY: bootstrap-lowest
+bootstrap-lowest: ## install the lowest allowed versions of the direct dependencies, and the test tools (needs uv)
+	uv pip install --resolution lowest-direct -r requirements.txt
+	@# The test tools must not lift a dependency above the version just installed, so it's a constraint.
+	mkdir -p build
+	uv pip freeze > build/lowest-installed.txt
+	for tool in $(TEST_TOOLS); do grep -E "^$$tool " requirements_dev.txt; done > build/lowest-test-tools.txt
+	uv pip install -r build/lowest-test-tools.txt --constraint build/lowest-installed.txt
+	uv pip install --no-deps --editable .
+	uv pip check
+	uv pip freeze
 
 
 .PHONY: install-infrahouse-repo
@@ -238,22 +254,30 @@ package:
 	"twindb/omnibus-ubuntu:${OS_VERSION}-${ARCH}" \
 	bash -l /infrahouse-toolkit/omnibus-infrahouse-toolkit/omnibus_build.sh
 
+# uv keeps the versions already pinned in requirements.lock while they satisfy requirements.txt,
+# so this changes the lock only when requirements.txt does. CI fails when it would.
 .PHONY: lock
 lock: ## Regenerate requirements.lock from requirements.txt
 	uv pip compile --universal --python-version 3.10 --generate-hashes --quiet requirements.txt -o requirements.lock
 
+# The standalone package is built and tested for the host's architecture. The platform is explicit,
+# so a cached image of another architecture is never used.
+STANDALONE_PLATFORM := linux/$(subst x86_64,amd64,$(subst aarch64,arm64,$(ARCH)))
+
 .PHONY: package-standalone
 package-standalone: ## Build a self-contained Debian package (python-build-standalone + nfpm) into dist/
-	docker build -t infrahouse-toolkit-packager packaging
-	docker run --rm -v $(PWD):/infrahouse-toolkit infrahouse-toolkit-packager
+	docker build --platform $(STANDALONE_PLATFORM) -t infrahouse-toolkit-packager packaging
+	docker run --platform $(STANDALONE_PLATFORM) --rm -v $(PWD):/infrahouse-toolkit infrahouse-toolkit-packager
 
+# apt-get installs the package's dependencies too, so this also proves they resolve on that release.
 .PHONY: package-smoke-test
-package-smoke-test: ## Install the package from dist/ on a clean Ubuntu (OS_VERSION) and smoke-test it
-	docker run --rm -v $(PWD):/src -w /src ubuntu:$(OS_VERSION) bash -ec '\
+package-smoke-test: ## Install the package from dist/ on a clean Ubuntu (STANDALONE_OS_VERSION) and smoke-test it
+	docker run --platform $(STANDALONE_PLATFORM) --pull always --rm -v $(PWD):/src -w /src \
+		ubuntu:$(STANDALONE_OS_VERSION) bash -ec '\
 		export DEBIAN_FRONTEND=noninteractive; \
-		apt-get -qq update; apt-get -qq install -y git; \
-		dpkg -i --force-depends dist/infrahouse-toolkit_*.deb; \
-		/opt/infrahouse-toolkit/embedded/bin/python3 packaging/smoke_test.py'
+		apt-get -qq update; \
+		apt-get -qq install -y --no-install-recommends ./dist/infrahouse-toolkit_*.deb; \
+		/opt/infrahouse-toolkit/embedded/bin/python3 -I packaging/smoke_test.py'
 
 .PHONY: dist
 dist: clean ## builds source and wheel package

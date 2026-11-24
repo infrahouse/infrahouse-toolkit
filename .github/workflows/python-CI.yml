@@ -5,7 +5,12 @@ on:  # yamllint disable-line rule:truthy
     pull_request:
         branches: ["main"]
 
+env:
+    # Keep in step with the uv image in packaging/Dockerfile.
+    UV_VERSION: "0.11.32"
+
 jobs:
+    # Linters and tests at the latest versions requirements.txt allows.
     check:
         runs-on: ubuntu-24.04
         strategy:
@@ -32,3 +37,59 @@ jobs:
             - name: Unit tests
               run: |
                   make test
+
+    # Tests at the lowest versions requirements.txt allows, on the oldest supported Python.
+    # A floor the code doesn't work with fails here; the latest versions can't show it (issue #206).
+    lowest:
+        name: "check-lowest (3.10)"
+        runs-on: ubuntu-24.04
+        env:
+            UV_SYSTEM_PYTHON: "true"
+        steps:
+            - uses: actions/checkout@v5
+            - name: Set up Python 3.10
+              uses: actions/setup-python@v6
+              with:
+                  python-version: "3.10"
+
+            - name: Install uv
+              run: |
+                  python -m pip install "uv==${UV_VERSION}"
+
+            - name: Install the lowest allowed versions
+              run: |
+                  make bootstrap-lowest
+
+            - name: Unit tests
+              run: |
+                  make test
+
+    lock:
+        name: "requirements.lock matches requirements.txt"
+        runs-on: ubuntu-24.04
+        steps:
+            - uses: actions/checkout@v5
+            - name: Set up Python
+              uses: actions/setup-python@v6
+              with:
+                  python-version: "3.13"
+
+            - name: Install uv
+              run: |
+                  python -m pip install "uv==${UV_VERSION}"
+
+            - name: Regenerate requirements.lock
+              run: |
+                  make lock
+
+            - name: Check requirements.lock is unchanged
+              run: |
+                  if ! git diff --exit-code requirements.lock
+                  then
+                    echo "::error file=requirements.lock::requirements.lock is out of date. Run make lock, commit it."
+                    exit 1
+                  fi
+
+    package:
+        name: "Standalone package"
+        uses: ./.github/workflows/standalone-package.yml
