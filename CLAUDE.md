@@ -34,7 +34,12 @@ pytest -xvvs infrahouse_toolkit/cli/ih_ec2/cmd_list/ -k "test_my_func"    # Sing
 # Build
 make dist                       # Build wheel + sdist
 make package                    # Build Debian package via Docker/omnibus
+make package-standalone         # Build the standalone .deb into dist/ (packaging/README.md)
+make package-smoke-test         # Install dist/*.deb on a clean ubuntu:noble and smoke-test it
 ```
+
+CD publishes the standalone .deb, as a candidate version, to the testing repo
+`testing-noble.infrahouse.com` (codename `noble-testing`), never to the release repo; see packaging/README.md.
 
 ## Architecture
 

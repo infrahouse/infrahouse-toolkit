@@ -15,14 +15,28 @@
 #   GLIBC_FLOOR      Oldest glibc the package must run on, as manylinux tag digits (default 2_35,
 #                    Ubuntu jammy). Wheels are chosen for this floor, not for the build host.
 #   OUTPUT_DIR       Where to write the .deb (default ./dist)
+#   PACKAGE_VERSION_SUFFIX
+#                    Appended to the toolkit version in the package version: +candidate.214.1 builds
+#                    2.67.0+candidate.214.1-1, which sorts above 2.67.0-1 and below 2.67.1-1.
+#                    A + followed by letters, digits and dots. Empty by default: the plain toolkit
+#                    version. CD sets it for candidates on the testing repo (packaging/README.md).
+#                    The toolkit's own __version__ doesn't change.
 
 set -euo pipefail
 
 PYTHON_VERSION="${PYTHON_VERSION:-3.13}"
 GLIBC_FLOOR="${GLIBC_FLOOR:-2_35}"
 OUTPUT_DIR="${OUTPUT_DIR:-dist}"
+PACKAGE_VERSION_SUFFIX="${PACKAGE_VERSION_SUFFIX:-}"
 INSTALL_DIR="/opt/infrahouse-toolkit"
 EMBEDDED="${INSTALL_DIR}/embedded"
+
+# Checked before the build, so a bad suffix fails in seconds, not after it.
+SUFFIX_PATTERN='^\+[A-Za-z0-9.]+$'
+if [[ -n "${PACKAGE_VERSION_SUFFIX}" && ! "${PACKAGE_VERSION_SUFFIX}" =~ ${SUFFIX_PATTERN} ]]; then
+    echo "PACKAGE_VERSION_SUFFIX must be a + followed by letters, digits and dots, got '${PACKAGE_VERSION_SUFFIX}'" >&2
+    exit 1
+fi
 
 cd "$(dirname "$0")/.."
 REPO_ROOT="$(pwd)"
@@ -87,7 +101,7 @@ mkdir -p "${STAGE_DIR}/etc/bash_completion.d"
 mv /tmp/infrahouse-completion "${STAGE_DIR}/etc/bash_completion.d/infrahouse-completion"
 
 echo "==> Building the Debian package"
-VERSION="$("${PYTHON}" -c 'import infrahouse_toolkit; print(infrahouse_toolkit.__version__)')"
+VERSION="$("${PYTHON}" -c 'import infrahouse_toolkit; print(infrahouse_toolkit.__version__)')${PACKAGE_VERSION_SUFFIX}"
 ARCH="$(dpkg --print-architecture)"
 mkdir -p "${OUTPUT_DIR}"
 VERSION="${VERSION}" ARCH="${ARCH}" \

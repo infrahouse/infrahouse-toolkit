@@ -119,8 +119,99 @@ jobs:
                   project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
                   coverage-reports: "coverage.xml"
 
-    # The standalone package, built and smoke-tested as a workflow artifact only. It is not published, and
-    # the deploy job above doesn't wait for it: the release ships the Omnibus package until IH-185.
+    # The standalone package, built and smoke-tested with a candidate version, for example
+    # 2.67.0+candidate.214.1-1. publish-testing publishes it to the testing repo, never to the release repo:
+    # the release ships the Omnibus package until IH-185, and the deploy job above doesn't wait for this one.
     standalone:
-        name: "Standalone package (artifact only)"
+        name: "Standalone package (candidate)"
         uses: ./.github/workflows/standalone-package.yml
+        with:
+            # Above the release of the same toolkit version, below the next one, and new on every run and
+            # re-run. Keep in step with PACKAGE_VERSION_SUFFIX in publish-testing.
+            package_version_suffix: "+candidate.${{ github.run_number }}.${{ github.run_attempt }}"
+
+    # Publishes the candidate to the testing repo (https://testing-noble.infrahouse.com/, codename
+    # noble-testing), which only canary nodes use. See packaging/README.md.
+    publish-testing:
+        name: "Publish the candidate to noble-testing"
+        needs: standalone
+        # A workflow_dispatch on another branch builds a candidate but doesn't publish it.
+        if: github.ref == 'refs/heads/main'
+        runs-on: ubuntu-24.04
+        # reprepro rewrites the repository's indexes on every upload, so one writer at a time. A running publish
+        # is never cancelled: reprepro stopped mid-write can leave the repository locked or half-written.
+        concurrency:
+            group: testing-repo-noble
+            cancel-in-progress: false
+        permissions:
+            contents: read  # actions/checkout
+            id-token: write  # aws-actions/configure-aws-credentials
+        env:
+            # The suffix the standalone job built with. Keep in step with its package_version_suffix.
+            PACKAGE_VERSION_SUFFIX: "+candidate.${{ github.run_number }}.${{ github.run_attempt }}"
+        steps:
+            - uses: actions/checkout@v5
+
+            - name: Download the candidates
+              uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+              with:
+                  pattern: infrahouse-toolkit-noble-*
+                  path: candidates
+                  merge-multiple: true
+
+            # A package without the suffix would carry a release version, which canary nodes would then see
+            # in both repos with different contents.
+            - name: Check there is one candidate per architecture, with this run's version
+              run: |
+                  ls -l candidates
+                  toolkit_version="$(python3 -c 'import infrahouse_toolkit; print(infrahouse_toolkit.__version__)')"
+                  expected="${toolkit_version}${PACKAGE_VERSION_SUFFIX}-1"
+                  count="$(find candidates -type f -name '*.deb' | wc -l)"
+                  if [[ "${count}" -ne 2 ]]; then
+                      echo "::error::Expected 2 .deb files, one per architecture, found ${count}"
+                      exit 1
+                  fi
+                  for arch in amd64 arm64; do
+                      deb="candidates/infrahouse-toolkit_${expected}_${arch}.deb"
+                      if [[ ! -f "${deb}" ]]; then
+                          echo "::error::${deb} is missing"
+                          exit 1
+                      fi
+                      package="$(dpkg-deb -f "${deb}" Package)"
+                      version="$(dpkg-deb -f "${deb}" Version)"
+                      architecture="$(dpkg-deb -f "${deb}" Architecture)"
+                      echo "${deb}: ${package} ${version} ${architecture}"
+                      if [[ "${package}" != "infrahouse-toolkit" || "${version}" != "${expected}" \
+                            || "${architecture}" != "${arch}" ]]; then
+                          echo "::error::${deb} is ${package} ${version} ${architecture}, expected ${expected} ${arch}"
+                          exit 1
+                      fi
+                  done
+                  echo "CANDIDATE_VERSION=${expected}" >> "${GITHUB_ENV}"
+
+            - name: Install InfraHouse APT repository
+              run: |
+                  sudo make install-infrahouse-repo
+                  sudo apt-get -y install infrahouse-toolkit
+
+            - name: Configure AWS Credentials
+              uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd  # v6.3.0
+              with:
+                  role-to-assume: ${{ env.ROLE_ARN }}
+                  role-session-name: github-action-infrahouse-toolkit-publish-testing
+                  aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+            # The testing repo: bucket infrahouse-testing-noble, codename noble-testing, and its own key secrets.
+            # The released ih-s3-reprepro's includedeb takes one package, so one call per architecture.
+            - name: Publish the candidates to noble-testing
+              run: |
+                  for arch in amd64 arm64; do
+                      ih-s3-reprepro \
+                        --aws-region "${AWS_DEFAULT_REGION}" \
+                        --bucket infrahouse-testing-noble \
+                        --gpg-key-secret-id packager-key-noble-testing \
+                        --gpg-passphrase-secret-id packager-passphrase-noble-testing \
+                        includedeb \
+                        noble-testing \
+                        "candidates/infrahouse-toolkit_${CANDIDATE_VERSION}_${arch}.deb"
+                  done
