@@ -264,10 +264,12 @@ lock: ## Regenerate requirements.lock from requirements.txt
 # so a cached image of another architecture is never used.
 STANDALONE_PLATFORM := linux/$(subst x86_64,amd64,$(subst aarch64,arm64,$(ARCH)))
 
+# -e PACKAGE_VERSION_SUFFIX passes the suffix into the container only when it is set; see packaging/build.sh.
 .PHONY: package-standalone
 package-standalone: ## Build a self-contained Debian package (python-build-standalone + nfpm) into dist/
 	docker build --platform $(STANDALONE_PLATFORM) -t infrahouse-toolkit-packager packaging
-	docker run --platform $(STANDALONE_PLATFORM) --rm -v $(PWD):/infrahouse-toolkit infrahouse-toolkit-packager
+	docker run --platform $(STANDALONE_PLATFORM) --rm -e PACKAGE_VERSION_SUFFIX \
+		-v $(PWD):/infrahouse-toolkit infrahouse-toolkit-packager
 
 # apt-get installs the package's dependencies too, so this also proves they resolve on that release.
 .PHONY: package-smoke-test

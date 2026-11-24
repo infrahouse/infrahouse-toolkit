@@ -1,11 +1,20 @@
 ---
 # Builds the standalone Debian package for noble on amd64 and arm64, each on a native runner,
 # smoke-tests it on a clean ubuntu:noble container and uploads it as a workflow artifact.
-# It publishes nothing. Called by python-CI.yml and python-CD.yml.
+# It publishes nothing itself. Called by python-CI.yml, with the plain toolkit version, and by python-CD.yml,
+# with a candidate version, whose publish-testing job publishes the artifacts to the testing repo.
 name: Standalone package
 
 on:  # yamllint disable-line rule:truthy
     workflow_call:
+        inputs:
+            package_version_suffix:
+                description: >-
+                    Appended to the toolkit version in the Debian version, e.g. +candidate.214.1.
+                    Empty builds the plain toolkit version. See PACKAGE_VERSION_SUFFIX in packaging/build.sh.
+                type: string
+                required: false
+                default: ""
 
 permissions:
     contents: read
@@ -32,6 +41,8 @@ jobs:
                   test "$(dpkg --print-architecture)" = "${{ matrix.arch }}"
 
             - name: Build the package
+              env:
+                  PACKAGE_VERSION_SUFFIX: ${{ inputs.package_version_suffix }}
               run: |
                   make package-standalone
 
