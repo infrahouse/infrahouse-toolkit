@@ -4,6 +4,7 @@ bump2version ~= 1.0
 isort ~= 5.12
 mdformat ~= 0.7
 mdformat-gfm ~= 0.3
+moto ~= 5.2
 pipdeptree ~= 3.1.1
 pylint ~= 3.2.0
 pytest ~= 9.0.3
