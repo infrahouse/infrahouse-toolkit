@@ -22,6 +22,8 @@ export PRINT_HELP_PYSCRIPT
 
 BROWSER := python -c "$$BROWSER_PYSCRIPT"
 OS_VERSION ?= jammy
+# Python files outside the infrahouse_toolkit package that the linters check.
+TOOLING_PY := setup.py packaging/smoke_test.py scripts
 
 PWD := $(shell pwd)
 ARCH := $(shell uname -m)
@@ -96,11 +98,11 @@ clean-test:
 
 .PHONY: black
 black: ## reformat code with black
-	black infrahouse_toolkit setup.py
+	black infrahouse_toolkit $(TOOLING_PY)
 
 .PHONY: isort
 isort: ## reformat imports
-	isort infrahouse_toolkit setup.py
+	isort infrahouse_toolkit $(TOOLING_PY)
 
 .PHONY: reqsort
 reqsort: ## sort requirements files
@@ -111,19 +113,19 @@ mdformat: ## format markdown files
 	mdformat .github
 
 .PHONY: lint
-lint: lint/yaml lint/black lint/isort lint/mdformat lint/reqsort lint/pylint ## check style
+lint: lint/yaml lint/black lint/isort lint/mdformat lint/reqsort lint/pylint lint/pylint-disables ## check style
 
 .PHONY: lint/yaml
 lint/yaml: ## check style with yamllint
-	yamllint infrahouse_toolkit .github .readthedocs.yaml
+	yamllint infrahouse_toolkit .github .readthedocs.yaml packaging
 
 .PHONY: lint/black
 lint/black: ## check style with black
-	black --check --diff infrahouse_toolkit setup.py
+	black --check --diff infrahouse_toolkit $(TOOLING_PY)
 
 .PHONY: lint/isort
 lint/isort: ## check imports formatting
-	isort --check-only infrahouse_toolkit setup.py
+	isort --check-only infrahouse_toolkit $(TOOLING_PY)
 
 .PHONY: lint/mdformat
 lint/mdformat:
@@ -135,7 +137,11 @@ lint/reqsort: ## check requirements sorting order
 
 .PHONY: lint/pylint
 lint/pylint: ## check style with pylint
-	pylint infrahouse_toolkit setup.py
+	pylint infrahouse_toolkit $(TOOLING_PY)
+
+.PHONY: lint/pylint-disables
+lint/pylint-disables: ## fail on pylint suppressions that hide calls not matching a function's signature
+	python scripts/check_pylint_disables.py
 
 
 .PHONY: test
@@ -143,7 +149,7 @@ test: ## run tests quickly with the default Python
 	set
 	pytest --cov \
 		--cov-report=term-missing --cov-report=xml  \
-		-xvvs infrahouse_toolkit
+		-xvvs infrahouse_toolkit scripts
 
 .PHONY: tox
 tox: ## run tests across Python 3.11 - 3.14 with tox
