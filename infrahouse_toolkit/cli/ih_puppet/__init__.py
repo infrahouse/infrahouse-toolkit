@@ -64,7 +64,8 @@ LOG = getLogger()
 )
 @click.option(
     "--cancel-instance-refresh-on-error",
-    help="If ih-puppet fails, try to cancel all existing autoscaling group instance refreshes.",
+    help="If ih-puppet fails, cancel the instance refresh of the local instance's autoscaling group "
+    "with ``ih-aws autoscaling cancel-instance-refresh``. A failed cancel doesn't change the exit code.",
     is_flag=True,
     default=False,
     show_default=True,

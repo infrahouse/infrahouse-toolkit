@@ -213,6 +213,45 @@ Interactively delete leftover resources from a Terraform module:
 
 Use ``--dry-run`` to preview what would be deleted, or ``--yes`` to skip prompts.
 
+``ih-aws autoscaling``: autoscaling group helpers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Commands that act on the autoscaling group of the local EC2 instance, or of an instance or group given as an
+argument. On InfraHouse instances they need no ``--aws-region``: the region comes from ``/root/.aws/config``.
+
+.. code-block:: bash
+
+    $ ih-aws autoscaling --help
+    Usage: ih-aws autoscaling [OPTIONS] COMMAND [ARGS]...
+
+      AWS autoscaling Commands.
+
+    Options:
+      --help  Show this message and exit.
+
+    Commands:
+      cancel-instance-refresh  Cancel the active instance refresh of an...
+      complete                 Complete a lifecycle action for a given hook...
+      mark-unhealthy           Mark instance Unhealthy so Autoscaling group...
+      scale-in                 scale-in EC2 instance from scale-in event.
+
+``ih-aws autoscaling cancel-instance-refresh`` cancels the active instance refresh. ``ih-puppet`` runs it when
+Puppet fails and ``--cancel-instance-refresh-on-error`` is set.
+
+.. code-block:: bash
+
+    $ ih-aws autoscaling cancel-instance-refresh --help
+    Usage: ih-aws autoscaling cancel-instance-refresh [OPTIONS] [ASG_NAME]
+
+      Cancel the active instance refresh of an autoscaling group.
+
+      ASG_NAME is the autoscaling group name. If omitted, the group of the local
+      EC2 instance is used. A group without an active instance refresh is not an
+      error.
+
+    Options:
+      --help  Show this message and exit.
+
 ``ih-aws ecs``: ECS helpers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -776,6 +815,11 @@ The full comment includes several sections:
     /opt/puppet-code/environments/sandbox/manifests/site.pp
 
 It's just a wrapper that installs Puppet module dependencies and runs the client.
+
+With ``--cancel-instance-refresh-on-error``, a failed Puppet run also cancels the instance refresh of the local
+instance's autoscaling group. ``ih-puppet`` runs ``ih-aws autoscaling cancel-instance-refresh`` for that in a new
+process, because Puppet may have upgraded infrahouse-toolkit during the run. A failed cancel is logged as a warning
+and doesn't change the exit code.
 
 ``ih-registry``: publish Terraform modules
 ------------------------------------------
