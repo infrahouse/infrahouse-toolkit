@@ -118,3 +118,9 @@ jobs:
               with:
                   project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
                   coverage-reports: "coverage.xml"
+
+    # The standalone package, built and smoke-tested as a workflow artifact only. It is not published, and
+    # the deploy job above doesn't wait for it: the release ships the Omnibus package until IH-185.
+    standalone:
+        name: "Standalone package (artifact only)"
+        uses: ./.github/workflows/standalone-package.yml

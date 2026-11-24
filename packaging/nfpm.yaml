@@ -1,0 +1,50 @@
+---
+# nfpm configuration for the infrahouse-toolkit Debian package.
+# VERSION and ARCH come from packaging/build.sh; paths are relative to the repo root.
+name: infrahouse-toolkit
+version: ${VERSION}
+release: "1"
+arch: ${ARCH}
+platform: linux
+section: misc
+priority: optional
+maintainer: "InfraHouse Inc. <aleks@infrahouse.com>"
+vendor: InfraHouse Inc.
+homepage: https://github.com/infrahouse/infrahouse-toolkit
+license: Apache-2.0
+description: |-
+  A collection of tools for building infrastructure.
+  Self-contained: ships its own CPython and Python dependencies
+  under /opt/infrahouse-toolkit.
+
+depends:
+  # GitPython (ih-registry) fails at import without a git executable.
+  - git
+  - reprepro
+  - gpg
+  - s3fs
+# puppet-agent is not a dependency: puppet-code depends on it, and ih-puppet is only useful
+# where puppet-code is installed.
+
+contents:
+  - src: /opt/infrahouse-toolkit
+    dst: /opt/infrahouse-toolkit
+    type: tree
+
+  - src: packaging/.stage/etc/bash_completion.d/infrahouse-completion
+    dst: /etc/bash_completion.d/infrahouse-completion
+
+  - {src: /opt/infrahouse-toolkit/embedded/bin/ih-aws, dst: /usr/local/bin/ih-aws, type: symlink}
+  - {src: /opt/infrahouse-toolkit/embedded/bin/ih-certbot, dst: /usr/local/bin/ih-certbot, type: symlink}
+  - {src: /opt/infrahouse-toolkit/embedded/bin/ih-ec2, dst: /usr/local/bin/ih-ec2, type: symlink}
+  - {src: /opt/infrahouse-toolkit/embedded/bin/ih-elastic, dst: /usr/local/bin/ih-elastic, type: symlink}
+  - {src: /opt/infrahouse-toolkit/embedded/bin/ih-github, dst: /usr/local/bin/ih-github, type: symlink}
+  - {src: /opt/infrahouse-toolkit/embedded/bin/ih-mysql, dst: /usr/local/bin/ih-mysql, type: symlink}
+  - {src: /opt/infrahouse-toolkit/embedded/bin/ih-openvpn, dst: /usr/local/bin/ih-openvpn, type: symlink}
+  - {src: /opt/infrahouse-toolkit/embedded/bin/ih-plan, dst: /usr/local/bin/ih-plan, type: symlink}
+  - {src: /opt/infrahouse-toolkit/embedded/bin/ih-puppet, dst: /usr/local/bin/ih-puppet, type: symlink}
+  - {src: /opt/infrahouse-toolkit/embedded/bin/ih-registry, dst: /usr/local/bin/ih-registry, type: symlink}
+  - {src: /opt/infrahouse-toolkit/embedded/bin/ih-s3, dst: /usr/local/bin/ih-s3, type: symlink}
+  - {src: /opt/infrahouse-toolkit/embedded/bin/ih-s3-reprepro, dst: /usr/local/bin/ih-s3-reprepro, type: symlink}
+  - {src: /opt/infrahouse-toolkit/embedded/bin/ih-secrets, dst: /usr/local/bin/ih-secrets, type: symlink}
+  - {src: /opt/infrahouse-toolkit/embedded/bin/ih-skeema, dst: /usr/local/bin/ih-skeema, type: symlink}

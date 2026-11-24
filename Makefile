@@ -22,6 +22,12 @@ export PRINT_HELP_PYSCRIPT
 
 BROWSER := python -c "$$BROWSER_PYSCRIPT"
 OS_VERSION ?= jammy
+# The Ubuntu release that package-smoke-test installs the standalone package on.
+STANDALONE_OS_VERSION ?= noble
+# Python files outside the infrahouse_toolkit package that the linters check.
+TOOLING_PY := setup.py packaging/smoke_test.py scripts
+# Test tools that bootstrap-lowest installs, at the versions in requirements_dev.txt.
+TEST_TOOLS := moto pylint pytest pytest-cov pytest-timeout
 
 PWD := $(shell pwd)
 ARCH := $(shell uname -m)
@@ -52,6 +58,18 @@ hooks:
 bootstrap: hooks pip setuptools ## bootstrap the development environment
 	pip install -r requirements.txt -r requirements_dev.txt
 	pip install --editable .
+
+.PHONY: bootstrap-lowest
+bootstrap-lowest: ## install the lowest allowed versions of the direct dependencies, and the test tools (needs uv)
+	uv pip install --resolution lowest-direct -r requirements.txt
+	@# The test tools must not lift a dependency above the version just installed, so it's a constraint.
+	mkdir -p build
+	uv pip freeze > build/lowest-installed.txt
+	for tool in $(TEST_TOOLS); do grep -E "^$$tool " requirements_dev.txt; done > build/lowest-test-tools.txt
+	uv pip install -r build/lowest-test-tools.txt --constraint build/lowest-installed.txt
+	uv pip install --no-deps --editable .
+	uv pip check
+	uv pip freeze
 
 
 .PHONY: install-infrahouse-repo
@@ -96,11 +114,11 @@ clean-test:
 
 .PHONY: black
 black: ## reformat code with black
-	black infrahouse_toolkit setup.py
+	black infrahouse_toolkit $(TOOLING_PY)
 
 .PHONY: isort
 isort: ## reformat imports
-	isort infrahouse_toolkit setup.py
+	isort infrahouse_toolkit $(TOOLING_PY)
 
 .PHONY: reqsort
 reqsort: ## sort requirements files
@@ -111,19 +129,19 @@ mdformat: ## format markdown files
 	mdformat .github
 
 .PHONY: lint
-lint: lint/yaml lint/black lint/isort lint/mdformat lint/reqsort lint/pylint ## check style
+lint: lint/yaml lint/black lint/isort lint/mdformat lint/reqsort lint/pylint lint/pylint-disables ## check style
 
 .PHONY: lint/yaml
 lint/yaml: ## check style with yamllint
-	yamllint infrahouse_toolkit .github .readthedocs.yaml
+	yamllint infrahouse_toolkit .github .readthedocs.yaml packaging
 
 .PHONY: lint/black
 lint/black: ## check style with black
-	black --check --diff infrahouse_toolkit setup.py
+	black --check --diff infrahouse_toolkit $(TOOLING_PY)
 
 .PHONY: lint/isort
 lint/isort: ## check imports formatting
-	isort --check-only infrahouse_toolkit setup.py
+	isort --check-only infrahouse_toolkit $(TOOLING_PY)
 
 .PHONY: lint/mdformat
 lint/mdformat:
@@ -135,7 +153,11 @@ lint/reqsort: ## check requirements sorting order
 
 .PHONY: lint/pylint
 lint/pylint: ## check style with pylint
-	pylint infrahouse_toolkit setup.py
+	pylint infrahouse_toolkit $(TOOLING_PY)
+
+.PHONY: lint/pylint-disables
+lint/pylint-disables: ## fail on pylint suppressions that hide calls not matching a function's signature
+	python scripts/check_pylint_disables.py
 
 
 .PHONY: test
@@ -143,7 +165,7 @@ test: ## run tests quickly with the default Python
 	set
 	pytest --cov \
 		--cov-report=term-missing --cov-report=xml  \
-		-xvvs infrahouse_toolkit
+		-xvvs infrahouse_toolkit scripts
 
 .PHONY: tox
 tox: ## run tests across Python 3.11 - 3.14 with tox
@@ -231,6 +253,31 @@ package:
 	--rm \
 	"twindb/omnibus-ubuntu:${OS_VERSION}-${ARCH}" \
 	bash -l /infrahouse-toolkit/omnibus-infrahouse-toolkit/omnibus_build.sh
+
+# uv keeps the versions already pinned in requirements.lock while they satisfy requirements.txt,
+# so this changes the lock only when requirements.txt does. CI fails when it would.
+.PHONY: lock
+lock: ## Regenerate requirements.lock from requirements.txt
+	uv pip compile --universal --python-version 3.10 --generate-hashes --quiet requirements.txt -o requirements.lock
+
+# The standalone package is built and tested for the host's architecture. The platform is explicit,
+# so a cached image of another architecture is never used.
+STANDALONE_PLATFORM := linux/$(subst x86_64,amd64,$(subst aarch64,arm64,$(ARCH)))
+
+.PHONY: package-standalone
+package-standalone: ## Build a self-contained Debian package (python-build-standalone + nfpm) into dist/
+	docker build --platform $(STANDALONE_PLATFORM) -t infrahouse-toolkit-packager packaging
+	docker run --platform $(STANDALONE_PLATFORM) --rm -v $(PWD):/infrahouse-toolkit infrahouse-toolkit-packager
+
+# apt-get installs the package's dependencies too, so this also proves they resolve on that release.
+.PHONY: package-smoke-test
+package-smoke-test: ## Install the package from dist/ on a clean Ubuntu (STANDALONE_OS_VERSION) and smoke-test it
+	docker run --platform $(STANDALONE_PLATFORM) --pull always --rm -v $(PWD):/src -w /src \
+		ubuntu:$(STANDALONE_OS_VERSION) bash -ec '\
+		export DEBIAN_FRONTEND=noninteractive; \
+		apt-get -qq update; \
+		apt-get -qq install -y --no-install-recommends ./dist/infrahouse-toolkit_*.deb; \
+		/opt/infrahouse-toolkit/embedded/bin/python3 -I packaging/smoke_test.py'
 
 .PHONY: dist
 dist: clean ## builds source and wheel package

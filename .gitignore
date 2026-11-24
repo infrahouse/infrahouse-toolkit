@@ -107,3 +107,4 @@ ENV/
 /.claude/*.local.json
 .claude/plans/*.local.md
 nul
+packaging/.stage/

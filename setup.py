@@ -28,7 +28,6 @@ def parse_requirements(req_file):
 
 
 requirements = parse_requirements("requirements.txt")
-test_requirements = parse_requirements("requirements_dev.txt")
 console_scripts = [
     "ih-aws=infrahouse_toolkit.cli.ih_aws:ih_aws",
     "ih-certbot=infrahouse_toolkit.cli.ih_certbot:ih_certbot",
@@ -53,7 +52,6 @@ setup(
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: Apache Software License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.10",
@@ -67,14 +65,12 @@ setup(
         "console_scripts": console_scripts,
     },
     install_requires=requirements,
-    license="Apache Software License 2.0",
+    license_expression="Apache-2.0",
     long_description=readme + "\n\n" + HISTORY,
     include_package_data=True,
     keywords="infrahouse-toolkit",
     name="infrahouse-toolkit",
     packages=find_packages(include=["infrahouse_toolkit", "infrahouse_toolkit.*"]),
-    test_suite="tests",
-    tests_require=test_requirements,
     url="https://github.com/infrahouse/infrahouse-toolkit",
     version="2.67.0",
     zip_safe=False,
