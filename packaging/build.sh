@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+#
+# Build a self-contained infrahouse-toolkit Debian package.
+#
+#   * Interpreter: a prebuilt python-build-standalone CPython, fetched by uv.
+#   * Dependencies: installed from requirements.lock (hash-pinned).
+#   * Package: assembled by nfpm from packaging/nfpm.yaml.
+#
+# The toolkit is installed at its final path, /opt/infrahouse-toolkit, so entry-point
+# shebangs need no rewriting. Run it in a disposable container (see `make package`),
+# never on a workstation: it writes to /opt and /usr/local/bin.
+#
+# Environment:
+#   PYTHON_VERSION   CPython version to embed (default 3.13)
+#   GLIBC_FLOOR      Oldest glibc the package must run on, as manylinux tag digits (default 2_35,
+#                    Ubuntu jammy). Wheels are chosen for this floor, not for the build host.
+#   OUTPUT_DIR       Where to write the .deb (default ./dist)
+
+set -euo pipefail
+
+PYTHON_VERSION="${PYTHON_VERSION:-3.13}"
+GLIBC_FLOOR="${GLIBC_FLOOR:-2_35}"
+OUTPUT_DIR="${OUTPUT_DIR:-dist}"
+INSTALL_DIR="/opt/infrahouse-toolkit"
+EMBEDDED="${INSTALL_DIR}/embedded"
+
+cd "$(dirname "$0")/.."
+REPO_ROOT="$(pwd)"
+
+for tool in uv nfpm; do
+    command -v "$tool" >/dev/null || { echo "$tool is required" >&2; exit 1; }
+done
+
+if [[ -e "${INSTALL_DIR}" ]]; then
+    echo "${INSTALL_DIR} already exists; build in a clean container" >&2
+    exit 1
+fi
+
+WORK_DIR="$(mktemp -d)"
+trap 'rm -rf "${WORK_DIR}"' EXIT
+
+echo "==> Fetching CPython ${PYTHON_VERSION} (python-build-standalone)"
+UV_PYTHON_INSTALL_DIR="${WORK_DIR}/python" uv python install --no-bin "${PYTHON_VERSION}"
+PYTHON_SRC="$(find "${WORK_DIR}/python" -mindepth 1 -maxdepth 1 -type d -name 'cpython-*' | head -1)"
+mkdir -p "${INSTALL_DIR}"
+cp -a "${PYTHON_SRC}" "${EMBEDDED}"
+# uv marks its managed interpreters as externally managed; this one is ours to manage.
+find "${EMBEDDED}/lib" -maxdepth 2 -name EXTERNALLY-MANAGED -delete
+
+PYTHON="${EMBEDDED}/bin/python3"
+# Precompile the standard library so the interpreter never writes bytecode at runtime,
+# which would leave files behind on package removal.
+"${PYTHON}" -m compileall -q -j 0 "${EMBEDDED}/lib" >/dev/null
+TARGET_PLATFORM="$(uname -m)-manylinux_${GLIBC_FLOOR}"
+
+echo "==> Installing locked dependencies for ${TARGET_PLATFORM}"
+uv pip install \
+    --python "${PYTHON}" \
+    --python-platform "${TARGET_PLATFORM}" \
+    --require-hashes \
+    --no-deps \
+    --compile-bytecode \
+    -r requirements.lock
+
+echo "==> Installing infrahouse-toolkit"
+uv build --wheel --out-dir "${WORK_DIR}/wheel" .
+uv pip install --python "${PYTHON}" --no-deps --compile-bytecode "${WORK_DIR}"/wheel/*.whl
+
+echo "==> Checking installed dependencies are consistent"
+uv pip check --python "${PYTHON}"
+
+echo "==> Checking no binary needs a glibc newer than ${GLIBC_FLOOR//_/.}"
+NEWEST_GLIBC="$(find "${INSTALL_DIR}" -type f -name '*.so*' -exec objdump -T {} + 2>/dev/null \
+    | grep -oE 'GLIBC_[0-9]+\.[0-9]+' | sed 's/GLIBC_//' | sort -uV | tail -1)"
+if [[ "$(printf '%s\n' "${NEWEST_GLIBC}" "${GLIBC_FLOOR//_/.}" | sort -V | tail -1)" != "${GLIBC_FLOOR//_/.}" ]]; then
+    echo "A bundled library needs glibc ${NEWEST_GLIBC}, above the ${GLIBC_FLOOR//_/.} floor" >&2
+    exit 1
+fi
+
+echo "==> Generating bash completion"
+STAGE_DIR="packaging/.stage"
+rm -rf "${STAGE_DIR}"
+mkdir -p "${STAGE_DIR}/etc/bash_completion.d"
+"${PYTHON}" omnibus-infrahouse-toolkit/update_bash_completion.py >/dev/null
+mv /tmp/infrahouse-completion "${STAGE_DIR}/etc/bash_completion.d/infrahouse-completion"
+
+echo "==> Building the Debian package"
+VERSION="$("${PYTHON}" -c 'import infrahouse_toolkit; print(infrahouse_toolkit.__version__)')"
+ARCH="$(dpkg --print-architecture)"
+mkdir -p "${OUTPUT_DIR}"
+VERSION="${VERSION}" ARCH="${ARCH}" \
+    nfpm package --config packaging/nfpm.yaml --packager deb --target "${OUTPUT_DIR}/"
+
+ls -l "${REPO_ROOT}/${OUTPUT_DIR}"/infrahouse-toolkit_*.deb

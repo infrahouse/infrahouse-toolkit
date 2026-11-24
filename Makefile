@@ -232,6 +232,23 @@ package:
 	"twindb/omnibus-ubuntu:${OS_VERSION}-${ARCH}" \
 	bash -l /infrahouse-toolkit/omnibus-infrahouse-toolkit/omnibus_build.sh
 
+.PHONY: lock
+lock: ## Regenerate requirements.lock from requirements.txt
+	uv pip compile --universal --python-version 3.10 --generate-hashes --quiet requirements.txt -o requirements.lock
+
+.PHONY: package-standalone
+package-standalone: ## Build a self-contained Debian package (python-build-standalone + nfpm) into dist/
+	docker build -t infrahouse-toolkit-packager packaging
+	docker run --rm -v $(PWD):/infrahouse-toolkit infrahouse-toolkit-packager
+
+.PHONY: package-smoke-test
+package-smoke-test: ## Install the package from dist/ on a clean Ubuntu (OS_VERSION) and smoke-test it
+	docker run --rm -v $(PWD):/src -w /src ubuntu:$(OS_VERSION) bash -ec '\
+		export DEBIAN_FRONTEND=noninteractive; \
+		apt-get -qq update; apt-get -qq install -y git; \
+		dpkg -i --force-depends dist/infrahouse-toolkit_*.deb; \
+		/opt/infrahouse-toolkit/embedded/bin/python3 packaging/smoke_test.py'
+
 .PHONY: dist
 dist: clean ## builds source and wheel package
 	python setup.py sdist
