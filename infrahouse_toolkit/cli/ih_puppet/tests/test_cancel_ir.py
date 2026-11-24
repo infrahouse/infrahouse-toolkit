@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 import time
+from contextlib import nullcontext
 from unittest import mock
 
 import pytest
@@ -14,6 +15,10 @@ from infrahouse_toolkit.cli.ih_puppet.tests.fake_executable import FakeExecutabl
 # The package ``__init__`` binds ``cmd_apply`` to the click command, which shadows the submodule,
 # so the module has to come from ``sys.modules``.
 _CMD_APPLY = sys.modules["infrahouse_toolkit.cli.ih_puppet.cmd_apply"]
+
+# The timeout for tests whose child hangs: long enough for a slow fork to start the child and let it
+# record its call, short enough to keep the test quick. Children that don't hang keep the real timeout.
+HANG_TIMEOUT = 5
 
 
 @pytest.mark.parametrize(
@@ -76,7 +81,7 @@ def test_child_times_out(fake_ih_aws, tmp_path, caplog):
     fake_ih_aws.write(f"echo $$ > {pid_file}\nexec sleep 60")
 
     started = time.monotonic()
-    with mock.patch.object(_CMD_APPLY, "CANCEL_IR_TIMEOUT", 1), caplog.at_level(logging.WARNING):
+    with mock.patch.object(_CMD_APPLY, "CANCEL_IR_TIMEOUT", HANG_TIMEOUT), caplog.at_level(logging.WARNING):
         _cancel_ir()
 
     assert time.monotonic() - started < 30
@@ -100,8 +105,16 @@ def test_child_cannot_start(fake_ih_aws, caplog):
     assert "No such file or directory" in warning
 
 
-@pytest.mark.parametrize("body", ["exit 0", "exit 1", "exec sleep 60"], ids=["succeeds", "fails", "hangs"])
-def test_no_imports_on_cancel_path(fake_ih_aws, body):
+@pytest.mark.parametrize(
+    "body, timeout, warnings",
+    [
+        ("exit 0", None, []),
+        ("exit 1", None, ["returned non-zero exit status 1"]),
+        ("exec sleep 60", HANG_TIMEOUT, ["timed out after"]),
+    ],
+    ids=["succeeds", "fails", "hangs"],
+)
+def test_no_imports_on_cancel_path(fake_ih_aws, caplog, body, timeout, warnings):
     """
     The cancel path imports nothing at run time.
 
@@ -109,13 +122,18 @@ def test_no_imports_on_cancel_path(fake_ih_aws, body):
     already done fails, so here every import raises ``ImportError``.
     """
     fake_ih_aws.write(body)
+    short_timeout = mock.patch.object(_CMD_APPLY, "CANCEL_IR_TIMEOUT", timeout) if timeout else nullcontext()
 
-    with mock.patch.object(_CMD_APPLY, "CANCEL_IR_TIMEOUT", 1), mock.patch(
+    with short_timeout, caplog.at_level(logging.WARNING), mock.patch(
         "builtins.__import__", side_effect=ImportError("the install tree is gone")
     ):
         _cancel_ir()
 
     assert len(fake_ih_aws.calls) == 1
+    logged = _warnings(caplog)
+    assert len(logged) == len(warnings), logged
+    for expected, warning in zip(warnings, logged):
+        assert expected in warning
 
 
 def _warnings(caplog) -> list:

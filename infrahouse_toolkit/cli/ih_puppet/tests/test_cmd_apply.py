@@ -70,11 +70,17 @@ def test_failed_cancel_keeps_exit_code(puppet, fake_ih_aws, puppet_code):
     assert fake_ih_aws.calls == [f"{fake_ih_aws.path} autoscaling cancel-instance-refresh"]
 
 
-def test_cancel_when_apply_raises(puppet, fake_ih_aws):
-    """An exception from the Puppet run (here, no ``puppet`` to run) exits 1 and cancels once."""
-    puppet.path.unlink()
+def test_cancel_when_apply_raises(puppet, fake_ih_aws):  # pylint: disable=unused-argument
+    """
+    An exception from the Puppet run exits 1 and cancels once.
 
-    result = _apply(CANCEL_FLAG)
+    ``Popen`` raises as if ``puppet`` were missing. Unlinking the fake wouldn't do: ``_run_apply()``
+    appends ``/opt/puppetlabs/bin`` to ``PATH``, where a host with puppet-agent has the real one.
+    """
+    with mock.patch.object(
+        _CMD_APPLY, "Popen", side_effect=FileNotFoundError(2, "No such file or directory", "puppet")
+    ):
+        result = _apply(CANCEL_FLAG)
 
     assert result.exit_code == 1, result.output
     assert len(fake_ih_aws.calls) == 1
