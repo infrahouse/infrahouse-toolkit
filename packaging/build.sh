@@ -63,7 +63,9 @@ uv pip install \
     -r requirements.lock
 
 echo "==> Installing infrahouse-toolkit"
-uv build --wheel --out-dir "${WORK_DIR}/wheel" .
+# Build with the embedded interpreter. Without --python, uv finds no Python in the container
+# and downloads its newest one just to run the build backend.
+uv build --python "${PYTHON}" --wheel --out-dir "${WORK_DIR}/wheel" .
 uv pip install --python "${PYTHON}" --no-deps --compile-bytecode "${WORK_DIR}"/wheel/*.whl
 
 echo "==> Checking installed dependencies are consistent"
