@@ -65,3 +65,5 @@ jobs:
                   name: ${{ inputs.artifact_prefix }}-${{ matrix.arch }}
                   path: dist/infrahouse-toolkit_*.deb
                   if-no-files-found: error
+                  # A re-run uploads again under the same name. Each call's names are unique within an attempt.
+                  overwrite: true
