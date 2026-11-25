@@ -281,6 +281,15 @@ package-smoke-test: ## Install the package from dist/ on a clean Ubuntu (STANDAL
 		apt-get -qq install -y --no-install-recommends ./dist/infrahouse-toolkit_*.deb; \
 		/opt/infrahouse-toolkit/embedded/bin/python3 -I packaging/smoke_test.py'
 
+# The macOS tarball is built natively, without Docker, on an arm64 Mac with the uv version packaging/Dockerfile pins.
+.PHONY: package-macos
+package-macos: ## Build the self-contained macOS arm64 tarball and its .sha256 into dist/ (arm64 Mac)
+	packaging/build-macos.sh
+
+.PHONY: package-macos-smoke-test
+package-macos-smoke-test: ## Unpack the macOS tarball from dist/ as Homebrew would and smoke-test it (arm64 Mac)
+	packaging/smoke-test-macos.sh
+
 .PHONY: dist
 dist: clean ## builds source and wheel package
 	python setup.py sdist
