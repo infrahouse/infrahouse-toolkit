@@ -8,6 +8,9 @@ and runs `smoke_test.py`. CI and CD do both for noble on amd64 and arm64 (`.gith
 The standalone package is the released package. The Omnibus package (`make package`) is kept as the rollback for
 a few releases (IH-186); see [Rollback](#rollback).
 
+The same interpreter and lock also make the macOS arm64 tarball that the Homebrew formula installs
+(`make package-macos`); see [macOS tarball](#macos-tarball).
+
 ## Release
 
 `.github/workflows/python-CD.yml` runs on every push to `main`. It builds and tests everything before it publishes
@@ -132,3 +135,83 @@ deb [signed-by=/etc/apt/keyrings/infrahouse.gpg] https://testing-noble.infrahous
 With terraform-aws-cloud-init, add it to `extra_repos` with `signed-by=$KEY_FILE` and the release key, which
 `https://testing-noble.infrahouse.com/DEB-GPG-KEY-testing-noble.infrahouse.com` also serves.
 `apt-cache policy infrahouse-toolkit` shows which version the node will install.
+
+## macOS tarball
+
+`make package-macos` builds `dist/infrahouse-toolkit-<version>-macos-arm64.tar.gz` and its `.sha256`, the
+self-contained tree the Homebrew formula installs. `build-macos.sh` is the twin of `build.sh`: the same
+python-build-standalone interpreter, fetched by the same uv version, the same `requirements.lock` and the same toolkit
+wheel. It runs natively on an arm64 Mac, without Docker, and builds arm64 only.
+`make package-macos-smoke-test` tests the tarball as Homebrew installs it.
+
+- **The tarball** is the interpreter tree itself, `bin/`, `lib/`, `include/`, `share/` and python-build-standalone's
+  `BUILD`, with no top-level directory: the formula does `libexec.install Dir["*"]` and links `libexec/bin/ih-*` into
+  its `bin`. It has no `._*` or `.DS_Store` files and no extended attributes. The `.sha256` is one line,
+  `<sha256>  <file name>`, as `shasum -a 256` writes it.
+- **One uv version.** It decides which python-build-standalone build `uv python install` fetches, so both builds use
+  the version `packaging/Dockerfile` pins. `build-macos.sh` reads it from there (`build-macos.sh --uv-version` prints
+  it) and fails if the `uv` on `PATH` is another version. Renovate's Dockerfile update moves both builds.
+- **Relocatable scripts.** uv writes console scripts with an absolute path to the build tree. `build-macos.sh`
+  replaces that header with `macos-script-header`, which runs the `python3` next to the script's real path.
+  `realpath` matters: Homebrew links `/opt/homebrew/bin/ih-ec2` → `Cellar/…/bin/ih-ec2` → `libexec/bin/ih-ec2`. The
+  build fails if any file in `bin/` still contains the build directory's path.
+- **The macOS floor**, `MACOS_FLOOR`, is 13.0, the first macOS with `realpath(1)`, which the header needs. uv chooses
+  wheels for it (`MACOSX_DEPLOYMENT_TARGET`), not for the runner's macOS. Then the build reads the minimum macOS of
+  every Mach-O file in the tree with `otool -l` (`minos` of `LC_BUILD_VERSION`, or `LC_VERSION_MIN_MACOSX`) and fails
+  if one is newer. Wheel tags aren't enough: protobuf's wheel is tagged `macosx_10_9_universal2`, but its arm64
+  `_message.abi3.so` needs 12.0, today's newest.
+- **The smoke test** deletes the build tree (`build/macos-arm64`), checks the `.sha256`, unpacks the tarball into a
+  directory whose path contains a space, and links each `ih-*` script through two relative symlinks, as Homebrew
+  does. With only those links and the system directories on `PATH`, it checks each script's header and that it
+  resolves through the links, runs `smoke_test.py --no-deb` with the unpacked interpreter (every `ih-*` `--help` as a
+  process, through both links), and imports `nacl.bindings` and `cryptography.hazmat.bindings._rust`.
+  `smoke_test.py --no-deb` skips the Debian package checks; without it, `smoke_test.py` runs exactly what it runs on
+  the .deb.
+
+### Building it on a Mac
+
+Install the pinned uv next to any other, for example in a virtualenv, and put it first on `PATH`:
+
+```bash
+python3 -m venv /tmp/uv-pinned && /tmp/uv-pinned/bin/pip install "uv==$(packaging/build-macos.sh --uv-version)"
+```
+
+```bash
+PATH="/tmp/uv-pinned/bin:$PATH" make package-macos
+```
+
+```bash
+make package-macos-smoke-test
+```
+
+The build takes about 20 seconds and leaves the tree in `build/macos-arm64` until the smoke test deletes it.
+
+### How it reaches the release
+
+`.github/workflows/macos-package.yml` builds and smoke-tests the tarball on a `macos-15` runner and uploads it as an
+artifact. `python-CI.yml` runs it on every pull request (check `macOS package / macOS arm64`), and `python-CD.yml` on
+every push to `main`. On the push that bumps the version, `publish-macos` attaches both files to the GitHub release
+`v<version>`, which the formula downloads
+(`https://github.com/infrahouse/infrahouse-toolkit/releases/download/v<version>/infrahouse-toolkit-<version>-macos-arm64.tar.gz`):
+
+- It needs `plan`, `test` and the macOS build, so a version whose unit tests failed gets no tarball.
+- It is independent of `publish`: neither waits for the other, so a macOS runner outage can't hold back PyPI or the
+  release apt repository. A failure in either fails the run. It runs whatever `RELEASE_PACKAGE` says: that variable
+  chooses the apt repository's package.
+- It checks the artifact holds exactly the tarball and its `.sha256` for this version, and that they match.
+- `release.yml` creates the release when the tag is pushed, after the push to `main`. `publish-macos` checks for it
+  every 30 seconds for up to 15 minutes, then fails with a message that the release doesn't exist. It also fails if
+  the tag isn't the commit this run built.
+- It never replaces an asset: builds aren't byte-reproducible, and a formula may already pin the first upload's
+  checksum. If the release has both files (a re-run), it uploads nothing. If it has only one, it fails and names it.
+  Otherwise it uploads the tarball, then the `.sha256`, with the job's `GITHUB_TOKEN`. Last, it downloads both from
+  the release and checks the checksum.
+- It is the only job with `contents: write`, and has no AWS role and no PyPI token.
+
+If `publish-macos` failed:
+
+- **The release didn't appear:** push the tag (`git push --tags`), check `release.yml`'s run, then re-run the failed
+  jobs.
+- **The macOS build failed:** fix it and re-run the failed jobs: `macos` and `publish-macos` run again, nothing else.
+- **The release has one of the two files:** check it, delete it (`gh release delete-asset v<version> <file>`), and
+  re-run the failed jobs.
