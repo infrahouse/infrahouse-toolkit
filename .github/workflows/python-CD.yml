@@ -4,8 +4,8 @@
 # and the standalone Debian package for noble amd64 and arm64, each smoke-tested on a native runner. Then the
 # publish job releases to PyPI and the release repo, but only when this commit bumped the version, and only
 # what is still missing. Every push also publishes a candidate build to the testing repo (publish-testing).
-# The repository variable RELEASE_PACKAGE switches the release repo to the Omnibus package, the rollback.
-# See packaging/README.md.
+# The repository variable RELEASE_PACKAGE=omnibus switches the release repo to the Omnibus package, the
+# rollback, and stops the candidates. See packaging/README.md.
 ---
 name: Python Continuous Deployment
 
@@ -66,10 +66,16 @@ jobs:
                           exit 1
                           ;;
                   esac
+                  # On every run's summary, so a switch nobody put back doesn't go unnoticed.
+                  if [[ "${package}" == omnibus ]]; then
+                      echo "::warning::RELEASE_PACKAGE is omnibus: a release publishes the Omnibus package," \
+                          "amd64 only, and no candidate is published. Set it back to standalone after the" \
+                          "rollback (packaging/README.md)."
+                  fi
 
-            # Only the commit that bumps the version releases it. A later push of the same version publishes
+            # Only the commit that raises the version releases it. A later push of the same version publishes
             # nothing, even where the release repo lacks an architecture of it: arm64 lacks 2.67.0, and an
-            # Omnibus rollback publishes no arm64 at all.
+            # Omnibus rollback publishes no arm64 at all. A revert of a bump lowers it, and publishes nothing.
             - name: Check whether this commit bumped the version
               id: version
               run: |
@@ -83,7 +89,7 @@ jobs:
                       echo "::error::Can't read the version: '${version}' at HEAD, '${parent_version}' at HEAD^1"
                       exit 1
                   fi
-                  if [[ "${version}" != "${parent_version}" ]]; then
+                  if dpkg --compare-versions "${version}" gt "${parent_version}"; then
                       bumped=true
                   else
                       bumped=false
@@ -131,6 +137,8 @@ jobs:
                   name: python-dist
                   path: dist/
                   if-no-files-found: error
+                  # A re-run uploads again under the same name. The name is unique within an attempt.
+                  overwrite: true
 
             # Coverage reporting isn't part of the release, so an outage there doesn't block one.
             - name: Run codacy-coverage-reporter
@@ -152,7 +160,7 @@ jobs:
             artifact_prefix: "infrahouse-toolkit-release-noble"
 
     # The same build with a candidate version, for example 2.68.0+candidate.214.1-1. publish-testing puts it
-    # in the testing repo, never in the release repo.
+    # in the testing repo, never in the release repo, and not at all under RELEASE_PACKAGE=omnibus.
     standalone-candidate:
         name: "Standalone package (candidate)"
         uses: ./.github/workflows/standalone-package.yml
@@ -182,6 +190,8 @@ jobs:
                   name: infrahouse-toolkit-omnibus-noble-amd64
                   path: omnibus-infrahouse-toolkit/pkg/infrahouse-toolkit_*.deb
                   if-no-files-found: error
+                  # A re-run uploads again under the same name. The name is unique within an attempt.
+                  overwrite: true
 
     # The release: PyPI, and the release repo (https://release-noble.infrahouse.com/, codename noble), which
     # every node installs from with Puppet's ensure => latest. It runs only on main, only when this commit
@@ -429,8 +439,11 @@ jobs:
         name: "Publish the candidate to noble-testing"
         # plan: an invalid RELEASE_PACKAGE stops this publish too.
         needs: [plan, standalone-candidate]
-        # A workflow_dispatch on another branch builds a candidate but doesn't publish it.
-        if: github.ref == 'refs/heads/main'
+        # A workflow_dispatch on another branch builds a candidate but doesn't publish it. Neither does a run
+        # under omnibus: a rollback's candidate would sort above the rollback (2.68.1+candidate.N.1-1 >
+        # 2.68.1-1), and canary nodes would keep the standalone package. Without it the newest candidate is the
+        # bad release's, below the rollback, so canaries roll back with the fleet.
+        if: github.ref == 'refs/heads/main' && needs.plan.outputs.package == 'standalone'
         runs-on: ubuntu-24.04
         # reprepro rewrites the repository's indexes on every upload, so one writer at a time. A running publish
         # is never cancelled: reprepro stopped mid-write can leave the repository locked or half-written.
