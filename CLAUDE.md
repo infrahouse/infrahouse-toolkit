@@ -33,13 +33,16 @@ pytest -xvvs infrahouse_toolkit/cli/ih_ec2/cmd_list/ -k "test_my_func"    # Sing
 
 # Build
 make dist                       # Build wheel + sdist
-make package                    # Build Debian package via Docker/omnibus
-make package-standalone         # Build the standalone .deb into dist/ (packaging/README.md)
+make package-standalone         # Build the standalone .deb, the released package, into dist/
 make package-smoke-test         # Install dist/*.deb on a clean ubuntu:noble and smoke-test it
+make package                    # Build the Omnibus .deb, the rollback (RELEASE_PACKAGE=omnibus)
 ```
 
-CD publishes the standalone .deb, as a candidate version, to the testing repo
-`testing-noble.infrahouse.com` (codename `noble-testing`), never to the release repo; see packaging/README.md.
+The standalone .deb is the released package. CD publishes it, with PyPI, to the release repo
+`release-noble.infrahouse.com` (codename `noble`, amd64 and arm64) when a commit bumps the version, and publishes
+every `main` push as a candidate version to the testing repo `testing-noble.infrahouse.com` (codename
+`noble-testing`). The Omnibus .deb is the rollback for a few releases (IH-186): the repository variable
+`RELEASE_PACKAGE=omnibus` makes the release publish it instead, amd64 only. See packaging/README.md.
 
 ## Architecture
 
