@@ -1,8 +1,9 @@
 ---
 # Builds the standalone Debian package for noble on amd64 and arm64, each on a native runner,
 # smoke-tests it on a clean ubuntu:noble container and uploads it as a workflow artifact.
-# It publishes nothing itself. Called by python-CI.yml, with the plain toolkit version, and by python-CD.yml,
-# with a candidate version, whose publish-testing job publishes the artifacts to the testing repo.
+# It publishes nothing itself. python-CI.yml calls it once, with the plain toolkit version. python-CD.yml calls it
+# twice: for the release, with the plain version (its publish job publishes to the release repo), and for a
+# candidate, with a version suffix (its publish-testing job publishes to the testing repo).
 name: Standalone package
 
 on:  # yamllint disable-line rule:truthy
@@ -15,6 +16,14 @@ on:  # yamllint disable-line rule:truthy
                 type: string
                 required: false
                 default: ""
+            artifact_prefix:
+                description: >-
+                    The artifacts are named <artifact_prefix>-<arch>. A caller that calls this workflow more than
+                    once in a run gives each call its own prefix, so a publish job can't download the other
+                    call's packages.
+                type: string
+                required: false
+                default: "infrahouse-toolkit-noble"
 
 permissions:
     contents: read
@@ -53,6 +62,6 @@ jobs:
             - name: Upload the package
               uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
               with:
-                  name: infrahouse-toolkit-noble-${{ matrix.arch }}
+                  name: ${{ inputs.artifact_prefix }}-${{ matrix.arch }}
                   path: dist/infrahouse-toolkit_*.deb
                   if-no-files-found: error
