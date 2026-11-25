@@ -1,0 +1,69 @@
+---
+# Builds the macOS arm64 tarball that the Homebrew formula installs, on a native arm64 runner, smoke-tests it as
+# Homebrew installs it (packaging/smoke-test-macos.sh), and uploads it with its .sha256 as a workflow artifact.
+# It publishes nothing itself. python-CI.yml calls it on every pull request. python-CD.yml calls it on every push
+# to main, and its publish-macos job attaches both files to the GitHub release when the push bumped the version.
+# The Linux twin is standalone-package.yml.
+name: macOS package
+
+on:  # yamllint disable-line rule:truthy
+    workflow_call:
+        inputs:
+            artifact_prefix:
+                description: >-
+                    The artifact is named <artifact_prefix>-arm64 and holds
+                    infrahouse-toolkit-<version>-macos-arm64.tar.gz and its .sha256.
+                type: string
+                required: false
+                default: "infrahouse-toolkit-macos"
+
+permissions:
+    contents: read
+
+jobs:
+    package:
+        name: "macOS arm64"
+        runs-on: macos-15
+        steps:
+            - uses: actions/checkout@v5
+
+            - name: Check the runner is native arm64
+              run: |
+                  uname -sm
+                  sw_vers
+                  test "$(uname -s)" = Darwin
+                  test "$(uname -m)" = arm64
+
+            # The uv version decides which python-build-standalone build the tarball gets, so it's the one
+            # packaging/Dockerfile pins for the Debian package. build-macos.sh reads it from there and checks it.
+            - name: Read the uv version packaging/Dockerfile pins
+              id: uv
+              run: |
+                  version="$(packaging/build-macos.sh --uv-version)"
+                  echo "uv ${version}"
+                  echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+            - name: Install uv ${{ steps.uv.outputs.version }}
+              uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
+              with:
+                  version: ${{ steps.uv.outputs.version }}
+                  # Nothing cached between runs: requirements.lock pins every hash, and the interpreter download
+                  # is checked against uv's own checksums.
+                  enable-cache: false
+
+            - name: Build the tarball
+              run: |
+                  make package-macos
+
+            - name: Smoke-test the tarball as Homebrew installs it
+              run: |
+                  make package-macos-smoke-test
+
+            - name: Upload the tarball and its .sha256
+              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+              with:
+                  name: ${{ inputs.artifact_prefix }}-arm64
+                  path: dist/infrahouse-toolkit-*-macos-arm64.tar.gz*
+                  if-no-files-found: error
+                  # A re-run uploads again under the same name. The name is unique within an attempt.
+                  overwrite: true

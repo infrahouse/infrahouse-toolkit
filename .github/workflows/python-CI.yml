@@ -93,3 +93,8 @@ jobs:
     package:
         name: "Standalone package"
         uses: ./.github/workflows/standalone-package.yml
+
+    # The macOS arm64 tarball for the Homebrew formula. Its check is "macOS package / macOS arm64".
+    macos:
+        name: "macOS package"
+        uses: ./.github/workflows/macos-package.yml
