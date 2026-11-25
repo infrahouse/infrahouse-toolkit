@@ -20,8 +20,10 @@ anything:
 - `publish` then publishes PyPI and the release repository (`https://release-noble.infrahouse.com/`, codename
   `noble`), in that order. It needs all of the above, so a broken package blocks the PyPI publish too.
 
-`publish` runs only on `main`, and only for the commit that bumped the version (`make release-*`, then
-`git push && git push --tags`). A later push of the same version publishes nothing. Each target is published only
+`publish` runs only on `main`, and only for the commit that raised the version (`make release-*`, then
+`git push && git push --tags`). The bump commit must be the last commit of its push: if another commit follows it in
+the same push, nothing is released, and the fix is another bump. A later push of the same version publishes nothing,
+and neither does a revert of a bump. Each target is published only
 when it lacks this version: PyPI when `https://pypi.org/pypi/infrahouse-toolkit/<version>/json` is 404, and each
 architecture when its pool file
 `https://release-noble.infrahouse.com/pool/main/i/infrahouse-toolkit/infrahouse-toolkit_<version>-1_<arch>.deb`
@@ -33,6 +35,13 @@ is 403 or 404 (the bucket can't be listed, so a missing file is 403). Any other 
 - **One kind of package per version:** before it adds an architecture to a version that is already published for
   another, `publish` checks the published one is the same package (standalone or Omnibus), by its description.
 - **One release at a time:** `publish` is in the `release-repo-noble` concurrency group and is never cancelled.
+- **The publisher is the last release:** `publish` and `publish-testing` install the newest infrahouse-toolkit from
+  the release repository and publish with its `ih-s3-reprepro`. After the first standalone release that is the
+  standalone package, whose `includedeb` (s3fs mount, GPG import, reprepro) no smoke test runs. After each release,
+  run the CD workflow by hand on `main` (Actions, Python Continuous Deployment, Run workflow): `publish` finds
+  everything published and publishes nothing, and `publish-testing` publishes a candidate with the new release's
+  `ih-s3-reprepro`. Its log must show `Setting up infrahouse-toolkit (<new version>-1)`. If it shows the previous
+  version, CloudFront still served the old index: wait a few minutes and run it again.
 
 Puppet installs the toolkit with `ensure => latest` every 30 minutes, so a release reaches every node within about
 30 minutes, and Puppet never downgrades.
@@ -46,7 +55,8 @@ instances install it, because it is the highest version in the repository.
    Variables), or `gh variable set RELEASE_PACKAGE --body omnibus --repo infrahouse/infrahouse-toolkit`.
 2. On `main`, `make release-patch`, then `git push && git push --tags`.
 3. CD builds the Omnibus package (`make package`, noble amd64) and publishes it, with PyPI, at the new version.
-   The standalone release packages are still built and smoke-tested, and must pass, but aren't published.
+   The standalone release packages are still built and smoke-tested, and must pass, but aren't published. Every
+   run's summary shows a warning while the variable is `omnibus`.
 4. Check `https://release-noble.infrahouse.com/dists/noble/main/binary-amd64/Packages` lists the new version, and
    on a couple of nodes, within the next hour, that `dpkg-query -W infrahouse-toolkit` shows it.
 5. Set `RELEASE_PACKAGE` back to `standalone`, or delete it: `gh variable delete RELEASE_PACKAGE --repo
@@ -54,6 +64,17 @@ instances install it, because it is the highest version in the repository.
 
 Under `omnibus` only amd64 is published, as before the standalone package. arm64 nodes stay on the version they
 have until the next standalone release.
+
+Under `omnibus` no candidate is published either. Otherwise the rollback's own bump commit would publish, for
+example, `2.68.1+candidate.N.1-1`, which sorts above the Omnibus `2.68.1-1`, and canary nodes would keep the standalone
+package. Without it the newest candidate is the bad release's, `2.68.0+candidate.N.1-1`, below `2.68.1-1`, so canary
+nodes roll back with the fleet. Once the variable is back to `standalone`, the next push to `main` publishes a
+candidate of the rollback version, and canary nodes take it.
+
+If `publish` fails inside `ih-s3-reprepro`, the newest release's publisher is broken (see "The publisher is the last
+release" above). In a PR, pin the install step of `publish` to the newest Omnibus version in the release repository,
+`sudo apt-get -y install --allow-downgrades infrahouse-toolkit=2.67.0-1` until a rollback publishes a newer one,
+merge it (that push publishes nothing), then release.
 
 `RELEASE_PACKAGE` unset or `standalone` releases the standalone package, `omnibus` the Omnibus one. Any other value
 fails the CD run before anything is published, the testing repository's candidate included.
@@ -66,7 +87,9 @@ back. A run outside `main` publishes nothing. Don't release while the variable i
 
 CD publishes every `main` build of the standalone package to a testing apt repository as a candidate, with a
 version above the release: Puppet installs the toolkit with `ensure => latest`, so anything in the release
-repository reaches every node within about 30 minutes. Only canary nodes use the testing repository.
+repository reaches every node within about 30 minutes. Only canary nodes use the testing repository. Under
+`RELEASE_PACKAGE=omnibus` no candidate is published, so canary nodes roll back with the fleet (see
+[Rollback](#rollback)).
 
 - `https://testing-noble.infrahouse.com/`, codename `noble-testing`, component `main`, `amd64` and `arm64`.
 - Signed with the release key. It keeps the last 5 versions.

@@ -42,7 +42,8 @@ The standalone .deb is the released package. CD publishes it, with PyPI, to the 
 `release-noble.infrahouse.com` (codename `noble`, amd64 and arm64) when a commit bumps the version, and publishes
 every `main` push as a candidate version to the testing repo `testing-noble.infrahouse.com` (codename
 `noble-testing`). The Omnibus .deb is the rollback for a few releases (IH-186): the repository variable
-`RELEASE_PACKAGE=omnibus` makes the release publish it instead, amd64 only. See packaging/README.md.
+`RELEASE_PACKAGE=omnibus` makes the release publish it instead, amd64 only, and stops the candidates. See
+packaging/README.md.
 
 ## Architecture
 
