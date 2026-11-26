@@ -36,6 +36,8 @@ make dist                       # Build wheel + sdist
 make package-standalone         # Build the standalone .deb, the released package, into dist/
 make package-smoke-test         # Install dist/*.deb on a clean ubuntu:noble and smoke-test it
 make package                    # Build the Omnibus .deb, the rollback (RELEASE_PACKAGE=omnibus)
+make package-macos              # Build the macOS arm64 tarball for Homebrew into dist/ (arm64 Mac, pinned uv)
+make package-macos-smoke-test   # Unpack dist/*-macos-arm64.tar.gz as Homebrew would and smoke-test it
 ```
 
 The standalone .deb is the released package. CD publishes it, with PyPI, to the release repo
@@ -44,6 +46,10 @@ every `main` push as a candidate version to the testing repo `testing-noble.infr
 `noble-testing`). The Omnibus .deb is the rollback for a few releases (IH-186): the repository variable
 `RELEASE_PACKAGE=omnibus` makes the release publish it instead, amd64 only, and stops the candidates. See
 packaging/README.md.
+
+The macOS arm64 tarball, `infrahouse-toolkit-<version>-macos-arm64.tar.gz`, is what the Homebrew formula installs.
+It is built from the same interpreter and `requirements.lock` as the standalone .deb, and on a version bump CD attaches
+it and its `.sha256` to the GitHub release `v<version>` (`publish-macos`), whatever `RELEASE_PACKAGE` says.
 
 ## Architecture
 

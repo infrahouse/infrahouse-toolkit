@@ -10,6 +10,9 @@
 # shebangs need no rewriting. Run it in a disposable container (see `make package-standalone`),
 # never on a workstation: it writes to /opt and /usr/local/bin.
 #
+# packaging/build-macos.sh is its macOS twin: the tarball for the Homebrew formula, from the same interpreter,
+# uv version and requirements.lock. A change to one of them likely belongs in the other.
+#
 # Environment:
 #   PYTHON_VERSION   CPython version to embed (default 3.13)
 #   GLIBC_FLOOR      Oldest glibc the package must run on, as manylinux tag digits (default 2_35,
@@ -62,6 +65,9 @@ cp -a "${PYTHON_SRC}" "${EMBEDDED}"
 find "${EMBEDDED}/lib" -maxdepth 2 -name EXTERNALLY-MANAGED -delete
 
 PYTHON="${EMBEDDED}/bin/python3"
+# The interpreter build, for comparing with the macOS tarball's (build-macos.sh prints the same).
+"${PYTHON}" -VV
+echo "python-build-standalone $(cat "${EMBEDDED}/BUILD")"
 # Precompile the standard library so the interpreter never writes bytecode at runtime,
 # which would leave files behind on package removal.
 "${PYTHON}" -m compileall -q -j 0 "${EMBEDDED}/lib" >/dev/null

@@ -5,10 +5,15 @@ Run it with the package's own interpreter:
 
     /opt/infrahouse-toolkit/embedded/bin/python3 -I packaging/smoke_test.py
 
+For the macOS tarball, which isn't a Debian package, add ``--no-deb`` (see packaging/smoke-test-macos.sh):
+
+    <unpacked tarball>/bin/python3 -I packaging/smoke_test.py --no-deb
+
 It checks that:
 
 * ``infrahouse_toolkit`` is imported from the interpreter's own tree, not from a source checkout;
-* the Debian package is installed for this machine's architecture and has no conffiles;
+* the Debian package is installed for this machine's architecture and has no conffiles (skipped with
+  ``--no-deb``);
 * every module in the ``infrahouse_toolkit`` package imports;
 * every console script is on PATH;
 * ``<script> --help`` succeeds when run as a real process, which proves the shebang, the
@@ -22,9 +27,11 @@ It checks that:
 Exit code is non-zero if anything fails.
 """
 
+import argparse
 import importlib
 import os
 import pkgutil
+import platform
 import shutil
 import subprocess
 import sys
@@ -139,10 +146,24 @@ def walk(command: click.Command, ctx: click.Context) -> Iterator[Tuple[str, clic
 
 def main() -> None:
     """Run all checks and report."""
-    failures = check_location() + check_debian_package() + check_imports()
+    parser = argparse.ArgumentParser(description="Smoke-test an installed infrahouse-toolkit package.")
+    parser.add_argument(
+        "--no-deb",
+        action="store_true",
+        help="Skip the Debian package checks and report the architecture from platform.machine(), "
+        "for a package that isn't a .deb, such as the macOS tarball.",
+    )
+    args = parser.parse_args()
+
+    failures = check_location() + ([] if args.no_deb else check_debian_package()) + check_imports()
     count, help_failures = check_help()
     failures += help_failures
-    arch = subprocess.run(["dpkg", "--print-architecture"], capture_output=True, text=True, check=True).stdout.strip()
+    if args.no_deb:
+        arch = platform.machine()
+    else:
+        arch = subprocess.run(
+            ["dpkg", "--print-architecture"], capture_output=True, text=True, check=True
+        ).stdout.strip()
     print(f"python {sys.version.split()[0]}, infrahouse-toolkit {infrahouse_toolkit.__version__}, {arch}")
     print(f"commands checked: {count}, failures: {len(failures)}")
     for failure in failures:

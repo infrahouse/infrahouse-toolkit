@@ -1,11 +1,15 @@
 # Continuous deployment, on every push to main.
 #
 # Everything is built and tested before anything is published: the unit and contract tests, the wheel and sdist,
-# and the standalone Debian package for noble amd64 and arm64, each smoke-tested on a native runner. Then the
-# publish job releases to PyPI and the release repo, but only when this commit bumped the version, and only
-# what is still missing. Every push also publishes a candidate build to the testing repo (publish-testing).
-# The repository variable RELEASE_PACKAGE=omnibus switches the release repo to the Omnibus package, the
-# rollback, and stops the candidates. See packaging/README.md.
+# the standalone Debian package for noble amd64 and arm64, and the macOS arm64 tarball, each smoke-tested on a
+# native runner. Then the publish job releases to PyPI and the release repo, but only when this commit bumped the
+# version, and only what is still missing. Every push also publishes a candidate build to the testing repo
+# (publish-testing). The repository variable RELEASE_PACKAGE=omnibus switches the release repo to the Omnibus
+# package, the rollback, and stops the candidates. See packaging/README.md.
+#
+# The macOS tarball, for the Homebrew formula, goes to the GitHub release instead (publish-macos), on the same
+# version bump. That job is independent of publish in both directions, so a macOS failure can't hold back the
+# fleet's release, and it doesn't depend on RELEASE_PACKAGE.
 ---
 name: Python Continuous Deployment
 
@@ -169,6 +173,16 @@ jobs:
             # re-run. Keep in step with PACKAGE_VERSION_SUFFIX in publish-testing.
             package_version_suffix: "+candidate.${{ github.run_number }}.${{ github.run_attempt }}"
             artifact_prefix: "infrahouse-toolkit-candidate-noble"
+
+    # The macOS arm64 tarball for the Homebrew formula, and its .sha256. publish-macos attaches both to the GitHub
+    # release. Nothing else needs it: publish and publish-testing don't wait for it.
+    macos:
+        name: "macOS package"
+        uses: ./.github/workflows/macos-package.yml
+        with:
+            # publish-macos downloads infrahouse-toolkit-macos-arm64, which matches neither
+            # infrahouse-toolkit-release-noble-* (publish) nor infrahouse-toolkit-candidate-noble-* (publish-testing).
+            artifact_prefix: "infrahouse-toolkit-macos"
 
     # The rollback (IH-186): the Omnibus package, noble amd64 only, built only when RELEASE_PACKAGE is omnibus.
     # Outside main this builds it without publishing it, which checks the rollback still builds.
@@ -522,3 +536,124 @@ jobs:
                         noble-testing \
                         "candidates/infrahouse-toolkit_${CANDIDATE_VERSION}_${arch}.deb"
                   done
+
+    # Attaches the macOS tarball and its .sha256 to the GitHub release v<version>, where the Homebrew formula
+    # downloads it. Only on main, only when this commit bumped the version, and only after the unit tests and the
+    # macOS build passed. Neither publish nor publish-testing waits for it, and it waits for neither: a macOS runner
+    # outage can't hold back the fleet's release, and a failure here still fails the run. It runs whatever
+    # RELEASE_PACKAGE says, which chooses the apt repo's package. Its only write permission is contents: write for
+    # the release; it has no AWS role and no PyPI token.
+    publish-macos:
+        name: "Attach the macOS tarball to the GitHub release"
+        needs: [plan, test, macos]
+        if: github.ref == 'refs/heads/main' && needs.plan.outputs.bumped == 'true'
+        runs-on: ubuntu-24.04
+        # One attempt at a time, so two can't both find the release without the files and both upload.
+        concurrency:
+            group: github-release-macos
+            cancel-in-progress: false
+        permissions:
+            contents: write  # gh release upload
+        env:
+            VERSION: ${{ needs.plan.outputs.version }}
+            GH_TOKEN: ${{ github.token }}
+            GH_REPO: ${{ github.repository }}
+        steps:
+            - name: Download the tarball and its .sha256
+              uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+              with:
+                  name: infrahouse-toolkit-macos-arm64
+                  path: macos
+
+            # The formula's url names the version, and IH-190 reads the checksum from the .sha256.
+            - name: Check there is one tarball and one .sha256, for this version, and that they match
+              run: |
+                  tarball="infrahouse-toolkit-${VERSION}-macos-arm64.tar.gz"
+                  ls -l macos
+                  count="$(find macos -type f | wc -l)"
+                  if [[ "${count}" -ne 2 ]]; then
+                      echo "::error::Expected ${tarball} and its .sha256, found ${count} files"
+                      exit 1
+                  fi
+                  for file in "macos/${tarball}" "macos/${tarball}.sha256"; do
+                      if [[ ! -f "${file}" ]]; then
+                          echo "::error::${file} is missing"
+                          exit 1
+                      fi
+                  done
+                  # One line, as shasum -a 256 writes it, with the file name and no directory.
+                  line_pattern='^[0-9a-f]{64}  (.+)$'
+                  if [[ "$(wc -l < "macos/${tarball}.sha256")" -ne 1 \
+                        || ! "$(cat "macos/${tarball}.sha256")" =~ ${line_pattern} \
+                        || "${BASH_REMATCH[1]}" != "${tarball}" ]]; then
+                      echo "::error::${tarball}.sha256 isn't one line '<sha256>  ${tarball}'. It is:"
+                      cat "macos/${tarball}.sha256"
+                      exit 1
+                  fi
+                  (cd macos && sha256sum --check --strict "${tarball}.sha256")
+
+            # release.yml creates the release when the tag is pushed, which comes after this push to main
+            # (git push && git push --tags). Anything but "release not found" fails the job at once.
+            - name: Wait for the GitHub release v${{ needs.plan.outputs.version }}
+              run: |
+                  tag="v${VERSION}"
+                  deadline=$((SECONDS + 15 * 60))
+                  while true; do
+                      if error="$(gh release view "${tag}" --json tagName 2>&1 >/dev/null)"; then
+                          echo "Release ${tag} exists"
+                          break
+                      fi
+                      if [[ "${error}" != "release not found" ]]; then
+                          echo "::error::gh release view ${tag} failed: ${error}"
+                          exit 1
+                      fi
+                      if (( SECONDS >= deadline )); then
+                          echo "::error::Release ${tag} doesn't exist after 15 minutes. release.yml creates it when" \
+                              "the tag ${tag} is pushed: push it (git push --tags), check release.yml's run, then" \
+                              "re-run this job."
+                          exit 1
+                      fi
+                      echo "Release ${tag} doesn't exist yet; checking again in 30 seconds"
+                      sleep 30
+                  done
+                  # The tarball was built from this commit, so the release must be this commit's.
+                  tag_commit="$(gh api "repos/${GH_REPO}/commits/${tag}" --jq .sha)"
+                  if [[ "${tag_commit}" != "${GITHUB_SHA}" ]]; then
+                      echo "::error::Tag ${tag} is commit ${tag_commit}, but this run built ${GITHUB_SHA}"
+                      exit 1
+                  fi
+
+            # Never replaces an asset: builds aren't byte-reproducible, and a formula may already pin the first
+            # upload's checksum. No --clobber, so gh refuses to overwrite one that appears meanwhile.
+            - name: Attach the tarball and its .sha256, unless the release has them
+              run: |
+                  tag="v${VERSION}"
+                  tarball="infrahouse-toolkit-${VERSION}-macos-arm64.tar.gz"
+                  assets="$(gh release view "${tag}" --json assets --jq '.assets[].name')"
+                  has_asset() {
+                      grep -qxF -- "$1" <<< "${assets}"
+                  }
+                  if has_asset "${tarball}" && has_asset "${tarball}.sha256"; then
+                      echo "::notice::Release ${tag} already has ${tarball} and its .sha256. Uploading nothing:" \
+                          "this build's tarball differs, and the formula may pin the release's checksum."
+                      exit 0
+                  fi
+                  for file in "${tarball}" "${tarball}.sha256"; do
+                      if has_asset "${file}"; then
+                          echo "::error::Release ${tag} has ${file} but not the other file of the pair. Check it," \
+                              "delete it (gh release delete-asset ${tag} ${file}) and re-run this job."
+                          exit 1
+                      fi
+                  done
+                  # The tarball first, so the .sha256 appears only once the file it describes is complete.
+                  gh release upload "${tag}" "macos/${tarball}"
+                  gh release upload "${tag}" "macos/${tarball}.sha256"
+                  echo "Attached ${tarball} and its .sha256 to ${tag}"
+
+            # What users download, whether this attempt uploaded it or an earlier one did.
+            - name: Check the release's tarball matches its .sha256
+              run: |
+                  tag="v${VERSION}"
+                  tarball="infrahouse-toolkit-${VERSION}-macos-arm64.tar.gz"
+                  gh release download "${tag}" --dir released --pattern "${tarball}" --pattern "${tarball}.sha256"
+                  (cd released && sha256sum --check --strict "${tarball}.sha256")
