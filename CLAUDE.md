@@ -38,6 +38,7 @@ make package-smoke-test         # Install dist/*.deb on a clean ubuntu:noble and
 make package                    # Build the Omnibus .deb, the rollback (RELEASE_PACKAGE=omnibus)
 make package-macos              # Build the macOS arm64 tarball for Homebrew into dist/ (arm64 Mac, pinned uv)
 make package-macos-smoke-test   # Unpack dist/*-macos-arm64.tar.gz as Homebrew would and smoke-test it
+make homebrew-test              # Run publish-homebrew's scripts against a local tap, gh and the token stubbed
 ```
 
 The standalone .deb is the released package. CD publishes it, with PyPI, to the release repo
@@ -50,6 +51,9 @@ packaging/README.md.
 The macOS arm64 tarball, `infrahouse-toolkit-<version>-macos-arm64.tar.gz`, is what the Homebrew formula installs.
 It is built from the same interpreter and `requirements.lock` as the standalone .deb, and on a version bump CD attaches
 it and its `.sha256` to the GitHub release `v<version>` (`publish-macos`), whatever `RELEASE_PACKAGE` says.
+Then `publish-homebrew` opens the pull request in `infrahouse/homebrew-tap` that moves the formula to that release,
+as the GitHub App `infrahouse-homebrew-tap`, whose key is in KMS; Aleks merges it. `release.yml` creates the release
+with `GITHUB_TOKEN`. See packaging/README.md, "How a release reaches the Homebrew formula".
 
 ## Architecture
 

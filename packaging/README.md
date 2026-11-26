@@ -212,6 +212,107 @@ If `publish-macos` failed:
 
 - **The release didn't appear:** push the tag (`git push --tags`), check `release.yml`'s run, then re-run the failed
   jobs.
-- **The macOS build failed:** fix it and re-run the failed jobs: `macos` and `publish-macos` run again, nothing else.
+- **The macOS build failed:** fix it and re-run the failed jobs: `macos`, `publish-macos` and then
+  `publish-homebrew`, which waited for it, run again, nothing else.
 - **The release has one of the two files:** check it, delete it (`gh release delete-asset v<version> <file>`), and
   re-run the failed jobs.
+
+### How a release reaches the Homebrew formula
+
+On the push that bumps the version, after `publish-macos` attached the tarball, `publish-homebrew` opens the pull
+request in [infrahouse/homebrew-tap](https://github.com/infrahouse/homebrew-tap) that moves
+`Formula/infrahouse-toolkit.rb` to the release. The tap's CI, `infrahouse-toolkit formula`, installs and tests the
+formula on it, and Aleks merges it. Then `brew update && brew upgrade infrahouse-toolkit` installs the release. The
+credential follows the design document
+[GitHub credentials for automation](https://linear.app/infrahouse/document/design-github-credentials-for-automation-token-app-key-in-secrets-b7f0b1e54767)
+(IH-190).
+
+- **The job graph.** `publish-homebrew` needs `plan` and `publish-macos`, and runs only on `main`, only when the
+  commit bumped the version and `publish-macos` succeeded. Nothing needs it, so it can't hold back or change PyPI, the
+  apt repositories or the tarball. It runs whatever `RELEASE_PACKAGE` says, like `publish-macos`. One runs at a time
+  (concurrency group `homebrew-tap-formula`), and a running one is never cancelled.
+- **The release, not the build.** `check-release.sh` downloads the release's tarball and `.sha256` from the url the
+  formula gets, and checks one against the other. The formula gets that checksum, never this run's build.
+- **Only forward.** `open-formula-pr.sh` clones the tap and reads the formula's version from its `url`. If the formula
+  is already at the release, or newer (a re-run of an older release), or the tap has an open pull request for a newer
+  release, it stops with a notice, green, and opens nothing. A formula at the release with another `sha256` is an
+  error: it wouldn't install.
+- **The change.** It changes `url` and `sha256`, and `version` if the formula has that line, then checks the diff:
+  exactly those lines, and the new `url` is
+  `https://github.com/infrahouse/infrahouse-toolkit/releases/download/v<version>/infrahouse-toolkit-<version>-macos-arm64.tar.gz`.
+  A formula with another layout (a second `url`, a `mirror`, a `resource` or `bottle` block) fails the job before
+  anything is pushed.
+- **The pull request.** The branch is `toolkit-<version>`, one commit authored by the App, on the tap's `main`. The
+  title is `infrahouse-toolkit <version>`, and the body links the release and the CD run. A re-run updates the open
+  pull request instead of opening a second one; the branch belongs to CD, and a re-run resets it to `main` plus the
+  change if `main` moved or someone changed it. Nothing merges the pull request or enables auto-merge.
+
+#### The App, the key, the role and the environment
+
+- **The App** is `infrahouse-homebrew-tap` (App ID 5944221, client ID `Iv23lilC1EyHKXYysFqn`), installed on
+  `infrahouse/homebrew-tap` only, with Contents and Pull requests read and write, and Metadata read. An App token
+  starts the tap's CI on the pull request; a `GITHUB_TOKEN` one wouldn't, and couldn't write to the tap anyway.
+- **The key** is the App's private key, imported into the KMS key
+  `arn:aws:kms:us-west-1:493370826424:key/ed26150d-e589-4cd1-8d4d-26ec30f0c709` (`RSA_2048`, `SIGN_VERIFY`, origin
+  `EXTERNAL`, KMS's default key policy, which delegates to IAM). It can't be exported, and the PEM is deleted: the
+  key is in no secret, file, Terraform state or log. Whoever may call `kms:Sign` on it has the App's full power on the
+  tap.
+- **The role** `ih-tf-infrahouse-toolkit-homebrew`, in `aws-control-493370826424`, is the only principal with
+  `kms:Sign` on the key, with `kms:SigningAlgorithm = RSASSA_PKCS1_V1_5_SHA_256`, and it has no other permission. It
+  trusts GitHub's OIDC provider only for the subject
+  `repo:infrahouse/infrahouse-toolkit:environment:homebrew-tap`, with `StringEquals`. It isn't the CD role
+  `ROLE_ARN`: that one also publishes the candidates on the same push to `main`, and GitHub's OIDC token can't tell
+  those jobs apart by branch. CloudTrail (493370826424, `us-west-1`) records every `Sign` on the key with the role.
+- **The environment** `homebrew-tap`, set in `infrahouse/github-control`, allows `main` only and has no secrets or
+  variables. Only `publish-homebrew` names it. A job on another branch that names it is refused by GitHub, so no pull
+  request can get the subject the role trusts.
+- **The token** comes from infrahouse-core's `GitHubAppTokenSource` and `KMSSigner` (`mint_token.py`), down-scoped to
+  `contents: write` and `pull_requests: write`. infrahouse-core 1.4 runs in a virtualenv of its own
+  (`install-venv.sh`), from `packaging/homebrew/requirements.lock`: hash-pinned, wheels only, apart from the toolkit's
+  own environment, which pins an older infrahouse-core. `open-formula-pr.sh` mints the token only once there is a
+  change to push, masks it at once, and uses it in that step only: `gh` reads it from `GH_TOKEN`, and `git` through a
+  credential helper that reads the same variable. It's in no URL, argument, file, step output or `$GITHUB_ENV`.
+
+`make homebrew-test` runs both scripts against a local release and tap, with `gh` and the token stubbed
+(`packaging/homebrew/test.sh`); CI runs it on every pull request. `make lock` regenerates
+`packaging/homebrew/requirements.lock` from its `requirements.in`, and CI fails when it would change.
+
+#### Rotating the App's key
+
+An App can hold several keys at once, so a rotation has no downtime.
+
+1. On the App's settings page, generate a new private key.
+2. Import it into a **new** KMS key and check it, with the "GitHub App key in KMS" runbook
+   ([terraform-aws-actions-runner#118](https://github.com/infrahouse/terraform-aws-actions-runner/pull/118), in the
+   module's README once it merges). Delete the PEM.
+3. In `aws-control-493370826424`, replace the key ARN in the role's policy (`homebrew_tap_kms_key_arn`). Merge it;
+   its apply moves the grant.
+4. In this repository, set `HOMEBREW_TAP_KMS_KEY_ARN` in `publish-homebrew` (`python-CD.yml`) to the new key. Merge it.
+   Don't release between steps 3 and 4: the role can't sign with the old key any more.
+5. On the App's settings page, delete the old key. Schedule the old KMS key's deletion.
+
+A KMS key that is lost or deleted can't be restored: generate a new App key and import it, as above.
+
+#### When publish-homebrew fails
+
+The run is red, and the job's `::error::` says what failed. Nothing else in the run is affected. Fix the cause, then
+re-run the failed jobs: a re-run is safe, and updates the same pull request.
+
+- **The release has no tarball or `.sha256`, or they don't match:** `publish-macos` attaches them; check its run and
+  the release's assets (see "How it reaches the release" above).
+- **Couldn't assume the role:** the role doesn't exist yet (merge the aws-control PR first), or the job's OIDC subject
+  isn't `repo:infrahouse/infrahouse-toolkit:environment:homebrew-tap` (the environment's name in the job and in the
+  role's trust must match).
+- **KMS refused to sign:** the role's policy doesn't name the key in `HOMEBREW_TAP_KMS_KEY_ARN`, or the key is
+  disabled or pending deletion.
+- **GitHub refused the JWT (401):** the key in KMS is no longer one of the App's keys: rotate it, as above.
+  **GitHub refused the token (422) or there's no installation:** the App lacks Contents or Pull requests write, or
+  isn't installed on `infrahouse/homebrew-tap`.
+- **The formula's layout or the diff:** update the formula by hand (below), and teach `open-formula-pr.sh` the new
+  layout.
+- **A closed pull request for the version:** if it was closed on purpose, there is nothing to do. Otherwise reopen it
+  and re-run the job.
+- **The push or the pull request failed:** check the App's permissions on the tap, then re-run.
+
+The fallback is a hand edit, as before IH-190: the "Updating the Formula for a New Release" section of the tap's
+`CLAUDE.md`.
