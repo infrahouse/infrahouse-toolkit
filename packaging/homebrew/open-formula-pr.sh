@@ -207,13 +207,19 @@ if [[ ! -x "${HOMEBREW_TOKEN_PYTHON:-}" ]]; then
         "virtualenv that install-venv.sh makes."
 fi
 if ! token="$("${HOMEBREW_TOKEN_PYTHON}" -I "${script_dir}/mint_token.py")"; then
+    unset token
     die "Couldn't mint a token for ${TAP_REPO} (the error above says why). Nothing was pushed. Fix it, then re-run" \
         "publish-homebrew."
 fi
-echo "::add-mask::${token}"
+# Checked before it's masked: ::add-mask:: masks one line, and the runner would print any other line of the value.
+# One line of token characters, or nothing of it is printed at all.
 if [[ ! "${token}" =~ ^[A-Za-z0-9_]+$ ]]; then
-    die "mint_token.py printed something that isn't a token. Nothing was pushed."
+    unset token
+    die "mint_token.py printed something other than one token on stdout. Nothing of it is printed, and nothing" \
+        "was pushed. Find what writes to its stdout (mint_token.py prints only the token), then re-run" \
+        "publish-homebrew."
 fi
+echo "::add-mask::${token}"
 export GH_TOKEN="${token}"
 unset token
 
@@ -227,11 +233,13 @@ if ! pr_versions="$(jq -r '.[] | select(.isCrossRepository | not) | .headRefName
     die "gh pr list printed something that isn't a list of pull requests. Re-run publish-homebrew."
 fi
 newer_prs=()
+older_prs=()
 while read -r pr_version; do
     [[ -n "${pr_version}" ]] || continue
-    if [[ "$(compare_versions "${pr_version}" "${VERSION}")" == 1 ]]; then
-        newer_prs+=("toolkit-${pr_version}")
-    fi
+    case "$(compare_versions "${pr_version}" "${VERSION}")" in
+        1) newer_prs+=("toolkit-${pr_version}") ;;
+        -1) older_prs+=("toolkit-${pr_version}") ;;
+    esac
 done <<< "${pr_versions}"
 if (( ${#newer_prs[@]} > 0 )); then
     echo "::notice::${TAP_REPO} has an open pull request for a newer release (${newer_prs[*]}). A formula only" \
@@ -314,4 +322,9 @@ fi
 echo "::notice::${action} ${pr_url}: ${title}"
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
     echo "${action} the formula pull request for ${VERSION}: ${pr_url}" >> "${GITHUB_STEP_SUMMARY}"
+fi
+# An older one can't merge after this one without a conflict on the same lines, but it stays open until closed.
+if (( ${#older_prs[@]} > 0 )); then
+    echo "::notice::${TAP_REPO} still has open pull requests for older releases (${older_prs[*]}). ${title}" \
+        "replaces them: close them without merging."
 fi

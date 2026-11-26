@@ -108,6 +108,10 @@ if [[ -e "${STUB_STATE}/fail-mint" ]]; then
         "the Sign operation." >&2
     exit 1
 fi
+# Something else on stdout before the token, as a library's print would put there.
+if [[ -e "${STUB_STATE}/mint-chatter" ]]; then
+    echo "some library chatter"
+fi
 printf '%s' "${STUB_TOKEN}"
 EOF
 
@@ -524,6 +528,34 @@ case_mint_fails() {
     expect_token_masked 0
 }
 
+case_mint_prints_more() {
+    make_tap 2.68.1 "${old_sha256}"
+    make_release 2.68.2
+    touch "${STUB_STATE}/mint-chatter"
+    publish 2.68.2
+    expect_status 1
+    expect_output "::error::mint_token.py printed something other than one token on stdout. Nothing of it is printed"
+    expect_no_branch toolkit-2.68.2
+    expect_minted 1
+    expect_gh 0 ""
+    # Not masked, because not printed: the token is nowhere in the output.
+    expect_token_masked 0
+}
+
+case_older_pr_open() {
+    make_tap 2.68.1 "${old_sha256}"
+    make_release 2.68.3
+    echo '[{"number": 7, "state": "OPEN", "headRefName": "toolkit-2.68.2", "isCrossRepository": false}]' \
+        > "${STUB_STATE}/prs.json"
+    publish 2.68.3
+    expect_status 0
+    expect_output "::notice::Opened https://github.com/infrahouse/homebrew-tap/pull/11: infrahouse-toolkit 2.68.3"
+    expect_output "::notice::infrahouse/homebrew-tap still has open pull requests for older releases (toolkit-2.68.2)."
+    expect_branch 2.68.3 "$(release_sha256 2.68.3)"
+    expect_gh 1 "pr create"
+    expect_token_masked 1
+}
+
 case_push_fails() {
     make_tap 2.68.1 "${old_sha256}"
     make_release 2.68.2
@@ -566,6 +598,7 @@ run_case already_at_version "the formula already at the version: a notice, no to
 run_case at_version_other_sha256 "the formula at the version with another sha256: red"
 run_case formula_ahead "the formula ahead (a re-run of an older release): a notice, no token"
 run_case newer_pr_open "a newer release's pull request open: a notice, no pull request"
+run_case older_pr_open "an older release's pull request open: this one opened, a notice to close the older one"
 run_case rerun_branch_and_pr_exist "a re-run, branch and pull request there: the pull request updated, no second"
 run_case rerun_after_main_moved "a re-run after the tap's main moved: the branch reset, the pull request updated"
 run_case branch_without_pr "a re-run after the pull request failed: the branch kept, the pull request opened"
@@ -576,6 +609,7 @@ run_case malformed_sha256 "a .sha256 that isn't one line for the tarball: red, n
 run_case diff_touches_another_line "an edit that touches another line: red, nothing pushed, no token"
 run_case formula_layout_changed "a formula with a second url (a resource block): red, no token"
 run_case mint_fails "the token mint failing: red, nothing pushed"
+run_case mint_prints_more "the mint printing a line before the token: red, the token printed nowhere"
 run_case push_fails "the push refused: red, no pull request"
 run_case pr_create_fails "the pull request refused: red"
 run_case credential_helper "git's credential helper answers with GH_TOKEN"

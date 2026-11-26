@@ -15,10 +15,25 @@ if ! python3 -I -c 'import sys; sys.exit(sys.version_info < (3, 12))'; then
     exit 1
 fi
 
-python3 -m venv "${venv}"
-"${venv}/bin/python" -I -m pip install --quiet --disable-pip-version-check --no-input \
-    --require-hashes --no-deps --only-binary :all: -r "${here}/requirements.lock"
-"${venv}/bin/python" -I -m pip check
-"${venv}/bin/python" -I -c "from infrahouse_core.github import GitHubAppTokenSource, KMSSigner"
+if ! python3 -m venv "${venv}"; then
+    echo "::error::$(command -v python3) couldn't make a virtualenv in ${venv} (the error above says why)."
+    exit 1
+fi
+if ! "${venv}/bin/python" -I -m pip install --quiet --disable-pip-version-check --no-input \
+        --require-hashes --no-deps --only-binary :all: -r "${here}/requirements.lock"; then
+    echo "::error::pip couldn't install packaging/homebrew/requirements.lock (the error above says why). If PyPI" \
+        "didn't answer, re-run the job. If a hash doesn't match or a wheel is missing, run make lock, check the" \
+        "change and commit it."
+    exit 1
+fi
+if ! "${venv}/bin/python" -I -m pip check; then
+    echo "::error::packaging/homebrew/requirements.lock is inconsistent (above). Run make lock and commit it."
+    exit 1
+fi
+if ! "${venv}/bin/python" -I -c "from infrahouse_core.github import GitHubAppTokenSource, KMSSigner"; then
+    echo "::error::The virtualenv's infrahouse-core has no GitHubAppTokenSource or KMSSigner: requirements.in" \
+        "must pin infrahouse-core 1.4 or later."
+    exit 1
+fi
 "${venv}/bin/python" -I -c "import sys; from importlib.metadata import version as v
 print('Python', sys.version.split()[0], '/ infrahouse-core', v('infrahouse-core'), '/ PyGithub', v('PyGithub'))"

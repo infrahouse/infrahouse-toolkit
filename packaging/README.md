@@ -236,7 +236,8 @@ credential follows the design document
 - **Only forward.** `open-formula-pr.sh` clones the tap and reads the formula's version from its `url`. If the formula
   is already at the release, or newer (a re-run of an older release), or the tap has an open pull request for a newer
   release, it stops with a notice, green, and opens nothing. A formula at the release with another `sha256` is an
-  error: it wouldn't install.
+  error: it wouldn't install. When it opens a pull request, a notice names any open one for an older release, to close
+  without merging.
 - **The change.** It changes `url` and `sha256`, and `version` if the formula has that line, then checks the diff:
   exactly those lines, and the new `url` is
   `https://github.com/infrahouse/infrahouse-toolkit/releases/download/v<version>/infrahouse-toolkit-<version>-macos-arm64.tar.gz`.
@@ -270,7 +271,8 @@ credential follows the design document
   `contents: write` and `pull_requests: write`. infrahouse-core 1.4 runs in a virtualenv of its own
   (`install-venv.sh`), from `packaging/homebrew/requirements.lock`: hash-pinned, wheels only, apart from the toolkit's
   own environment, which pins an older infrahouse-core. `open-formula-pr.sh` mints the token only once there is a
-  change to push, masks it at once, and uses it in that step only: `gh` reads it from `GH_TOKEN`, and `git` through a
+  change to push, checks it is one line of token characters (`::add-mask::` masks one line; anything else fails the
+  job and isn't printed), masks it, and uses it in that step only: `gh` reads it from `GH_TOKEN`, and `git` through a
   credential helper that reads the same variable. It's in no URL, argument, file, step output or `$GITHUB_ENV`.
 
 `make homebrew-test` runs both scripts against a local release and tap, with `gh` and the token stubbed
@@ -279,17 +281,18 @@ credential follows the design document
 
 #### Rotating the App's key
 
-An App can hold several keys at once, so a rotation has no downtime.
+An App can hold several keys at once, and the role can be granted two KMS keys, so a rotation never stops a release.
 
 1. On the App's settings page, generate a new private key.
 2. Import it into a **new** KMS key and check it, with the "GitHub App key in KMS" runbook
    ([terraform-aws-actions-runner#118](https://github.com/infrahouse/terraform-aws-actions-runner/pull/118), in the
    module's README once it merges). Delete the PEM.
-3. In `aws-control-493370826424`, replace the key ARN in the role's policy (`homebrew_tap_kms_key_arn`). Merge it;
-   its apply moves the grant.
+3. In `aws-control-493370826424`, add the new key's ARN to the role's policy next to the old one
+   (`aws_iam_role.infrahouse-toolkit-homebrew.tf`, `homebrew_tap_kms_key_arn`). Merge it; its apply grants both.
 4. In this repository, set `HOMEBREW_TAP_KMS_KEY_ARN` in `publish-homebrew` (`python-CD.yml`) to the new key. Merge it.
-   Don't release between steps 3 and 4: the role can't sign with the old key any more.
-5. On the App's settings page, delete the old key. Schedule the old KMS key's deletion.
+   The next release signs with the new key.
+5. In `aws-control-493370826424`, take the old key's ARN out of the role's policy. Merge it.
+6. On the App's settings page, delete the old key. Schedule the old KMS key's deletion.
 
 A KMS key that is lost or deleted can't be restored: generate a new App key and import it, as above.
 
