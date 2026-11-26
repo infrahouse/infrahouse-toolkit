@@ -9,7 +9,9 @@
 #
 # The macOS tarball, for the Homebrew formula, goes to the GitHub release instead (publish-macos), on the same
 # version bump. That job is independent of publish in both directions, so a macOS failure can't hold back the
-# fleet's release, and it doesn't depend on RELEASE_PACKAGE.
+# fleet's release, and it doesn't depend on RELEASE_PACKAGE. After it, publish-homebrew opens the pull request in
+# infrahouse/homebrew-tap that moves the formula to the release, as a GitHub App whose key is in KMS, through a
+# role that only its environment, homebrew-tap, can assume. Nothing needs publish-homebrew.
 ---
 name: Python Continuous Deployment
 
@@ -657,3 +659,75 @@ jobs:
                   tarball="infrahouse-toolkit-${VERSION}-macos-arm64.tar.gz"
                   gh release download "${tag}" --dir released --pattern "${tarball}" --pattern "${tarball}.sha256"
                   (cd released && sha256sum --check --strict "${tarball}.sha256")
+
+    # Opens the pull request in infrahouse/homebrew-tap that moves the formula to this release, or updates the one
+    # that is open, once publish-macos attached the tarball. It needs publish-macos, and nothing needs it: it can't
+    # hold back or change PyPI, the apt repositories or the tarball. The tap's CI ("infrahouse-toolkit formula")
+    # installs and tests the formula on the pull request, and Aleks merges it.
+    #
+    # It writes to the tap as the GitHub App infrahouse-homebrew-tap, installed there only. The App's private key is
+    # in KMS, and only HOMEBREW_TAP_ROLE_ARN may sign with it. That role trusts this repository's OIDC subject for the
+    # environment homebrew-tap, nothing else: only this job names the environment, which allows main only
+    # (github-control). The token is minted, masked and used in one step, down-scoped to contents and pull_requests
+    # write. See "How a release reaches the Homebrew formula" in packaging/README.md.
+    publish-homebrew:
+        name: "Open the formula pull request in the Homebrew tap"
+        needs: [plan, publish-macos]
+        if: >-
+            github.ref == 'refs/heads/main'
+            && needs.plan.outputs.bumped == 'true'
+            && needs.publish-macos.result == 'success'
+        runs-on: ubuntu-24.04
+        timeout-minutes: 15
+        # The OIDC subject is repo:infrahouse/infrahouse-toolkit:environment:homebrew-tap, the one the role trusts.
+        environment: homebrew-tap
+        # One at a time, so two runs can't both push toolkit-<version> or both open its pull request. A running one is
+        # never cancelled.
+        concurrency:
+            group: homebrew-tap-formula
+            cancel-in-progress: false
+        permissions:
+            contents: read  # actions/checkout
+            id-token: write  # aws-actions/configure-aws-credentials
+        env:
+            VERSION: ${{ needs.plan.outputs.version }}
+            # Not secrets (IH-190): the App, the KMS key that holds its private key, and the only role that may sign
+            # with it (aws-control-493370826424).
+            HOMEBREW_TAP_APP_ID: "5944221"
+            HOMEBREW_TAP_KMS_KEY_ARN: "arn:aws:kms:us-west-1:493370826424:key/ed26150d-e589-4cd1-8d4d-26ec30f0c709"
+            HOMEBREW_TAP_ROLE_ARN: "arn:aws:iam::493370826424:role/ih-tf-infrahouse-toolkit-homebrew"
+        steps:
+            - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5.0.1
+              with:
+                  # Nothing here pushes to this repository, so its token stays out of .git/config.
+                  persist-credentials: false
+
+            # The formula gets the checksum of the file users download, not this run's build.
+            - name: Check the release's tarball against its .sha256
+              id: release
+              run: packaging/homebrew/check-release.sh
+
+            - name: Install infrahouse-core for the token, in a virtualenv of its own
+              run: packaging/homebrew/install-venv.sh "${RUNNER_TEMP}/homebrew-token"
+
+            - name: Assume the role that may sign as the App
+              id: aws
+              uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd  # v6.3.0
+              with:
+                  role-to-assume: ${{ env.HOMEBREW_TAP_ROLE_ARN }}
+                  role-session-name: github-action-infrahouse-toolkit-publish-homebrew
+                  aws-region: us-west-1
+
+            - name: Explain a refused role
+              if: failure() && steps.aws.outcome == 'failure'
+              run: |
+                  echo "::error::Couldn't assume ${HOMEBREW_TAP_ROLE_ARN}. It trusts only the OIDC subject" \
+                      "repo:infrahouse/infrahouse-toolkit:environment:homebrew-tap: check that" \
+                      "aws-control-493370826424 created it, then re-run publish-homebrew."
+
+            # One script: the token is minted, masked and used here, and nowhere else.
+            - name: Open or update the formula pull request
+              env:
+                  TARBALL_SHA256: ${{ steps.release.outputs.sha256 }}
+                  HOMEBREW_TOKEN_PYTHON: ${{ runner.temp }}/homebrew-token/bin/python
+              run: packaging/homebrew/open-formula-pr.sh
