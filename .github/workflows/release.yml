@@ -1,4 +1,7 @@
 ---
+# Creates the GitHub release when a tag is pushed: make release-* pushes v<version> after the version bump on main.
+# The job's own GITHUB_TOKEN creates it. No workflow starts on the release event: publish-macos (python-CD.yml)
+# waits for the release by polling it, and then publish-homebrew opens the formula pull request in the tap.
 # Credit: https://stackoverflow.com/a/75679739/3209896
 name: "Create release"
 
@@ -8,7 +11,7 @@ on:  # yamllint disable-line rule:truthy
             - "*"
 
 permissions:
-    contents: write
+    contents: write  # gh release create
 
 jobs:
     release:
@@ -17,7 +20,7 @@ jobs:
         steps:
             - name: "Create release"
               env:
-                  GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+                  GITHUB_TOKEN: ${{ github.token }}
                   tag: ${{ github.ref_name }}
               run: |
                   gh release create "$tag" \
