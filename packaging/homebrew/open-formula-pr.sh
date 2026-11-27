@@ -206,18 +206,27 @@ if [[ ! -x "${HOMEBREW_TOKEN_PYTHON:-}" ]]; then
     die "HOMEBREW_TOKEN_PYTHON is '${HOMEBREW_TOKEN_PYTHON:-}', not a Python. publish-homebrew sets it to the" \
         "virtualenv that install-venv.sh makes."
 fi
-if ! token="$("${HOMEBREW_TOKEN_PYTHON}" -I "${script_dir}/mint_token.py")"; then
+# The "." is stripped below. It keeps a newline at the end of the output, which $(...) alone would drop, for the
+# check to see.
+if ! token="$("${HOMEBREW_TOKEN_PYTHON}" -I "${script_dir}/mint_token.py" && echo .)"; then
     unset token
     die "Couldn't mint a token for ${TAP_REPO} (the error above says why). Nothing was pushed. Fix it, then re-run" \
         "publish-homebrew."
 fi
+token="${token%.}"
 # Checked before it's masked: ::add-mask:: masks one line, and the runner would print any other line of the value.
-# One line of token characters, or nothing of it is printed at all.
-if [[ ! "${token}" =~ ^[A-Za-z0-9_]+$ ]]; then
+# An installation token starts with ghs_. Since GitHub's stateless tokens (2026) it is ghs_<App ID>_<JWT>, about
+# 520 characters, opaque, with '.' and '-' from the JWT; a legacy one is ghs_ and 36 characters. So the pattern takes
+# ghs_ and at least 36 token characters, with no upper bound, and doesn't parse the JWT. Under bash's =~ (POSIX ERE)
+# '.' and '-' are literal in the bracket ('-' because it's last), the bracket has no whitespace, and ^ and $ are the
+# ends of the whole value, not of a line. So a second line, a newline at the end, a space, empty output and anything
+# before or after the token fail: the value masked is one line, or nothing of it is printed at all.
+token_pattern='^ghs_[A-Za-z0-9._-]{36,}$'
+if [[ ! "${token}" =~ ${token_pattern} ]]; then
     unset token
-    die "mint_token.py printed something other than one token on stdout. Nothing of it is printed, and nothing" \
-        "was pushed. Find what writes to its stdout (mint_token.py prints only the token), then re-run" \
-        "publish-homebrew."
+    die "mint_token.py printed something other than one token on stdout: expected one line, ghs_ then 36 or more" \
+        "letters, digits, '.', '_' or '-', with no newline. Nothing of it is printed, and nothing was pushed. Find" \
+        "what writes to its stdout (mint_token.py prints only the token), then re-run publish-homebrew."
 fi
 echo "::add-mask::${token}"
 export GH_TOKEN="${token}"
