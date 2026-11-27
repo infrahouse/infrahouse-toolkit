@@ -272,9 +272,15 @@ credential follows the design document
   `contents: write` and `pull_requests: write`. infrahouse-core 1.4 runs in a virtualenv of its own
   (`install-venv.sh`), from `packaging/homebrew/requirements.lock`: hash-pinned, wheels only, apart from the toolkit's
   own environment, which pins an older infrahouse-core. `open-formula-pr.sh` mints the token only once there is a
-  change to push, checks it is one line of token characters (`::add-mask::` masks one line; anything else fails the
-  job and isn't printed), masks it, and uses it in that step only: `gh` reads it from `GH_TOKEN`, and `git` through a
-  credential helper that reads the same variable. It's in no URL, argument, file, step output or `$GITHUB_ENV`.
+  change to push, checks that `mint_token.py`'s stdout is one line, `ghs_` then token characters (`::add-mask::` masks
+  one line; anything else, even a newline at the end, fails the job and isn't printed), masks it, and uses it in that
+  step only: `gh` reads it from `GH_TOKEN`, and `git` through a credential helper that reads the same variable. It's
+  in no URL, argument, file, step output or `$GITHUB_ENV`.
+- **The token's format.** Installation tokens are opaque and about 520 characters long since GitHub's
+  [stateless installation tokens](https://github.blog/changelog/2026-10-02-stateless-github-app-installation-tokens-rolled-out/)
+  (rolled out April to October 2026): `ghs_<App ID>_<JWT>`, with `.` and `-` besides letters, digits and `_`. The
+  check takes `^ghs_[A-Za-z0-9._-]{36,}$`: the prefix and at least a legacy token's 36 characters, with no upper
+  bound, and it doesn't parse the JWT. A legacy 40-character token still passes.
 
 `make homebrew-test` runs both scripts against a local release and tap, with `gh` and the token stubbed
 (`packaging/homebrew/test.sh`); CI runs it on every pull request. `make lock` regenerates
@@ -312,6 +318,10 @@ re-run the failed jobs: a re-run is safe, and updates the same pull request.
   role's trust must match).
 - **KMS refused to sign:** the alias in `HOMEBREW_TAP_KMS_ALIAS_ARN` doesn't exist (the aws-control apply creates
   it), the role's policy doesn't name the key the alias points to, or the key is disabled or pending deletion.
+- **mint_token.py printed something other than one token:** something besides `mint_token.py` writes to its stdout
+  (a library's `print`, a newline after the token), or GitHub's token format moved outside the check (see "The
+  token's format" above). Nothing of it is printed. Find what writes there and fix it, or widen the check and its
+  tests in `test.sh`. A fix in this repository needs a new release: a re-run runs the release's own scripts.
 - **GitHub refused the JWT (401):** the key in KMS is no longer one of the App's keys: rotate it, as above.
   **GitHub refused the token (422) or there's no installation:** the App lacks Contents or Pull requests write, or
   isn't installed on `infrahouse/homebrew-tap`.

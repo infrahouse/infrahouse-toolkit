@@ -15,8 +15,20 @@ here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root="$(mktemp -d)"
 trap 'rm -rf "${root}"' EXIT
 
-# Shaped like an installation token.
-export STUB_TOKEN="ghs_stubToken0123456789ABCDEFGHIJKLMNOPQRSTUV"
+# Shaped like a stateless installation token, GitHub's format since 2026: ghs_<App ID>_<JWT>, 524 characters, with
+# '.' between the JWT's parts and '-' and '_' in its base64url, outside the legacy token's [A-Za-z0-9_]. The payload
+# is {"stub":"packaging/homebrew/test.sh","iss":"5944221","iat":1764201600,"exp":1764205200,"perm":"cw"}; the
+# signature is random bytes. Every case mints it, unless it sets STUB_TOKEN to another.
+stub_jwt_header="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9"
+stub_jwt_payload="eyJzdHViIjoicGFja2FnaW5nL2hvbWVicmV3L3Rlc3Quc2giLCJpc3MiOiI1OTQ0MjIxIiwiaWF0IjoxNzY0MjAx"
+stub_jwt_payload+="NjAwLCJleHAiOjE3NjQyMDUyMDAsInBlcm0iOiJjdyJ9"
+stub_jwt_signature="EHWFYdI1Ttt4Q0lnkd-655wuvDsr3KFPf3DjYxKDZXIIR6ALD1GUszrw3nP0h2TfBRLTZ8LKVPOXYDhvWnwhN9ezvxE6Uj2k"
+stub_jwt_signature+="iXnBKCkGD5oQn1eTertB3hlxMIREApfqXIWC4U3m_ZMeds81cX4fnwbOgpMDIHuZU-3xeqmF2suIOZcKcfpJMafQeRIHdfa"
+stub_jwt_signature+="ZgTaQ_0IgeNRdyEPPq7TylOC7oIVW9IGXmIw7-n8H9miQBjgQafJ3lEXyajczaTi_3cm37cYxxm8tHqMHSyUvLHovtgcusFKW"
+stub_jwt_signature+="KIQ2mWHTJPhn7pm-5-LUUUZUGkSSx6QaL5PKpLPdWl9GbKihm3r9Wg"
+readonly STATELESS_TOKEN="ghs_5944221_${stub_jwt_header}.${stub_jwt_payload}.${stub_jwt_signature}"
+# Shaped like a legacy installation token: ghs_ and 36 characters.
+readonly LEGACY_TOKEN="ghs_legacyStubToken0123456789ABCDEFGHIJK"
 readonly APP_AUTHOR="infrahouse-homebrew-tap[bot] <361738287+infrahouse-homebrew-tap[bot]@users.noreply.github.com>"
 readonly DOWNLOAD="https://github.com/infrahouse/infrahouse-toolkit/releases/download"
 SED="$(command -v sed)"
@@ -97,7 +109,9 @@ case "${command}" in
 esac
 EOF
 
-# The token's Python, stubbed: open-formula-pr.sh runs it as <python> -I mint_token.py.
+# The token's Python, stubbed: open-formula-pr.sh runs it as <python> -I mint_token.py. It prints the token as
+# mint_token.py does, one line without a newline, or, as $STUB_STATE/mint-output says, what a stray print would
+# make of it.
 cat > "${root}/bin/token-python" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -108,11 +122,19 @@ if [[ -e "${STUB_STATE}/fail-mint" ]]; then
         "the Sign operation." >&2
     exit 1
 fi
-# Something else on stdout before the token, as a library's print would put there.
-if [[ -e "${STUB_STATE}/mint-chatter" ]]; then
-    echo "some library chatter"
-fi
-printf '%s' "${STUB_TOKEN}"
+output=token
+[[ ! -e "${STUB_STATE}/mint-output" ]] || output="$(cat "${STUB_STATE}/mint-output")"
+case "${output}" in
+    token) printf '%s' "${STUB_TOKEN}" ;;
+    line-before) printf 'some library chatter\n%s' "${STUB_TOKEN}" ;;
+    line-after) printf '%s\nsome library chatter' "${STUB_TOKEN}" ;;
+    trailing-newline) printf '%s\n' "${STUB_TOKEN}" ;;
+    trailing-space) printf '%s ' "${STUB_TOKEN}" ;;
+    empty) ;;
+    no-prefix) printf '%s' "${STUB_TOKEN#ghs_}" ;;
+    too-short) printf '%s' "${STUB_TOKEN:0:39}" ;;
+    *) echo "token stub: mint-output is ${output}" >&2; exit 2 ;;
+esac
 EOF
 
 # A sed that also changes another line of the formula, for the case where the edit would touch one.
@@ -247,14 +269,15 @@ expect_output() {
     grep -qF -- "$1" "${case_dir}/output" || fail "no '$1' in the output"
 }
 
-# The token appears only in ::add-mask:: lines, and in exactly $1 of them.
+# The token appears only in ::add-mask:: lines, whole, and in exactly $1 of them. What follows its ghs_ is the needle,
+# so that the token without its prefix counts too.
 expect_token_masked() {
     local masks leaks
     masks="$(grep -cxF "::add-mask::${STUB_TOKEN}" "${case_dir}/output" || true)"
-    leaks="$(grep -F "${STUB_TOKEN}" "${case_dir}/output" | grep -vxF "::add-mask::${STUB_TOKEN}" || true)"
+    leaks="$(grep -F "${STUB_TOKEN#ghs_}" "${case_dir}/output" | grep -vxF "::add-mask::${STUB_TOKEN}" || true)"
     [[ "${masks}" == "$1" ]] || fail "${masks} ::add-mask:: lines for the token, expected $1"
     [[ -z "${leaks}" ]] || fail "the token is in the output outside ::add-mask::: ${leaks}"
-    if [[ -e "${STUB_STATE}/gh.log" ]] && grep -qF "${STUB_TOKEN}" "${STUB_STATE}/gh.log"; then
+    if [[ -e "${STUB_STATE}/gh.log" ]] && grep -qF "${STUB_TOKEN#ghs_}" "${STUB_STATE}/gh.log"; then
         fail "the token was an argument of gh"
     fi
 }
@@ -309,7 +332,7 @@ expect_branch() {
 run_case() {
     case_dir="${root}/cases/$1"
     STUB_STATE="${case_dir}/state"
-    export STUB_STATE
+    export STUB_STATE STUB_TOKEN="${STATELESS_TOKEN}"
     mkdir -p "${STUB_STATE}"
     echo "[]" > "${STUB_STATE}/prs.json"
     : > "${case_dir}/output"
@@ -340,6 +363,41 @@ case_new_version() {
     grep -qxF "infrahouse-toolkit 2.68.2" "${STUB_STATE}/title" || fail "the title isn't 'infrahouse-toolkit 2.68.2'"
     grep -qF "/releases/tag/v2.68.2" "${STUB_STATE}/body" || fail "the body doesn't link the release"
     grep -qF "/actions/runs/1234/attempts/1" "${STUB_STATE}/body" || fail "the body doesn't link the CD run"
+}
+
+case_legacy_token() {
+    STUB_TOKEN="${LEGACY_TOKEN}"
+    make_tap 2.68.1 "${old_sha256}"
+    make_release 2.68.2
+    publish 2.68.2
+    expect_status 0
+    expect_output "::notice::Opened https://github.com/infrahouse/homebrew-tap/pull/10: infrahouse-toolkit 2.68.2"
+    expect_branch 2.68.2 "$(release_sha256 2.68.2)"
+    expect_minted 1
+    expect_gh 1 "pr create"
+    expect_token_masked 1
+}
+
+# The whole token is masked, in one ::add-mask:: line, and it is nowhere else: not in the rest of the output, gh's
+# arguments, the pull request, the step summary, the step outputs or the tap.
+case_token_masked() {
+    make_tap 2.68.1 "${old_sha256}"
+    make_release 2.68.2
+    publish 2.68.2
+    expect_status 0
+    expect_token_masked 1
+    local masks where
+    masks="$(grep '^::add-mask::' "${case_dir}/output" || true)"
+    [[ "${masks}" == "::add-mask::${STUB_TOKEN}" ]] || fail "the ::add-mask:: lines aren't one with the whole token"
+    for where in "${STUB_STATE}/title" "${STUB_STATE}/body" "${case_dir}/summary" "${case_dir}/github_output"; do
+        if grep -qF "${STUB_TOKEN#ghs_}" "${where}"; then
+            fail "the token is in ${where#"${case_dir}/"}"
+        fi
+    done
+    if git --git-dir="${TAP}" log --all --format=fuller -p | grep -qF "${STUB_TOKEN#ghs_}"; then
+        fail "the token is in the tap's history"
+    fi
+    echo "::add-mask:: has the whole token (${#STUB_TOKEN} characters), and it is nowhere else" >> "${case_dir}/output"
 }
 
 case_version_line() {
@@ -528,19 +586,35 @@ case_mint_fails() {
     expect_token_masked 0
 }
 
-case_mint_prints_more() {
+# The job with the token's Python printing $1 (a mint-output of its stub) instead of one token: red, and nothing of
+# what it printed is in the output, neither the token nor the chatter. Nothing is masked, because nothing is printed.
+mint_output_refused() {
     make_tap 2.68.1 "${old_sha256}"
     make_release 2.68.2
-    touch "${STUB_STATE}/mint-chatter"
+    echo "$1" > "${STUB_STATE}/mint-output"
     publish 2.68.2
     expect_status 1
-    expect_output "::error::mint_token.py printed something other than one token on stdout. Nothing of it is printed"
+    expect_output "::error::mint_token.py printed something other than one token on stdout: expected one line, ghs_"
     expect_no_branch toolkit-2.68.2
     expect_minted 1
     expect_gh 0 ""
-    # Not masked, because not printed: the token is nowhere in the output.
     expect_token_masked 0
+    if grep -q '^::add-mask::' "${case_dir}/output"; then
+        fail "$(grep -c '^::add-mask::' "${case_dir}/output") ::add-mask:: lines, expected none"
+    fi
+    # Every output of the stub but the empty one has the 35 characters after ghs_, the too-short one too.
+    if grep -qF -e "${STUB_TOKEN:4:35}" -e "library chatter" "${case_dir}/output"; then
+        fail "what the token's Python printed is in the output"
+    fi
 }
+
+case_mint_line_before() { mint_output_refused line-before; }
+case_mint_line_after() { mint_output_refused line-after; }
+case_mint_trailing_newline() { mint_output_refused trailing-newline; }
+case_mint_trailing_space() { mint_output_refused trailing-space; }
+case_mint_empty() { mint_output_refused empty; }
+case_mint_no_prefix() { mint_output_refused no-prefix; }
+case_mint_too_short() { mint_output_refused too-short; }
 
 case_older_pr_open() {
     make_tap 2.68.1 "${old_sha256}"
@@ -592,7 +666,9 @@ case_credential_helper() {
     echo "git credential fill: username=x-access-token, password=GH_TOKEN" >> "${case_dir}/output"
 }
 
-run_case new_version "a new version: branch, commit by the App, pull request"
+run_case new_version "a new version, a stateless token: branch, commit by the App, pull request"
+run_case legacy_token "a new version, a legacy 40-character token: the pull request opened"
+run_case token_masked "the whole stateless token in one ::add-mask:: line, and nowhere else"
 run_case version_line "a formula with a version line: url, sha256 and version change"
 run_case already_at_version "the formula already at the version: a notice, no token"
 run_case at_version_other_sha256 "the formula at the version with another sha256: red"
@@ -609,7 +685,13 @@ run_case malformed_sha256 "a .sha256 that isn't one line for the tarball: red, n
 run_case diff_touches_another_line "an edit that touches another line: red, nothing pushed, no token"
 run_case formula_layout_changed "a formula with a second url (a resource block): red, no token"
 run_case mint_fails "the token mint failing: red, nothing pushed"
-run_case mint_prints_more "the mint printing a line before the token: red, the token printed nowhere"
+run_case mint_line_before "the mint printing a line before the token: red, nothing of it printed"
+run_case mint_line_after "the mint printing a line after the token: red, nothing of it printed"
+run_case mint_trailing_newline "the mint printing the token and a newline (a stray print): red, nothing of it printed"
+run_case mint_trailing_space "the mint printing the token and a space: red, nothing of it printed"
+run_case mint_empty "the mint printing nothing: red, nothing masked"
+run_case mint_no_prefix "the mint printing the token without its ghs_: red, nothing of it printed"
+run_case mint_too_short "the mint printing ghs_ and 35 characters: red, nothing of it printed"
 run_case push_fails "the push refused: red, no pull request"
 run_case pr_create_fails "the pull request refused: red"
 run_case credential_helper "git's credential helper answers with GH_TOKEN"
