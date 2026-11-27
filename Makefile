@@ -21,7 +21,6 @@ endef
 export PRINT_HELP_PYSCRIPT
 
 BROWSER := python -c "$$BROWSER_PYSCRIPT"
-OS_VERSION ?= jammy
 # The Ubuntu release that package-smoke-test installs the standalone package on.
 STANDALONE_OS_VERSION ?= noble
 # Python files outside the infrahouse_toolkit package that the linters check.
@@ -96,7 +95,6 @@ clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and 
 clean-build:
 	rm -fr build/
 	rm -fr dist/
-	rm -fr omnibus-infrahouse-toolkit/pkg/
 	rm -fr .eggs/
 	find . -name '*.egg-info' -exec rm -fr {} +
 	find . -name '*.egg' -exec rm -f {} +
@@ -247,15 +245,6 @@ release-minor: ## Release a minor version (x.MINOR.0)
 release-major: ## Release a major version (MAJOR.0.0)
 	$(call do_release,major)
 
-
-.PHONY: package
-package:
-	docker run \
-	-v ${PWD}:/infrahouse-toolkit \
-	--name infrahouse-toolkit-builder \
-	--rm \
-	"twindb/omnibus-ubuntu:${OS_VERSION}-${ARCH}" \
-	bash -l /infrahouse-toolkit/omnibus-infrahouse-toolkit/omnibus_build.sh
 
 # uv keeps the versions already pinned in requirements.lock while they satisfy requirements.txt,
 # so this changes the lock only when requirements.txt does. CI fails when it would.

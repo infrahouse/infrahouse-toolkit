@@ -103,7 +103,7 @@ echo "==> Generating bash completion"
 STAGE_DIR="packaging/.stage"
 rm -rf "${STAGE_DIR}"
 mkdir -p "${STAGE_DIR}/etc/bash_completion.d"
-"${PYTHON}" omnibus-infrahouse-toolkit/update_bash_completion.py >/dev/null
+"${PYTHON}" packaging/update_bash_completion.py >/dev/null
 mv /tmp/infrahouse-completion "${STAGE_DIR}/etc/bash_completion.d/infrahouse-completion"
 
 echo "==> Building the Debian package"
