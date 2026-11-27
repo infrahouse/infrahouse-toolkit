@@ -253,12 +253,12 @@ credential follows the design document
 - **The App** is `infrahouse-homebrew-tap` (App ID 5944221, client ID `Iv23lilC1EyHKXYysFqn`), installed on
   `infrahouse/homebrew-tap` only, with Contents and Pull requests read and write, and Metadata read. An App token
   starts the tap's CI on the pull request; a `GITHUB_TOKEN` one wouldn't, and couldn't write to the tap anyway.
-- **The key** is the App's private key, imported into a KMS key (`RSA_2048`, `SIGN_VERIFY`, origin `EXTERNAL`, KMS's
-  default key policy, which delegates to IAM). It can't be exported, and the PEM is deleted: the key is in no secret,
-  file, Terraform state or log. Whoever may call `kms:Sign` on it has the App's full power on the tap.
-  `publish-homebrew` names it by its alias, `alias/github-app-infrahouse-homebrew-tap`. `aws-control-493370826424`
-  looks the key up by its ID and points the alias at it, and its plan fails if the ID names no key, or a key that
-  isn't an imported RSA signing key.
+- **The key** is the KMS key `aws_kms_external_key.homebrew_tap_app` in `aws-control-493370826424` (`RSA_2048`,
+  `SIGN_VERIFY`, origin `EXTERNAL`, KMS's default key policy, which delegates to IAM), with the alias
+  `alias/github-app-infrahouse-homebrew-tap` and the tag `github_app = infrahouse-homebrew-tap`. `publish-homebrew`
+  names it by the alias. The App's private key was imported into it by hand: the AWS provider can't import an RSA
+  private key. It can't be exported, and the PEM is deleted. Whoever may call `kms:Sign` on it has the App's full
+  power on the tap.
 - **The role** `ih-tf-infrahouse-toolkit-homebrew`, in `aws-control-493370826424`, is the only principal with
   `kms:Sign` on the key, with `kms:SigningAlgorithm = RSASSA_PKCS1_V1_5_SHA_256`, and it has no other permission. It
   trusts GitHub's OIDC provider only for the subject
@@ -286,13 +286,16 @@ An App can hold several keys at once, and `publish-homebrew` signs through the a
 this repository.
 
 1. On the App's settings page, generate a new private key.
-2. Import it into a **new** KMS key and check it, with the "GitHub App key in KMS" runbook
+2. In `aws-control-493370826424`, add a second `aws_kms_external_key` next to `homebrew_tap_app`
+   (`aws_kms_external_key.homebrew-tap-app.tf`), with `key_spec = "RSA_2048"`, the same other arguments, and no
+   `import` block. Merge it: its apply creates the key, waiting for its material.
+3. Import the new App key into it and check it, with the "GitHub App key in KMS" runbook
    ([terraform-aws-actions-runner#118](https://github.com/infrahouse/terraform-aws-actions-runner/pull/118), in the
-   module's README once it merges). Delete the PEM.
-3. In `aws-control-493370826424`, set `key_id` of `data.aws_kms_key.homebrew_tap_app` to the new key's ID
-   (`aws_iam_role.infrahouse-toolkit-homebrew.tf`); the plan fails if it's wrong. Merge it: its apply moves the alias
-   and the role's grant to the new key. A release that signs during the apply may fail: re-run it.
-4. On the App's settings page, delete the old key. Schedule the old KMS key's deletion.
+   module's README once it merges), from its import step on. Delete the PEM.
+4. In `aws-control-493370826424`, point the alias and the role's grant at the new key, and delete the old key's
+   resource. Merge it: its apply moves the alias and the grant, and schedules the old KMS key's deletion in 30 days.
+   A release that signs during the apply may fail: re-run it.
+5. On the App's settings page, delete the old key.
 
 A KMS key that is lost or deleted can't be restored: generate a new App key and import it, as above.
 
