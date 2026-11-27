@@ -3,6 +3,9 @@ line-length = 120
 
 [tool.isort]
 profile = "black"
+# The modules `make test-integration` downloads into tests/integration/terraform/.terraform have Python files of
+# their own. black skips them because they're in .gitignore; isort doesn't read .gitignore.
+extend_skip = [".terraform"]
 
 [tool.pytest.ini_options]
 # A bare `pytest`, as tox runs it, collects what `make test` does. tests/integration deploys to AWS, from a
