@@ -224,7 +224,7 @@ publish() {
         && VERSION="$1" TARBALL_SHA256="$("${SED}" -n 's/^sha256=//p' "${output}")" \
             TAP_GIT_URL="file://${TAP}" HOMEBREW_TOKEN_PYTHON="${root}/bin/token-python" \
             HOMEBREW_TAP_APP_ID=5944221 \
-            HOMEBREW_TAP_KMS_KEY_ARN="arn:aws:kms:us-west-1:493370826424:key/ed26150d-e589-4cd1-8d4d-26ec30f0c709" \
+            HOMEBREW_TAP_KMS_ALIAS_ARN="arn:aws:kms:us-west-1:493370826424:alias/github-app-infrahouse-homebrew-tap" \
             GITHUB_SERVER_URL=https://github.com GITHUB_REPOSITORY=infrahouse/infrahouse-toolkit \
             GITHUB_RUN_ID=1234 GITHUB_RUN_ATTEMPT=1 GITHUB_STEP_SUMMARY="${case_dir}/summary" \
             PATH="${2:+$2:}${PATH}" \

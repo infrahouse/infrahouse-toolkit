@@ -253,11 +253,12 @@ credential follows the design document
 - **The App** is `infrahouse-homebrew-tap` (App ID 5944221, client ID `Iv23lilC1EyHKXYysFqn`), installed on
   `infrahouse/homebrew-tap` only, with Contents and Pull requests read and write, and Metadata read. An App token
   starts the tap's CI on the pull request; a `GITHUB_TOKEN` one wouldn't, and couldn't write to the tap anyway.
-- **The key** is the App's private key, imported into the KMS key
-  `arn:aws:kms:us-west-1:493370826424:key/ed26150d-e589-4cd1-8d4d-26ec30f0c709` (`RSA_2048`, `SIGN_VERIFY`, origin
-  `EXTERNAL`, KMS's default key policy, which delegates to IAM). It can't be exported, and the PEM is deleted: the
-  key is in no secret, file, Terraform state or log. Whoever may call `kms:Sign` on it has the App's full power on the
-  tap.
+- **The key** is the App's private key, imported into a KMS key (`RSA_2048`, `SIGN_VERIFY`, origin `EXTERNAL`, KMS's
+  default key policy, which delegates to IAM). It can't be exported, and the PEM is deleted: the key is in no secret,
+  file, Terraform state or log. Whoever may call `kms:Sign` on it has the App's full power on the tap.
+  `publish-homebrew` names it by its alias, `alias/github-app-infrahouse-homebrew-tap`. `aws-control-493370826424`
+  looks the key up by its ID and points the alias at it, and its plan fails if the ID names no key, or a key that
+  isn't an imported RSA signing key.
 - **The role** `ih-tf-infrahouse-toolkit-homebrew`, in `aws-control-493370826424`, is the only principal with
   `kms:Sign` on the key, with `kms:SigningAlgorithm = RSASSA_PKCS1_V1_5_SHA_256`, and it has no other permission. It
   trusts GitHub's OIDC provider only for the subject
@@ -281,18 +282,17 @@ credential follows the design document
 
 #### Rotating the App's key
 
-An App can hold several keys at once, and the role can be granted two KMS keys, so a rotation never stops a release.
+An App can hold several keys at once, and `publish-homebrew` signs through the alias, so a rotation changes nothing in
+this repository.
 
 1. On the App's settings page, generate a new private key.
 2. Import it into a **new** KMS key and check it, with the "GitHub App key in KMS" runbook
    ([terraform-aws-actions-runner#118](https://github.com/infrahouse/terraform-aws-actions-runner/pull/118), in the
    module's README once it merges). Delete the PEM.
-3. In `aws-control-493370826424`, add the new key's ARN to the role's policy next to the old one
-   (`aws_iam_role.infrahouse-toolkit-homebrew.tf`, `homebrew_tap_kms_key_arn`). Merge it; its apply grants both.
-4. In this repository, set `HOMEBREW_TAP_KMS_KEY_ARN` in `publish-homebrew` (`python-CD.yml`) to the new key. Merge it.
-   The next release signs with the new key.
-5. In `aws-control-493370826424`, take the old key's ARN out of the role's policy. Merge it.
-6. On the App's settings page, delete the old key. Schedule the old KMS key's deletion.
+3. In `aws-control-493370826424`, set `key_id` of `data.aws_kms_key.homebrew_tap_app` to the new key's ID
+   (`aws_iam_role.infrahouse-toolkit-homebrew.tf`); the plan fails if it's wrong. Merge it: its apply moves the alias
+   and the role's grant to the new key. A release that signs during the apply may fail: re-run it.
+4. On the App's settings page, delete the old key. Schedule the old KMS key's deletion.
 
 A KMS key that is lost or deleted can't be restored: generate a new App key and import it, as above.
 
@@ -306,8 +306,8 @@ re-run the failed jobs: a re-run is safe, and updates the same pull request.
 - **Couldn't assume the role:** the role doesn't exist yet (merge the aws-control PR first), or the job's OIDC subject
   isn't `repo:infrahouse/infrahouse-toolkit:environment:homebrew-tap` (the environment's name in the job and in the
   role's trust must match).
-- **KMS refused to sign:** the role's policy doesn't name the key in `HOMEBREW_TAP_KMS_KEY_ARN`, or the key is
-  disabled or pending deletion.
+- **KMS refused to sign:** the alias in `HOMEBREW_TAP_KMS_ALIAS_ARN` doesn't exist (the aws-control apply creates
+  it), the role's policy doesn't name the key the alias points to, or the key is disabled or pending deletion.
 - **GitHub refused the JWT (401):** the key in KMS is no longer one of the App's keys: rotate it, as above.
   **GitHub refused the token (422) or there's no installation:** the App lacks Contents or Pull requests write, or
   isn't installed on `infrahouse/homebrew-tap`.

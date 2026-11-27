@@ -691,10 +691,10 @@ jobs:
             id-token: write  # aws-actions/configure-aws-credentials
         env:
             VERSION: ${{ needs.plan.outputs.version }}
-            # Not secrets (IH-190): the App, the KMS key that holds its private key, and the only role that may sign
-            # with it (aws-control-493370826424).
+            # Not secrets (IH-190): the App, the alias of the KMS key that holds its private key, and the only role
+            # that may sign with it (aws-control-493370826424).
             HOMEBREW_TAP_APP_ID: "5944221"
-            HOMEBREW_TAP_KMS_KEY_ARN: "arn:aws:kms:us-west-1:493370826424:key/ed26150d-e589-4cd1-8d4d-26ec30f0c709"
+            HOMEBREW_TAP_KMS_ALIAS_ARN: "arn:aws:kms:us-west-1:493370826424:alias/github-app-infrahouse-homebrew-tap"
             HOMEBREW_TAP_ROLE_ARN: "arn:aws:iam::493370826424:role/ih-tf-infrahouse-toolkit-homebrew"
         steps:
             - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5.0.1

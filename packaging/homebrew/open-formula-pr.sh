@@ -19,7 +19,7 @@
 # - VERSION: the release, X.Y.Z.
 # - TARBALL_SHA256: the release's checksum, from check-release.sh.
 # - HOMEBREW_TOKEN_PYTHON: the Python of the virtualenv with infrahouse-core 1.4 (install-venv.sh).
-# - HOMEBREW_TAP_APP_ID and HOMEBREW_TAP_KMS_KEY_ARN: for mint_token.py.
+# - HOMEBREW_TAP_APP_ID and HOMEBREW_TAP_KMS_ALIAS_ARN: for mint_token.py.
 # - GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_RUN_ID, GITHUB_RUN_ATTEMPT: the run's link in the pull request.
 # - GITHUB_STEP_SUMMARY (optional).
 # - TAP_GIT_URL replaces https://github.com/infrahouse/homebrew-tap.git for the tests (test.sh) only.
