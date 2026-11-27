@@ -25,6 +25,9 @@ BROWSER := python -c "$$BROWSER_PYSCRIPT"
 STANDALONE_OS_VERSION ?= noble
 # Python files outside the infrahouse_toolkit package that the linters check.
 TOOLING_PY := setup.py packaging/smoke_test.py scripts
+# The integration test. black and isort check it; pylint doesn't, like every test (.pylintrc's ignore-paths), and
+# couldn't: its imports are in its own virtualenv (make test-integration).
+INTEGRATION_PY := tests
 # publish-homebrew's token script. black and isort check it here; pylint checks it in CI (python-CI.yml, job
 # homebrew), in the virtualenv with infrahouse-core 1.4 it imports, which the toolkit's own environment hasn't got.
 HOMEBREW_PY := packaging/homebrew/mint_token.py
@@ -115,11 +118,11 @@ clean-test:
 
 .PHONY: black
 black: ## reformat code with black
-	black infrahouse_toolkit $(TOOLING_PY) $(HOMEBREW_PY)
+	black infrahouse_toolkit $(TOOLING_PY) $(HOMEBREW_PY) $(INTEGRATION_PY)
 
 .PHONY: isort
 isort: ## reformat imports
-	isort infrahouse_toolkit $(TOOLING_PY) $(HOMEBREW_PY)
+	isort infrahouse_toolkit $(TOOLING_PY) $(HOMEBREW_PY) $(INTEGRATION_PY)
 
 .PHONY: reqsort
 reqsort: ## sort requirements files
@@ -138,11 +141,11 @@ lint/yaml: ## check style with yamllint
 
 .PHONY: lint/black
 lint/black: ## check style with black
-	black --check --diff infrahouse_toolkit $(TOOLING_PY) $(HOMEBREW_PY)
+	black --check --diff infrahouse_toolkit $(TOOLING_PY) $(HOMEBREW_PY) $(INTEGRATION_PY)
 
 .PHONY: lint/isort
 lint/isort: ## check imports formatting
-	isort --check-only infrahouse_toolkit $(TOOLING_PY) $(HOMEBREW_PY)
+	isort --check-only infrahouse_toolkit $(TOOLING_PY) $(HOMEBREW_PY) $(INTEGRATION_PY)
 
 .PHONY: lint/mdformat
 lint/mdformat:
@@ -167,6 +170,34 @@ test: ## run tests quickly with the default Python
 	pytest --cov \
 		--cov-report=term-missing --cov-report=xml  \
 		-xvvs infrahouse_toolkit scripts
+
+# The integration test (IH-192) boots a jumphost with a toolkit candidate in AWS and checks it; see "Integration test"
+# in packaging/README.md. KEEP_AFTER=1 keeps the resources, TOOLKIT_VERSION=<version> tests that candidate instead of
+# the newest one. It runs in a virtualenv of its own, from tests/integration/requirements.txt: pytest-infrahouse needs
+# isort 8, which the pylint in requirements_dev.txt doesn't allow. INTEGRATION_PYTHON makes it, 3.10 or newer.
+TEST_REGION ?= us-west-2
+TEST_ROLE ?= arn:aws:iam::303467602807:role/toolkit-tester
+INTEGRATION_PYTHON ?= python3
+INTEGRATION_VENV ?= .venv-integration
+KEEP_AFTER ?=
+TOOLKIT_VERSION ?=
+
+$(INTEGRATION_VENV)/.installed: tests/integration/requirements.txt
+	@$(INTEGRATION_PYTHON) -c 'import sys; sys.exit(sys.version_info < (3, 10))' \
+		|| { echo "$(INTEGRATION_PYTHON) is older than 3.10. Run with INTEGRATION_PYTHON=<python 3.10 or newer>."; exit 1; }
+	$(INTEGRATION_PYTHON) -m venv $(INTEGRATION_VENV)
+	$(INTEGRATION_VENV)/bin/pip install --quiet --upgrade "pip ~= 26.1"
+	$(INTEGRATION_VENV)/bin/pip install --quiet -r tests/integration/requirements.txt
+	touch $@
+
+.PHONY: test-integration
+test-integration: $(INTEGRATION_VENV)/.installed ## run the integration test in AWS (KEEP_AFTER=1, TOOLKIT_VERSION=…)
+	$(INTEGRATION_VENV)/bin/pytest -xvvs \
+		--aws-region=$(TEST_REGION) \
+		--test-role-arn=$(TEST_ROLE) \
+		$(if $(KEEP_AFTER),--keep-after) \
+		$(if $(TOOLKIT_VERSION),--toolkit-version=$(TOOLKIT_VERSION)) \
+		tests/integration
 
 .PHONY: tox
 tox: ## run tests across Python 3.11 - 3.14 with tox

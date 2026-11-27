@@ -3,3 +3,8 @@ line-length = 120
 
 [tool.isort]
 profile = "black"
+
+[tool.pytest.ini_options]
+# A bare `pytest`, as tox runs it, collects what `make test` does. tests/integration deploys to AWS, from a
+# virtualenv of its own: `make test-integration` runs it.
+testpaths = ["infrahouse_toolkit", "scripts"]
