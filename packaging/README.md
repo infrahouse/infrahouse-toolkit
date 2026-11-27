@@ -293,8 +293,9 @@ this repository.
    ([terraform-aws-actions-runner#118](https://github.com/infrahouse/terraform-aws-actions-runner/pull/118), in the
    module's README once it merges), from its import step on. Delete the PEM.
 4. In `aws-control-493370826424`, point the alias and the role's grant at the new key, and delete the old key's
-   resource. Merge it: its apply moves the alias and the grant, and schedules the old KMS key's deletion in 30 days.
-   A release that signs during the apply may fail: re-run it.
+   resource and its `import` block (an `import` block whose resource is gone fails the plan). Merge it: its apply
+   moves the alias and the grant, and schedules the old KMS key's deletion in 30 days. A release that signs during the
+   apply may fail: re-run it.
 5. On the App's settings page, delete the old key.
 
 A KMS key that is lost or deleted can't be restored: generate a new App key and import it, as above.
