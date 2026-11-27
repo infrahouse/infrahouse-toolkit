@@ -72,6 +72,6 @@ setup(
     name="infrahouse-toolkit",
     packages=find_packages(include=["infrahouse_toolkit", "infrahouse_toolkit.*"]),
     url="https://github.com/infrahouse/infrahouse-toolkit",
-    version="2.68.2",
+    version="2.68.3",
     zip_safe=False,
 )
