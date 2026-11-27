@@ -36,6 +36,30 @@ ACTIVE_REFRESH_STATUSES = ("Pending", "InProgress", "Cancelling", "RollbackInPro
 """Instance refresh statuses that aren't final."""
 
 
+class Check:
+    """
+    One of the integration test's checks: every failure inside it starts with ``Check <n>, <name>, failed:``.
+
+    Failures are assertions, and the errors a step on the instance can end with: ``RuntimeError`` when the instance
+    was terminated, ``TimeoutError`` when SSM never reached it.
+
+    :param number: The check's number, in the order they run.
+    :type number: int
+    :param name: The check's name, for example ``boot``.
+    :type name: str
+    """
+
+    def __init__(self, number: int, name: str):
+        self._title = f"Check {number}, {name}"
+
+    def __enter__(self) -> "Check":
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        if exc_type is not None and issubclass(exc_type, (AssertionError, RuntimeError, TimeoutError)):
+            raise AssertionError(f"{self._title}, failed: {exc_value}") from exc_value
+
+
 class CommandFailed(AssertionError):
     """A command on the instance exited non-zero where the check needs it to succeed."""
 
@@ -191,12 +215,17 @@ class CandidateNode:
         :param poll_interval: Seconds between two status checks.
         :type poll_interval: int
         :raise BootstrapFailed: If cloud-init ends in ``error``, is still running after ``timeout``, or finished
-            without ih-bootstrap's marker. The message carries the evidence.
+            without ih-bootstrap's marker, or SSM never reached the instance. The message carries the evidence.
         """
         try:
             self._instance.wait_for_bootstrap(timeout_seconds=timeout, poll_interval=poll_interval)
         except IHBootstrapException as err:
             raise BootstrapFailed(str(err)) from err
+        # TimeoutError: SSM never reached the instance. RuntimeError: it was terminated.
+        except (TimeoutError, RuntimeError) as err:
+            raise BootstrapFailed(
+                f"Couldn't read the cloud-init status of {self.instance_id}: {err}\n{self.evidence}"
+            ) from err
 
         if self.run(f"test -f {BOOTSTRAP_MARKER}").exit_code != 0:
             raise BootstrapFailed(

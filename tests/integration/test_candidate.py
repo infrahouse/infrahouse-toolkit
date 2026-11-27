@@ -11,7 +11,7 @@ from textwrap import dedent
 from pytest_infrahouse.utils import wait_for_instance_refresh
 
 from tests.integration.apt import TESTING_REPO_CODENAME, TESTING_REPO_URL
-from tests.integration.aws import CandidateGroup, CandidateNode
+from tests.integration.aws import CandidateGroup, CandidateNode, Check
 
 PUPPET_WRAPPER = "/usr/local/bin/puppet-wrapper"
 """The Puppet cron's command (``profile::puppet_apply`` in puppet-code)."""
@@ -34,44 +34,42 @@ def test_1_boot(candidate_group: CandidateGroup) -> None:
     terraform-aws-jumphost 6.1.1 has no launching lifecycle hook, so InService alone doesn't wait for the bootstrap:
     the check waits for cloud-init and ih-bootstrap's marker too.
     """
-    try:
+    with Check(1, "boot"):
         node = candidate_group.wait_for_in_service_node()
         node.wait_for_bootstrap()
-    # RuntimeError: the instance was terminated. TimeoutError: SSM never reached it.
-    except (AssertionError, RuntimeError, TimeoutError) as err:
-        raise AssertionError(f"Check 1, boot, failed: {err}") from err
 
 
 def test_2_package(candidate_group: CandidateGroup, toolkit_version: str) -> None:
     """
     The package: dpkg has the version under test, and apt has it from the testing repository.
     """
-    node = candidate_group.wait_for_in_service_node()
-    installed = node.installed_version
-    policy = node.apt_policy
-    assert installed == toolkit_version, (
-        f"Check 2, the package, failed: {node.instance_id} has infrahouse-toolkit {installed}, "
-        f"not {toolkit_version}, the version under test.\n{policy}"
-    )
-    origins = policy.origins(toolkit_version)
-    assert any(origin.startswith(TESTING_REPO_ORIGIN) for origin in origins), (
-        f"Check 2, the package, failed: apt-cache policy on {node.instance_id} doesn't show {toolkit_version} "
-        f"from {TESTING_REPO_ORIGIN.strip()}. It shows it from: {origins}.\n{policy}"
-    )
+    with Check(2, "the package"):
+        node = candidate_group.wait_for_in_service_node()
+        installed = node.installed_version
+        policy = node.apt_policy
+        assert installed == toolkit_version, (
+            f"{node.instance_id} has infrahouse-toolkit {installed}, not {toolkit_version}, the version under test."
+            f"\n{policy}"
+        )
+        origins = policy.origins(toolkit_version)
+        assert any(origin.startswith(TESTING_REPO_ORIGIN) for origin in origins), (
+            f"apt-cache policy on {node.instance_id} doesn't show {toolkit_version} from "
+            f"{TESTING_REPO_ORIGIN.strip()}. It shows it from: {origins}.\n{policy}"
+        )
 
 
 def test_3_puppet(candidate_group: CandidateGroup) -> None:
     """
-    Puppet: the Puppet cron's command exits 0.
+    Puppet: the Puppet cron's command exits 0, in the cron's environment.
     """
-    node = candidate_group.wait_for_in_service_node()
-    result = node.run(f"{CRON_ENV} {PUPPET_WRAPPER}", execution_timeout=1200)
-    if result.exit_code != 0:
-        summary = node.run("cat /opt/puppetlabs/puppet/public/last_run_summary.yaml")
-        raise AssertionError(
-            f"Check 3, Puppet, failed: {PUPPET_WRAPPER} on {node.instance_id} exited {result.exit_code}.\n"
-            f"{result}\n{summary}"
-        )
+    with Check(3, "Puppet"):
+        node = candidate_group.wait_for_in_service_node()
+        result = node.run(f"{CRON_ENV} {PUPPET_WRAPPER}", execution_timeout=1200)
+        if result.exit_code != 0:
+            summary = node.run("cat /opt/puppetlabs/puppet/public/last_run_summary.yaml")
+            raise AssertionError(
+                f"{PUPPET_WRAPPER} on {node.instance_id} exited {result.exit_code}.\n{result}\n{summary}"
+            )
 
 
 def test_4_puppet_failure_cancels_refresh(candidate_group: CandidateGroup) -> None:
@@ -82,35 +80,37 @@ def test_4_puppet_failure_cancels_refresh(candidate_group: CandidateGroup) -> No
     The instance is protected from scale-in, so the refresh waits for it (``ScaleInProtectedInstances: Wait``) and
     stays in progress, without replacing the instance that is running ``ih-puppet``.
     """
-    node = candidate_group.wait_for_in_service_node()
-    node.protect()
-    refresh = None
-    try:
-        refresh = candidate_group.start_instance_refresh(
-            {"MinHealthyPercentage": 100, "ScaleInProtectedInstances": "Wait"}
-        )
-        status = refresh.wait_for(["InProgress"], timeout=300)
-        assert status == "InProgress", (
-            f"Check 4, Puppet's failure path, failed: the refresh never got in progress, so there is nothing to "
-            f"cancel: {refresh}.\n{candidate_group.scaling_activities}"
-        )
+    with Check(4, "Puppet's failure path"):
+        node = candidate_group.wait_for_in_service_node()
+        node.protect()
+        refresh = None
+        try:
+            refresh = candidate_group.start_instance_refresh(
+                {"MinHealthyPercentage": 100, "ScaleInProtectedInstances": "Wait"}
+            )
+            status = refresh.wait_for(["InProgress"], timeout=300)
+            assert status == "InProgress", (
+                f"The refresh never got in progress, so there is nothing to cancel: {refresh}.\n"
+                f"{candidate_group.scaling_activities}"
+            )
 
-        result = node.run(_failing_puppet_command(node), execution_timeout=900)
-        assert (
-            result.exit_code != 0
-        ), f"Check 4, Puppet's failure path, failed: ih-puppet exited 0 with a manifest that fails.\n{result}"
+            result = node.run(_failing_puppet_command(node), execution_timeout=900)
+            assert result.exit_code != 0, f"ih-puppet exited 0 with a manifest that fails.\n{result}"
 
-        status = refresh.wait_for(["Cancelled"], timeout=600)
-        assert status == "Cancelled", (
-            f"Check 4, Puppet's failure path, failed: ih-puppet exited {result.exit_code}, but {refresh}, "
-            f"not Cancelled.\n{result}\n{candidate_group.scaling_activities}"
-        )
-    finally:
-        # Leave the group as check 5 needs it: no refresh in progress, and nothing protected.
-        if refresh is not None:
-            refresh.cancel()
-            refresh.wait_for(["Cancelled"], timeout=600)
-        node.unprotect()
+            # ih-puppet's cancel request returns before ih-puppet exits: a refresh still in progress wasn't cancelled.
+            status = refresh.status
+            if status == "Cancelling":
+                status = refresh.wait_for(["Cancelled"], timeout=600)
+            assert status == "Cancelled", (
+                f"ih-puppet exited {result.exit_code}, but {refresh}, not Cancelled.\n{result}\n"
+                f"{candidate_group.scaling_activities}"
+            )
+        finally:
+            # Leave the group as check 5 needs it: no refresh in progress, and nothing protected.
+            if refresh is not None:
+                refresh.cancel()
+                refresh.wait_for(["Cancelled"], timeout=600)
+            node.unprotect()
 
 
 def test_5_replacement(candidate_group: CandidateGroup, toolkit_version: str) -> None:
@@ -118,36 +118,31 @@ def test_5_replacement(candidate_group: CandidateGroup, toolkit_version: str) ->
     Replacement: an instance refresh replaces the instance, and the new one boots, installs the same version and
     reaches InService.
     """
-    old_node = candidate_group.wait_for_in_service_node()
-    # terraform-aws-jumphost's own refresh preference.
-    refresh = candidate_group.start_instance_refresh({"MinHealthyPercentage": 100})
-    try:
-        wait_for_instance_refresh(
-            asg_name=candidate_group.name,
-            autoscaling_client=candidate_group.autoscaling_client,
-            timeout=3600,
-            poll_interval=30,
-        )
-    except (RuntimeError, TimeoutError) as err:
-        raise AssertionError(f"Check 5, replacement, failed: {err}\n{candidate_group.scaling_activities}") from err
-    assert (
-        refresh.status == "Successful"
-    ), f"Check 5, replacement, failed: {refresh}.\n{candidate_group.scaling_activities}"
+    with Check(5, "replacement"):
+        old_node = candidate_group.wait_for_in_service_node()
+        # terraform-aws-jumphost's own refresh preference.
+        refresh = candidate_group.start_instance_refresh({"MinHealthyPercentage": 100})
+        try:
+            wait_for_instance_refresh(
+                asg_name=candidate_group.name,
+                autoscaling_client=candidate_group.autoscaling_client,
+                timeout=3600,
+                poll_interval=30,
+            )
+        except (RuntimeError, TimeoutError) as err:
+            raise AssertionError(f"{err}\n{candidate_group.scaling_activities}") from err
+        assert refresh.status == "Successful", f"{refresh}.\n{candidate_group.scaling_activities}"
 
-    try:
         new_node = candidate_group.wait_for_in_service_node()
         assert (
             new_node.instance_id != old_node.instance_id
         ), f"{refresh} succeeded, but {old_node.instance_id} is still the group's instance."
         new_node.wait_for_bootstrap()
-    except AssertionError as err:
-        raise AssertionError(f"Check 5, replacement, failed: {err}") from err
-
-    installed = new_node.installed_version
-    assert installed == toolkit_version, (
-        f"Check 5, replacement, failed: the new instance {new_node.instance_id} has infrahouse-toolkit "
-        f"{installed}, not {toolkit_version}.\n{new_node.apt_policy}"
-    )
+        installed = new_node.installed_version
+        assert installed == toolkit_version, (
+            f"The new instance {new_node.instance_id} has infrahouse-toolkit {installed}, not {toolkit_version}.\n"
+            f"{new_node.apt_policy}"
+        )
 
 
 def _failing_puppet_command(node: CandidateNode) -> str:
