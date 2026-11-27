@@ -4,14 +4,13 @@
 # the standalone Debian package for noble amd64 and arm64, and the macOS arm64 tarball, each smoke-tested on a
 # native runner. Then the publish job releases to PyPI and the release repo, but only when this commit bumped the
 # version, and only what is still missing. Every push also publishes a candidate build to the testing repo
-# (publish-testing). The repository variable RELEASE_PACKAGE=omnibus switches the release repo to the Omnibus
-# package, the rollback, and stops the candidates. See packaging/README.md.
+# (publish-testing). See packaging/README.md.
 #
 # The macOS tarball, for the Homebrew formula, goes to the GitHub release instead (publish-macos), on the same
 # version bump. That job is independent of publish in both directions, so a macOS failure can't hold back the
-# fleet's release, and it doesn't depend on RELEASE_PACKAGE. After it, publish-homebrew opens the pull request in
-# infrahouse/homebrew-tap that moves the formula to the release, as a GitHub App whose key is in KMS, through a
-# role that only its environment, homebrew-tap, can assume. Nothing needs publish-homebrew.
+# fleet's release. After it, publish-homebrew opens the pull request in infrahouse/homebrew-tap that moves the
+# formula to the release, as a GitHub App whose key is in KMS, through a role that only its environment,
+# homebrew-tap, can assume. Nothing needs publish-homebrew.
 ---
 name: Python Continuous Deployment
 
@@ -39,13 +38,12 @@ env:
     ROLE_ARN: "arn:aws:iam::493370826424:role/ih-tf-infrahouse-toolkit-github"
 
 jobs:
-    # What this run would release. The publish jobs read it from here, so every job of a run agrees on it,
-    # even if the variable changes while the run is in progress.
+    # What this run would release: this commit's version, and whether this commit bumped it. publish,
+    # publish-macos and publish-homebrew read both from here.
     plan:
         name: "Release plan"
         runs-on: ubuntu-24.04
         outputs:
-            package: ${{ steps.package.outputs.package }}
             version: ${{ steps.version.outputs.version }}
             bumped: ${{ steps.version.outputs.bumped }}
         steps:
@@ -54,34 +52,9 @@ jobs:
                   # This commit and its parents, to tell whether this commit bumped the version.
                   fetch-depth: 2
 
-            # Fails the run on any other value. Every publish job needs this one, so nothing is published.
-            - name: Check RELEASE_PACKAGE
-              id: package
-              env:
-                  RELEASE_PACKAGE: ${{ vars.RELEASE_PACKAGE }}
-              run: |
-                  package="${RELEASE_PACKAGE:-standalone}"
-                  case "${package}" in
-                      standalone|omnibus)
-                          echo "The release repo gets the ${package} package"
-                          echo "package=${package}" >> "${GITHUB_OUTPUT}"
-                          ;;
-                      *)
-                          echo "::error::RELEASE_PACKAGE is '${RELEASE_PACKAGE}'." \
-                              "Unset it, or set it to standalone or omnibus."
-                          exit 1
-                          ;;
-                  esac
-                  # On every run's summary, so a switch nobody put back doesn't go unnoticed.
-                  if [[ "${package}" == omnibus ]]; then
-                      echo "::warning::RELEASE_PACKAGE is omnibus: a release publishes the Omnibus package," \
-                          "amd64 only, and no candidate is published. Set it back to standalone after the" \
-                          "rollback (packaging/README.md)."
-                  fi
-
             # Only the commit that raises the version releases it. A later push of the same version publishes
-            # nothing, even where the release repo lacks an architecture of it: arm64 lacks 2.67.0, and an
-            # Omnibus rollback publishes no arm64 at all. A revert of a bump lowers it, and publishes nothing.
+            # nothing, even where the release repo lacks an architecture of it: arm64 lacks 2.67.0. A revert of a
+            # bump lowers it, and publishes nothing.
             - name: Check whether this commit bumped the version
               id: version
               run: |
@@ -166,7 +139,7 @@ jobs:
             artifact_prefix: "infrahouse-toolkit-release-noble"
 
     # The same build with a candidate version, for example 2.68.0+candidate.214.1-1. publish-testing puts it
-    # in the testing repo, never in the release repo, and not at all under RELEASE_PACKAGE=omnibus.
+    # in the testing repo, never in the release repo.
     standalone-candidate:
         name: "Standalone package (candidate)"
         uses: ./.github/workflows/standalone-package.yml
@@ -186,47 +159,17 @@ jobs:
             # infrahouse-toolkit-release-noble-* (publish) nor infrahouse-toolkit-candidate-noble-* (publish-testing).
             artifact_prefix: "infrahouse-toolkit-macos"
 
-    # The rollback (IH-186): the Omnibus package, noble amd64 only, built only when RELEASE_PACKAGE is omnibus.
-    # Outside main this builds it without publishing it, which checks the rollback still builds.
-    omnibus:
-        name: "Omnibus package (rollback)"
-        needs: plan
-        if: needs.plan.outputs.package == 'omnibus'
-        runs-on: ubuntu-24.04
-        steps:
-            - uses: actions/checkout@v5
-
-            - name: Build the Omnibus package
-              run: |
-                  OS_VERSION=noble make package
-
-            - name: Upload the package
-              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
-              with:
-                  name: infrahouse-toolkit-omnibus-noble-amd64
-                  path: omnibus-infrahouse-toolkit/pkg/infrahouse-toolkit_*.deb
-                  if-no-files-found: error
-                  # A re-run uploads again under the same name. The name is unique within an attempt.
-                  overwrite: true
-
     # The release: PyPI, and the release repo (https://release-noble.infrahouse.com/, codename noble), which
     # every node installs from with Puppet's ensure => latest. It runs only on main, only when this commit
     # bumped the version, and only after the tests and the release builds passed, both standalone packages
-    # included, whichever package the release repo gets. Each target is published only when it lacks this
-    # version, so a re-run finishes a release that failed halfway and publishes nothing twice.
+    # included. Each target is published only when it lacks this version, so a re-run finishes a release that
+    # failed halfway and publishes nothing twice.
     publish:
         name: "Publish the release to PyPI and noble"
-        needs: [plan, test, standalone, omnibus]
-        # !cancelled() instead of the implicit success(): omnibus is skipped when the release is standalone,
-        # which would skip this job too. Each result is checked instead.
-        if: >-
-            github.ref == 'refs/heads/main'
-            && !cancelled()
-            && needs.plan.result == 'success'
-            && needs.plan.outputs.bumped == 'true'
-            && needs.test.result == 'success'
-            && needs.standalone.result == 'success'
-            && (needs.plan.outputs.package == 'standalone' || needs.omnibus.result == 'success')
+        needs: [plan, test, standalone]
+        # No status function, so GitHub applies success(): plan, test and both standalone builds succeeded, and
+        # the run wasn't cancelled.
+        if: github.ref == 'refs/heads/main' && needs.plan.outputs.bumped == 'true'
         runs-on: ubuntu-24.04
         # reprepro rewrites the repository's indexes on every upload, so one writer at a time. A running publish
         # is never cancelled: reprepro stopped mid-write can leave the repository locked or half-written.
@@ -237,7 +180,6 @@ jobs:
             contents: read  # actions/checkout
             id-token: write  # aws-actions/configure-aws-credentials
         env:
-            RELEASE_PACKAGE: ${{ needs.plan.outputs.package }}
             VERSION: ${{ needs.plan.outputs.version }}
             RELEASE_POOL_URL: "https://release-noble.infrahouse.com/pool/main/i/infrahouse-toolkit"
         steps:
@@ -250,29 +192,17 @@ jobs:
                   path: dist
 
             - name: Download the standalone packages
-              if: env.RELEASE_PACKAGE == 'standalone'
               uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
               with:
                   pattern: infrahouse-toolkit-release-noble-*
                   path: release
                   merge-multiple: true
 
-            - name: Download the Omnibus package
-              if: env.RELEASE_PACKAGE == 'omnibus'
-              uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
-              with:
-                  name: infrahouse-toolkit-omnibus-noble-amd64
-                  path: release
-
             # A package with any other version, a candidate's included, would reach every node within about
             # 30 minutes, and Puppet never downgrades.
             - name: Check the wheel, the sdist and one package per architecture, with this version
               run: |
-                  case "${RELEASE_PACKAGE}" in
-                      standalone) architectures=(amd64 arm64) ;;
-                      omnibus) architectures=(amd64) ;;
-                      *) echo "::error::Unknown release package '${RELEASE_PACKAGE}'"; exit 1 ;;
-                  esac
+                  architectures=(amd64 arm64)
                   ls -l dist release
 
                   expected_dist=(
@@ -294,8 +224,7 @@ jobs:
                   expected="${VERSION}-1"
                   count="$(find release -type f | wc -l)"
                   if [[ "${count}" -ne "${#architectures[@]}" ]]; then
-                      echo "::error::Expected one ${RELEASE_PACKAGE} package per architecture" \
-                          "(${architectures[*]}), found ${count} files"
+                      echo "::error::Expected one package per architecture (${architectures[*]}), found ${count} files"
                       exit 1
                   fi
                   for arch in "${architectures[@]}"; do
@@ -315,7 +244,6 @@ jobs:
                           exit 1
                       fi
                   done
-                  echo "ARCHITECTURES=${architectures[*]}" >> "${GITHUB_ENV}"
 
             # Anything but a clear answer (DNS, connection, timeout, 5xx after the retries) fails the job,
             # rather than publishing a version that may be there or skipping one that may not.
@@ -338,11 +266,7 @@ jobs:
                       *) echo "::error::${url} returned ${status}"; exit 1 ;;
                   esac
 
-                  read -ra architectures <<< "${ARCHITECTURES}"
                   publish_architectures=()
-                  published_architectures=()
-                  # All architectures, not only this release's: the check below compares the ones already
-                  # published with this release's package.
                   for arch in amd64 arm64; do
                       url="${RELEASE_POOL_URL}/infrahouse-toolkit_${VERSION}-1_${arch}.deb"
                       if ! status="$(http_status "${url}")"; then
@@ -352,15 +276,12 @@ jobs:
                       case "${status}" in
                           200)
                               echo "The release repo has ${VERSION} for ${arch}"
-                              published_architectures+=("${arch}")
                               ;;
                           # The repository is an S3 bucket behind CloudFront that can't list it, so a missing
                           # file is 403, not 404.
                           403|404)
                               echo "The release repo lacks ${VERSION} for ${arch}"
-                              if [[ " ${architectures[*]} " == *" ${arch} "* ]]; then
-                                  publish_architectures+=("${arch}")
-                              fi
+                              publish_architectures+=("${arch}")
                               ;;
                           *)
                               echo "::error::${url} returned ${status}"
@@ -373,37 +294,7 @@ jobs:
                   {
                       echo "PUBLISH_PYPI=${publish_pypi}"
                       echo "PUBLISH_ARCHITECTURES=${publish_architectures[*]}"
-                      echo "PUBLISHED_ARCHITECTURES=${published_architectures[*]}"
                   } >> "${GITHUB_ENV}"
-
-            # One version is one kind of package on every architecture. Otherwise a re-run after switching
-            # RELEASE_PACKAGE could add a standalone arm64 to an Omnibus amd64 release, or the other way round.
-            - name: Check the architectures already published are the same package
-              if: env.PUBLISH_ARCHITECTURES != '' && env.PUBLISHED_ARCHITECTURES != ''
-              run: |
-                  read -ra publish_architectures <<< "${PUBLISH_ARCHITECTURES}"
-                  read -ra published_architectures <<< "${PUBLISHED_ARCHITECTURES}"
-                  reference="release/infrahouse-toolkit_${VERSION}-1_${publish_architectures[0]}.deb"
-                  expected="$(dpkg-deb -f "${reference}" Description)"
-                  mkdir -p published
-                  for arch in "${published_architectures[@]}"; do
-                      url="${RELEASE_POOL_URL}/infrahouse-toolkit_${VERSION}-1_${arch}.deb"
-                      deb="published/infrahouse-toolkit_${VERSION}-1_${arch}.deb"
-                      if ! curl --fail --silent --show-error --location --max-time 600 --retry 3 --retry-delay 5 \
-                              --output "${deb}" "${url}"; then
-                          echo "::error::Couldn't download ${url} to compare it with this release's package"
-                          exit 1
-                      fi
-                      description="$(dpkg-deb -f "${deb}" Description)"
-                      if [[ "${description}" != "${expected}" ]]; then
-                          echo "::error::${VERSION} for ${arch} is already a different package. Published:"
-                          echo "${description}"
-                          echo "This release's ${RELEASE_PACKAGE} package:"
-                          echo "${expected}"
-                          exit 1
-                      fi
-                      echo "${VERSION} for ${arch} is the same package as this release's ${RELEASE_PACKAGE} one"
-                  done
 
             # Before any publish, so a failure here leaves nothing half-published.
             - name: Install InfraHouse APT repository
@@ -453,13 +344,9 @@ jobs:
     # noble-testing), which only canary nodes use. See packaging/README.md.
     publish-testing:
         name: "Publish the candidate to noble-testing"
-        # plan: an invalid RELEASE_PACKAGE stops this publish too.
-        needs: [plan, standalone-candidate]
-        # A workflow_dispatch on another branch builds a candidate but doesn't publish it. Neither does a run
-        # under omnibus: a rollback's candidate would sort above the rollback (2.68.1+candidate.N.1-1 >
-        # 2.68.1-1), and canary nodes would keep the standalone package. Without it the newest candidate is the
-        # bad release's, below the rollback, so canaries roll back with the fleet.
-        if: github.ref == 'refs/heads/main' && needs.plan.outputs.package == 'standalone'
+        needs: [standalone-candidate]
+        # A workflow_dispatch on another branch builds a candidate but doesn't publish it.
+        if: github.ref == 'refs/heads/main'
         runs-on: ubuntu-24.04
         # reprepro rewrites the repository's indexes on every upload, so one writer at a time. A running publish
         # is never cancelled: reprepro stopped mid-write can leave the repository locked or half-written.
@@ -542,9 +429,8 @@ jobs:
     # Attaches the macOS tarball and its .sha256 to the GitHub release v<version>, where the Homebrew formula
     # downloads it. Only on main, only when this commit bumped the version, and only after the unit tests and the
     # macOS build passed. Neither publish nor publish-testing waits for it, and it waits for neither: a macOS runner
-    # outage can't hold back the fleet's release, and a failure here still fails the run. It runs whatever
-    # RELEASE_PACKAGE says, which chooses the apt repo's package. Its only write permission is contents: write for
-    # the release; it has no AWS role and no PyPI token.
+    # outage can't hold back the fleet's release, and a failure here still fails the run. Its only write permission
+    # is contents: write for the release; it has no AWS role and no PyPI token.
     publish-macos:
         name: "Attach the macOS tarball to the GitHub release"
         needs: [plan, test, macos]
