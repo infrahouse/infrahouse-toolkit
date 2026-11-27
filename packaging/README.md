@@ -47,6 +47,22 @@ is 403 or 404 (the bucket can't be listed, so a missing file is 403). Any other 
 Puppet installs the toolkit with `ensure => latest` every 30 minutes, so a release reaches every node within about
 30 minutes, and Puppet never downgrades.
 
+### Before a release
+
+1. Merge the change. Its push to `main` publishes a candidate to the testing repository (`publish-testing`) and
+   releases nothing.
+2. When that CD run's `publish-testing` has passed, run the [integration test](#integration-test) against the
+   candidate it published, the newest in the testing repository:
+
+   ```bash
+   make test-integration
+   ```
+
+   It takes about 30 minutes and costs less than $0.25. If a newer candidate landed meanwhile, name the one to test:
+   `make test-integration TOOLKIT_VERSION=<version>-1`, the version from `publish-testing`'s log. If it fails,
+   don't release: fix the change, and test the fix's candidate.
+3. On `main`, `make release-patch` (or `release-minor`, `release-major`), then `git push && git push --tags`.
+
 ## Roll-forward
 
 There is no rollback: Puppet never downgrades, so a node keeps a bad release until a higher version is published. A
@@ -148,6 +164,62 @@ deb [signed-by=/etc/apt/keyrings/infrahouse.gpg] https://testing-noble.infrahous
 With terraform-aws-cloud-init, add it to `extra_repos` with `signed-by=$KEY_FILE` and the release key, which
 `https://testing-noble.infrahouse.com/DEB-GPG-KEY-testing-noble.infrahouse.com` also serves.
 `apt-cache policy infrahouse-toolkit` shows which version the node will install.
+
+## Integration test
+
+`make test-integration` (IH-192) boots one instance with a candidate in AWS, the way a new node boots, and checks it.
+The contract tests (`infrahouse_toolkit/cli/ih_aws/tests/`, `infrahouse_toolkit/cli/ih_puppet/tests/`) run the same
+commands against moto, which can't check the instance role's real permissions, instance metadata, cloud-init, the
+apt install or a Puppet run. `make test` doesn't run it.
+
+- **Where:** account 303467602807, `us-west-2`, as `arn:aws:iam::303467602807:role/toolkit-tester`
+  (aws-control-303467602807's `aws_iam_role.tester.tf`). It deploys pytest-infrahouse's `service_network` and
+  `subzone`, and terraform-aws-jumphost 6.1.1 with one instance, the canary role in production, from
+  `tests/integration/terraform`. Everything is destroyed at the end; `KEEP_AFTER=1` keeps it, and the next run
+  without it destroys it.
+- **The candidate:** the newest `infrahouse-toolkit` in the testing repository's amd64 `Packages` index (the
+  jumphost boots an x86_64 AMI), or `TOOLKIT_VERSION=<version>`, which must be in that index. The run logs it first.
+  The testing repository is in `extra_repos`, and an apt pin (`Pin-Priority: 1001`) makes the instance install
+  exactly that version: Puppet's `ensure => latest` would otherwise replace it with any newer one.
+- **The checks,** in order, each a test of its own; `-x` stops at the first failure:
+  1. **Boot:** the instance is `InService`, cloud-init finished (`done`; `degraded done` passes with a warning) and
+     ih-bootstrap's `/var/run/puppet-done` exists.
+  2. **The package:** `dpkg-query -W infrahouse-toolkit` is the version under test, and `apt-cache policy` lists it
+     from `https://testing-noble.infrahouse.com noble-testing/main`.
+  3. **Puppet:** `/usr/local/bin/puppet-wrapper`, the Puppet cron's command, exits 0 in the cron's environment.
+  4. **Puppet's failure path:** the instance is protected from scale-in and an instance refresh is started with
+     `ScaleInProtectedInstances: Wait`, so it stays in progress without replacing the instance. `ih-puppet
+     --cancel-instance-refresh-on-error`, with the cron's arguments and a manifest whose only resource is an `exec`
+     of `/bin/false`, must exit non-zero, and the refresh must end `Cancelled`. The test's Terraform grants the
+     jumphost's role `autoscaling:CancelInstanceRefresh` on its group: production jumphosts don't use the flag.
+  5. **Replacement:** an instance refresh with the module's preference (`MinHealthyPercentage: 100`) ends
+     `Successful`, and the new instance boots and has the same version.
+- **Failures** start with `Check <n>, <name>, failed:` and carry the instance's evidence: `cloud-init status --long`
+  and the tail of `/var/log/cloud-init-output.log` (the serial console instead, when SSM can't reach it), the failed
+  command's output, and the group's latest scaling activities.
+- **Not covered:** a launching lifecycle hook. terraform-aws-jumphost 6.1.1 passes no `lifecycle_hook_name` to
+  terraform-aws-cloud-init, so `ih-bootstrap.sh` never runs `ih-aws autoscaling complete` on it, and `InService`
+  doesn't wait for the bootstrap; check 1 waits for cloud-init and the marker instead.
+- **Check 4's log** shows `ERROR: ... Command failed with exit code 4` and Puppet's red `Error:` lines: that is the
+  failing manifest's `ih-puppet` run, which the check needs to fail. The check's result is pytest's `PASSED` or
+  `FAILED`.
+- **Duration and cost:** about 30 minutes a run, measured on 2026-11-27 with `2.68.3+candidate.259.1-1`: 11 minutes
+  to deploy and boot, 3 for checks 2 to 4, 7 for the replacement and 9 to destroy. It costs less than $0.25: one NAT
+  gateway, one NLB and a t3a.micro (two during the replacement) for half an hour, and the NAT data of two installs.
+
+Run it with credentials that may assume the tester role, the account's SSO AWSAdministratorAccess:
+
+```bash
+eval "$(ih-aws --aws-region us-west-2 --aws-profile <303467602807 AWSAdministratorAccess profile> credentials -e)"
+```
+
+```bash
+make test-integration
+```
+
+It runs in a virtualenv of its own, `.venv-integration`, which the target makes from
+`tests/integration/requirements.txt` with `INTEGRATION_PYTHON` (`python3` by default, 3.10 or newer): pytest-infrahouse
+needs isort 8, which the pylint in `requirements_dev.txt` doesn't allow.
 
 ## macOS tarball
 
