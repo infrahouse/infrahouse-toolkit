@@ -38,11 +38,11 @@ is 403 or 404 (the bucket can't be listed, so a missing file is 403). Any other 
 - **One release at a time:** `publish` is in the `release-repo-noble` concurrency group and is never cancelled.
 - **The publisher is the last release:** `publish` and `publish-testing` install the newest infrahouse-toolkit from
   the release repository and publish with its `ih-s3-reprepro`, whose `includedeb` (s3fs mount, GPG import,
-  reprepro) no smoke test runs. After each release,
-  run the CD workflow by hand on `main` (Actions, Python Continuous Deployment, Run workflow): `publish` finds
-  everything published and publishes nothing, and `publish-testing` publishes a candidate with the new release's
-  `ih-s3-reprepro`. Its log must show `Setting up infrahouse-toolkit (<new version>-1)`. If it shows the previous
-  version, CloudFront still served the old index: wait a few minutes and run it again.
+  reprepro) no smoke test runs. After each release, run the CD workflow by hand on `main` (Actions, Python
+  Continuous Deployment, Run workflow): `publish` finds everything published and publishes nothing, and
+  `publish-testing` publishes a candidate with the new release's `ih-s3-reprepro`. Its log must show
+  `Setting up infrahouse-toolkit (<new version>-1)`. If it shows the previous version, CloudFront still served the
+  old index: wait a few minutes and run it again.
 
 Puppet installs the toolkit with `ensure => latest` every 30 minutes, so a release reaches every node within about
 30 minutes, and Puppet never downgrades.
@@ -95,8 +95,10 @@ ih-s3-reprepro \
   `signing_key_readers` of `release.infrahouse.com.tf` in aws-control-493370826424. The jumphost's role is in both.
   If the bad release broke `ih-s3-reprepro`, install the release before it there first.
 - The `Packages` index stops listing the version once CloudFront serves the new one, which can take a few minutes.
-- Until the revert is on `main`, don't re-run the bad release's CD run or run CD by hand on `main`: the pool file is
-  gone now, so `publish` would publish the bad release again.
+- Don't re-run the bad release's CD run, then or later: a re-run builds the bad bump commit again, and with its pool
+  files gone, `publish` publishes the bad release again. Until the revert is on `main`, don't run CD by hand on
+  `main` either: it would build the same commit. Once the revert is merged, a run by hand builds the revert or a later
+  commit, never the bad one.
 - PyPI keeps the version; the next release supersedes it there.
 
 ## Testing repository
