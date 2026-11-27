@@ -5,8 +5,8 @@ into `dist/`: a python-build-standalone CPython, the dependencies from `requirem
 `build.sh` in the container from `Dockerfile`. `make package-smoke-test` installs it on a clean `ubuntu:noble`
 and runs `smoke_test.py`. CI and CD do both for noble on amd64 and arm64 (`.github/workflows/standalone-package.yml`).
 
-The standalone package is the released package. The Omnibus package (`make package`) is kept as the rollback for
-a few releases (IH-186); see [Rollback](#rollback).
+The standalone package is the released package. Puppet never downgrades, so a bad release is fixed by releasing a
+higher version; see [Roll-forward](#roll-forward).
 
 The same interpreter and lock also make the macOS arm64 tarball that the Homebrew formula installs
 (`make package-macos`); see [macOS tarball](#macos-tarball).
@@ -16,7 +16,7 @@ The same interpreter and lock also make the macOS arm64 tarball that the Homebre
 `.github/workflows/python-CD.yml` runs on every push to `main`. It builds and tests everything before it publishes
 anything:
 
-- `plan` reads `RELEASE_PACKAGE` and whether this commit bumped the version.
+- `plan` reads this commit's version and whether this commit bumped it.
 - `test` runs the unit and contract tests and builds the wheel and sdist.
 - `standalone` builds the release package, without a version suffix, for amd64 and arm64, and smoke-tests each on
   a native runner.
@@ -35,64 +35,77 @@ is 403 or 404 (the bucket can't be listed, so a missing file is 403). Any other 
 - **A release that failed halfway:** "Re-run all jobs" on its run. It publishes only what is still missing, for
   example arm64 after amd64 made it. "Re-run failed jobs" also finishes the release, but if `publish-testing` is
   among the failed jobs it fails again: the candidates of the earlier attempt carry that attempt's version.
-- **One kind of package per version:** before it adds an architecture to a version that is already published for
-  another, `publish` checks the published one is the same package (standalone or Omnibus), by its description.
 - **One release at a time:** `publish` is in the `release-repo-noble` concurrency group and is never cancelled.
 - **The publisher is the last release:** `publish` and `publish-testing` install the newest infrahouse-toolkit from
-  the release repository and publish with its `ih-s3-reprepro`. After the first standalone release that is the
-  standalone package, whose `includedeb` (s3fs mount, GPG import, reprepro) no smoke test runs. After each release,
-  run the CD workflow by hand on `main` (Actions, Python Continuous Deployment, Run workflow): `publish` finds
-  everything published and publishes nothing, and `publish-testing` publishes a candidate with the new release's
-  `ih-s3-reprepro`. Its log must show `Setting up infrahouse-toolkit (<new version>-1)`. If it shows the previous
-  version, CloudFront still served the old index: wait a few minutes and run it again.
+  the release repository and publish with its `ih-s3-reprepro`, whose `includedeb` (s3fs mount, GPG import,
+  reprepro) no smoke test runs. After each release, run the CD workflow by hand on `main` (Actions, Python
+  Continuous Deployment, Run workflow): `publish` finds everything published and publishes nothing, and
+  `publish-testing` publishes a candidate with the new release's `ih-s3-reprepro`. Its log must show
+  `Setting up infrahouse-toolkit (<new version>-1)`. If it shows the previous version, CloudFront still served the
+  old index: wait a few minutes and run it again.
 
 Puppet installs the toolkit with `ensure => latest` every 30 minutes, so a release reaches every node within about
 30 minutes, and Puppet never downgrades.
 
-## Rollback
+## Roll-forward
 
-A rollback is a higher version, built with Omnibus. Puppet moves the fleet to it within about 30 minutes, and new
+There is no rollback: Puppet never downgrades, so a node keeps a bad release until a higher version is published. A
+bad release is fixed by releasing that higher version. Puppet moves the fleet to it within about 30 minutes, and new
 instances install it, because it is the highest version in the repository.
 
-1. Set the repository variable `RELEASE_PACKAGE` to `omnibus` (Settings, Secrets and variables, Actions,
-   Variables), or `gh variable set RELEASE_PACKAGE --body omnibus --repo infrahouse/infrahouse-toolkit`.
-2. On `main`, `make release-patch`, then `git push && git push --tags`.
-3. CD builds the Omnibus package (`make package`, noble amd64) and publishes it, with PyPI, at the new version.
-   The standalone release packages are still built and smoke-tested, and must pass, but aren't published. Every
-   run's summary shows a warning while the variable is `omnibus`.
-4. Check `https://release-noble.infrahouse.com/dists/noble/main/binary-amd64/Packages` lists the new version, and
-   on a couple of nodes, within the next hour, that `dpkg-query -W infrahouse-toolkit` shows it.
-5. Set `RELEASE_PACKAGE` back to `standalone`, or delete it: `gh variable delete RELEASE_PACKAGE --repo
-   infrahouse/infrahouse-toolkit`. The next release ships the standalone package again.
+1. **If new instances mustn't install the bad release meanwhile:** remove it from the release repository (below).
+   Nodes that have it keep it, and new instances install the release before it.
+2. Revert the bad change in a pull request and merge it. That push publishes only a candidate: it doesn't bump the
+   version.
+3. On `main`, `make release-patch`, then `git push && git push --tags`. CD publishes the new version to PyPI and the
+   release repository, amd64 and arm64, like any release.
+4. Check `https://release-noble.infrahouse.com/dists/noble/main/binary-amd64/Packages` and `…/binary-arm64/Packages`
+   list the new version, and on a couple of nodes, within the next hour, that `dpkg-query -W infrahouse-toolkit`
+   shows it.
 
-Under `omnibus` only amd64 is published, as before the standalone package. arm64 nodes stay on the version they
-have until the next standalone release.
-
-Under `omnibus` no candidate is published either. Otherwise the rollback's own bump commit would publish, for
-example, `2.68.1+candidate.N.1-1`, which sorts above the Omnibus `2.68.1-1`, and canary nodes would keep the standalone
-package. Without it the newest candidate is the bad release's, `2.68.0+candidate.N.1-1`, below `2.68.1-1`, so canary
-nodes roll back with the fleet. Once the variable is back to `standalone`, the next push to `main` publishes a
-candidate of the rollback version, and canary nodes take it.
+Canary nodes need nothing: the revert's candidate has a higher run number than the bad release's, and the new release
+sorts above both. On the Homebrew side, the new release's `publish-homebrew` opens the formula pull request for it and
+names the bad release's if that one is still open, to close without merging.
 
 If `publish` fails inside `ih-s3-reprepro`, the newest release's publisher is broken (see "The publisher is the last
-release" above). In a PR, pin the install step of `publish` to the newest Omnibus version in the release repository,
-`sudo apt-get -y install --allow-downgrades infrahouse-toolkit=2.67.0-1` until a rollback publishes a newer one,
-merge it (that push publishes nothing), then release.
+release" above). If the bad release is removed from the repository, `publish` installs the release before it, whose
+publisher published the bad one. Otherwise, in a PR, pin the install step of `publish` to that release,
+`sudo apt-get -y install --allow-downgrades infrahouse-toolkit=<version>-1`, merge it (that push publishes nothing),
+then release. Drop the pin in the next release.
 
-`RELEASE_PACKAGE` unset or `standalone` releases the standalone package, `omnibus` the Omnibus one. Any other value
-fails the CD run before anything is published, the testing repository's candidate included.
+### Removing a version from the release repository
 
-To check the Omnibus build still works without releasing it: set `RELEASE_PACKAGE` to `omnibus`, run the CD
-workflow by hand on a branch other than `main` (Actions, Python Continuous Deployment, Run workflow), and set it
-back. A run outside `main` publishes nothing. Don't release while the variable is set.
+`publish`'s own flags, with `remove` in place of `includedeb`:
+
+```bash
+ih-s3-reprepro \
+  --aws-region us-west-1 \
+  --bucket infrahouse-release-noble \
+  --gpg-key-secret-id packager-key-noble \
+  --gpg-passphrase-secret-id packager-passphrase-noble \
+  remove noble infrahouse-toolkit=<version>-1
+```
+
+- `infrahouse-toolkit=<version>-1` removes exactly that version, from amd64 and arm64, and deletes its pool files.
+  Every other version stays. Without `=<version>-1`, reprepro removes whichever version is the newest.
+- It needs Linux, where `ih-s3-reprepro` mounts the bucket with s3fs, and the reprepro from the release repository
+  (5.4.5, which installing the toolkit from there pulls in), because the repository keeps every version (`Limit: 0`).
+  Ubuntu noble's own reprepro, 5.3.1, can't read that configuration.
+- It needs a role that may write the bucket and read the signing key: `bucket_admin_roles` and
+  `signing_key_readers` of `release.infrahouse.com.tf` in aws-control-493370826424. The jumphost's role is in both.
+  If the bad release broke `ih-s3-reprepro`, install the release before it there first.
+- The `Packages` index stops listing the version once CloudFront serves the new one, which can take a few minutes.
+- Don't re-run the bad release's CD run, then or later: a re-run builds the bad bump commit again, and with its pool
+  files gone, `publish` publishes the bad release again. Until the revert is on `main`, don't run CD by hand on
+  `main` either: it would build the same commit. Once the revert is merged, a run by hand builds the revert or a later
+  commit, never the bad one.
+- PyPI keeps the version; the next release supersedes it there.
 
 ## Testing repository
 
 CD publishes every `main` build of the standalone package to a testing apt repository as a candidate, with a
 version above the release: Puppet installs the toolkit with `ensure => latest`, so anything in the release
-repository reaches every node within about 30 minutes. Only canary nodes use the testing repository. Under
-`RELEASE_PACKAGE=omnibus` no candidate is published, so canary nodes roll back with the fleet (see
-[Rollback](#rollback)).
+repository reaches every node within about 30 minutes. Only canary nodes use the testing repository.
 
 - `https://testing-noble.infrahouse.com/`, codename `noble-testing`, component `main`, `amd64` and `arm64`.
 - Signed with the release key. It keeps the last 5 versions.
@@ -196,8 +209,7 @@ every push to `main`. On the push that bumps the version, `publish-macos` attach
 
 - It needs `plan`, `test` and the macOS build, so a version whose unit tests failed gets no tarball.
 - It is independent of `publish`: neither waits for the other, so a macOS runner outage can't hold back PyPI or the
-  release apt repository. A failure in either fails the run. It runs whatever `RELEASE_PACKAGE` says: that variable
-  chooses the apt repository's package.
+  release apt repository. A failure in either fails the run.
 - It checks the artifact holds exactly the tarball and its `.sha256` for this version, and that they match.
 - `release.yml` creates the release when the tag is pushed, after the push to `main`. `publish-macos` checks for it
   every 30 seconds for up to 15 minutes, then fails with a message that the release doesn't exist. It also fails if
@@ -229,8 +241,8 @@ credential follows the design document
 
 - **The job graph.** `publish-homebrew` needs `plan` and `publish-macos`, and runs only on `main`, only when the
   commit bumped the version and `publish-macos` succeeded. Nothing needs it, so it can't hold back or change PyPI, the
-  apt repositories or the tarball. It runs whatever `RELEASE_PACKAGE` says, like `publish-macos`. One runs at a time
-  (concurrency group `homebrew-tap-formula`), and a running one is never cancelled.
+  apt repositories or the tarball. One runs at a time (concurrency group `homebrew-tap-formula`), and a running one is
+  never cancelled.
 - **The release, not the build.** `check-release.sh` downloads the release's tarball and `.sha256` from the url the
   formula gets, and checks one against the other. The formula gets that checksum, never this run's build.
 - **Only forward.** `open-formula-pr.sh` clones the tap and reads the formula's version from its `url`. If the formula
