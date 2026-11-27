@@ -602,7 +602,8 @@ mint_output_refused() {
     if grep -q '^::add-mask::' "${case_dir}/output"; then
         fail "$(grep -c '^::add-mask::' "${case_dir}/output") ::add-mask:: lines, expected none"
     fi
-    if grep -qF "library chatter" "${case_dir}/output"; then
+    # Every output of the stub but the empty one has the 35 characters after ghs_, the too-short one too.
+    if grep -qF -e "${STUB_TOKEN:4:35}" -e "library chatter" "${case_dir}/output"; then
         fail "what the token's Python printed is in the output"
     fi
 }

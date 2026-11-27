@@ -226,7 +226,9 @@ if [[ ! "${token}" =~ ${token_pattern} ]]; then
     unset token
     die "mint_token.py printed something other than one token on stdout: expected one line, ghs_ then 36 or more" \
         "letters, digits, '.', '_' or '-', with no newline. Nothing of it is printed, and nothing was pushed. Find" \
-        "what writes to its stdout (mint_token.py prints only the token), then re-run publish-homebrew."
+        "what writes to its stdout (mint_token.py prints only the token), or whether GitHub's token format changed" \
+        "(\"The token's format\" in packaging/README.md). A fix needs a new release: a re-run runs this release's" \
+        "scripts."
 fi
 echo "::add-mask::${token}"
 export GH_TOKEN="${token}"
