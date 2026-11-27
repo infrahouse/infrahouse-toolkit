@@ -26,6 +26,9 @@ OS_VERSION ?= jammy
 STANDALONE_OS_VERSION ?= noble
 # Python files outside the infrahouse_toolkit package that the linters check.
 TOOLING_PY := setup.py packaging/smoke_test.py scripts
+# publish-homebrew's token script. black and isort check it here; pylint checks it in CI (python-CI.yml, job
+# homebrew), in the virtualenv with infrahouse-core 1.4 it imports, which the toolkit's own environment hasn't got.
+HOMEBREW_PY := packaging/homebrew/mint_token.py
 # Test tools that bootstrap-lowest installs, at the versions in requirements_dev.txt.
 TEST_TOOLS := moto pylint pytest pytest-cov pytest-timeout
 
@@ -114,11 +117,11 @@ clean-test:
 
 .PHONY: black
 black: ## reformat code with black
-	black infrahouse_toolkit $(TOOLING_PY)
+	black infrahouse_toolkit $(TOOLING_PY) $(HOMEBREW_PY)
 
 .PHONY: isort
 isort: ## reformat imports
-	isort infrahouse_toolkit $(TOOLING_PY)
+	isort infrahouse_toolkit $(TOOLING_PY) $(HOMEBREW_PY)
 
 .PHONY: reqsort
 reqsort: ## sort requirements files
@@ -137,11 +140,11 @@ lint/yaml: ## check style with yamllint
 
 .PHONY: lint/black
 lint/black: ## check style with black
-	black --check --diff infrahouse_toolkit $(TOOLING_PY)
+	black --check --diff infrahouse_toolkit $(TOOLING_PY) $(HOMEBREW_PY)
 
 .PHONY: lint/isort
 lint/isort: ## check imports formatting
-	isort --check-only infrahouse_toolkit $(TOOLING_PY)
+	isort --check-only infrahouse_toolkit $(TOOLING_PY) $(HOMEBREW_PY)
 
 .PHONY: lint/mdformat
 lint/mdformat:
@@ -256,9 +259,13 @@ package:
 
 # uv keeps the versions already pinned in requirements.lock while they satisfy requirements.txt,
 # so this changes the lock only when requirements.txt does. CI fails when it would.
+# packaging/homebrew/requirements.lock is publish-homebrew's infrahouse-core, for Python 3.12 and later, the
+# python3 of ubuntu-24.04. It's no part of the package. uv runs in its directory, so its header names short paths.
 .PHONY: lock
-lock: ## Regenerate requirements.lock from requirements.txt
+lock: ## Regenerate requirements.lock from requirements.txt, and packaging/homebrew/requirements.lock
 	uv pip compile --universal --python-version 3.10 --generate-hashes --quiet requirements.txt -o requirements.lock
+	cd packaging/homebrew && uv pip compile --universal --python-version 3.12 --generate-hashes --quiet \
+		requirements.in -o requirements.lock
 
 # The standalone package is built and tested for the host's architecture. The platform is explicit,
 # so a cached image of another architecture is never used.
@@ -289,6 +296,11 @@ package-macos: ## Build the self-contained macOS arm64 tarball and its .sha256 i
 .PHONY: package-macos-smoke-test
 package-macos-smoke-test: ## Unpack the macOS tarball from dist/ as Homebrew would and smoke-test it (arm64 Mac)
 	packaging/smoke-test-macos.sh
+
+.PHONY: homebrew-test
+homebrew-test: ## Run publish-homebrew's scripts against a local tap, with gh and the token stubbed
+	shellcheck packaging/homebrew/*.sh
+	packaging/homebrew/test.sh
 
 .PHONY: dist
 dist: clean ## builds source and wheel package

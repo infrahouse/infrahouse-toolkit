@@ -1,0 +1,3 @@
+# infrahouse-core for publish-homebrew's token, in a virtualenv of its own (python-CD.yml). The toolkit package
+# pins an older infrahouse-core in requirements.txt; this file is not part of the package. See packaging/README.md.
+infrahouse-core==1.4.0

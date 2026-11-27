@@ -64,6 +64,7 @@ jobs:
               run: |
                   make test
 
+    # Also packaging/homebrew/requirements.lock against its requirements.in: make lock regenerates both.
     lock:
         name: "requirements.lock matches requirements.txt"
         runs-on: ubuntu-24.04
@@ -84,11 +85,14 @@ jobs:
 
             - name: Check requirements.lock is unchanged
               run: |
-                  if ! git diff --exit-code requirements.lock
-                  then
-                    echo "::error file=requirements.lock::requirements.lock is out of date. Run make lock, commit it."
-                    exit 1
-                  fi
+                  for lock in requirements.lock packaging/homebrew/requirements.lock
+                  do
+                    if ! git diff --exit-code "${lock}"
+                    then
+                      echo "::error file=${lock}::${lock} is out of date. Run make lock, commit it."
+                      exit 1
+                    fi
+                  done
 
     package:
         name: "Standalone package"
@@ -98,3 +102,30 @@ jobs:
     macos:
         name: "macOS package"
         uses: ./.github/workflows/macos-package.yml
+
+    # publish-homebrew's scripts (python-CD.yml): its virtualenv, installed as publish-homebrew installs it, so a
+    # broken packaging/homebrew/requirements.lock fails here rather than at a release; pylint on the token script,
+    # in that virtualenv, the only one with the infrahouse-core it imports; and its steps against a local release
+    # and tap, with gh and the token stubbed (packaging/homebrew/test.sh). Nothing here reaches AWS or the tap.
+    homebrew:
+        name: "Homebrew formula pull request scripts"
+        runs-on: ubuntu-24.04
+        permissions:
+            contents: read
+        steps:
+            - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Install infrahouse-core for the token, as publish-homebrew does
+              run: packaging/homebrew/install-venv.sh "${RUNNER_TEMP}/homebrew-token"
+
+            - name: pylint on the token script
+              run: |
+                  pylint="$(grep -E '^pylint *~=' requirements_dev.txt)"
+                  "${RUNNER_TEMP}/homebrew-token/bin/pip" install --quiet --disable-pip-version-check "${pylint}"
+                  "${RUNNER_TEMP}/homebrew-token/bin/pylint" --rcfile .pylintrc packaging/homebrew/mint_token.py
+
+            - name: Run publish-homebrew's steps against a local release and tap
+              run: |
+                  make homebrew-test
