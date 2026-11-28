@@ -116,7 +116,7 @@ def install_module_dependencies(module_path: str, env: dict = None):
                             LOG.error("STDERR:\n%s", strip_colors(cerr.decode()))
                             sys.exit(1)
         except NotADirectoryError:
-            LOG.info("%s isn't a puppet module")
+            LOG.info("%s isn't a puppet module", osp.join(module_path, module))
 
 
 def strip_colors(text: str) -> str:
