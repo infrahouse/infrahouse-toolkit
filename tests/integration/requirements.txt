@@ -1,0 +1,3 @@
+infrahouse-core ~= 1.4
+pytest-infrahouse ~= 0.26
+python-debian ~= 1.1

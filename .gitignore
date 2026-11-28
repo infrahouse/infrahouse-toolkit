@@ -108,3 +108,10 @@ ENV/
 .claude/plans/*.local.md
 nul
 packaging/.stage/
+
+# The integration test: its virtualenv, and its Terraform's working files (make test-integration)
+.venv-integration/
+tests/integration/terraform/.terraform/
+tests/integration/terraform/.terraform.lock.hcl
+tests/integration/terraform/terraform.tfstate*
+tests/integration/terraform/terraform.tfvars.json

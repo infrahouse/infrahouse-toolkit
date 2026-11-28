@@ -5,7 +5,9 @@ include README.rst
 include requirements.txt
 include requirements_dev.txt
 
-recursive-include tests *
+# tests/ holds the integration test, which deploys to AWS. After a run it also holds the test's Terraform state and
+# the modules and provider Terraform downloaded. None of it belongs in the sdist.
+prune tests
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 
