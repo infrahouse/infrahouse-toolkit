@@ -194,9 +194,11 @@ apt install or a Puppet run. `make test` doesn't run it.
      jumphost's role `autoscaling:CancelInstanceRefresh` on its group: production jumphosts don't use the flag.
   5. **Replacement:** an instance refresh with the module's preference (`MinHealthyPercentage: 100`) ends
      `Successful`, and the new instance boots and has the same version.
-- **Failures** start with `Check <n>, <name>, failed:` and carry the instance's evidence: `cloud-init status --long`
-  and the tail of `/var/log/cloud-init-output.log` (the serial console instead, when SSM can't reach it), the failed
-  command's output, and the group's latest scaling activities.
+- **Failures** start with `Check <n>, <name>, failed:`. Every failure has the failed step's own output: the
+  command's output, `apt-cache policy` or the refresh's status. It also has the group's latest scaling activities and
+  each of its instances' evidence: `cloud-init status --long` and the tail of `/var/log/cloud-init-output.log`, or
+  the serial console when SSM can't reach the instance. When a refresh replaced the instance, that is the new one's
+  evidence.
 - **Not covered:** a launching lifecycle hook. terraform-aws-jumphost 6.1.1 passes no `lifecycle_hook_name` to
   terraform-aws-cloud-init, so `ih-bootstrap.sh` never runs `ih-aws autoscaling complete` on it, and `InService`
   doesn't wait for the bootstrap; check 1 waits for cloud-init and the marker instead.

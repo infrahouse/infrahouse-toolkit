@@ -35,37 +35,61 @@ FACTER = "/opt/puppetlabs/bin/facter"
 ACTIVE_REFRESH_STATUSES = ("Pending", "InProgress", "Cancelling", "RollbackInProgress", "Baking")
 """Instance refresh statuses that aren't final."""
 
+CHECK_FAILURES = (AssertionError, ClientError, RuntimeError, TimeoutError)
+"""
+What a check can fail with: assertions, and the errors a step can end with. ``ClientError`` is an AWS API call the
+test role or the instance can't make, ``RuntimeError`` an instance that was terminated, ``TimeoutError`` an instance
+SSM never reached.
+"""
+
 
 class Check:
     """
-    One of the integration test's checks: every failure inside it starts with ``Check <n>, <name>, failed:``.
+    One of the integration test's checks.
 
-    Failures are assertions, and the errors a step on the instance can end with: ``RuntimeError`` when the instance
-    was terminated, ``TimeoutError`` when SSM never reached it.
+    Every failure inside it starts with ``Check <n>, <name>, failed:`` and ends with the group's evidence: its latest
+    scaling activities, and from each of its instances ``cloud-init status --long`` and the tail of
+    ``/var/log/cloud-init-output.log``. A failure that already has the instances' evidence, a ``FailureWithEvidence``,
+    gets only the scaling activities.
 
     :param number: The check's number, in the order they run.
     :type number: int
     :param name: The check's name, for example ``boot``.
     :type name: str
+    :param group: The group the check runs on.
+    :type group: CandidateGroup
     """
 
-    def __init__(self, number: int, name: str):
+    def __init__(self, number: int, name: str, group: "CandidateGroup"):
         self._title = f"Check {number}, {name}"
+        self._group = group
 
     def __enter__(self) -> "Check":
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
-        if exc_type is not None and issubclass(exc_type, (AssertionError, RuntimeError, TimeoutError)):
-            raise AssertionError(f"{self._title}, failed: {exc_value}") from exc_value
+        if exc_type is None or not issubclass(exc_type, CHECK_FAILURES):
+            return
+        report = [f"{self._title}, failed: {exc_value}", self._group.scaling_activities]
+        if not isinstance(exc_value, FailureWithEvidence):
+            report.append(self._group.evidence)
+        raise AssertionError("\n".join(report)) from exc_value
 
 
 class CommandFailed(AssertionError):
     """A command on the instance exited non-zero where the check needs it to succeed."""
 
 
-class BootstrapFailed(AssertionError):
+class FailureWithEvidence(AssertionError):
+    """A failure whose message already has the evidence from the group's instances."""
+
+
+class BootstrapFailed(FailureWithEvidence):
     """cloud-init or ih-bootstrap didn't finish on the instance."""
+
+
+class GroupNotReady(FailureWithEvidence):
+    """The group didn't get exactly one ``InService`` instance in time."""
 
 
 @dataclass(frozen=True)
@@ -364,6 +388,24 @@ class CandidateGroup:
         return self._client
 
     @property
+    def evidence(self) -> str:
+        """
+        The evidence from each instance in the group, as ``CandidateNode.evidence`` collects it.
+
+        Best effort, like ``CandidateNode.evidence``: it runs on a path that is already failing, so an API error here
+        doesn't replace the failure it explains.
+
+        :return: The evidence, for a failure message.
+        """
+        try:
+            instances = self._instances
+        except ClientError as err:
+            return f"===== instances of {self._asg_name} =====\n<unavailable: {err}>"
+        if not instances:
+            return f"===== {self._asg_name} has no instances ====="
+        return "\n".join(self._node(instance["InstanceId"]).evidence for instance in instances)
+
+    @property
     def name(self) -> str:
         """
         :return: Group name.
@@ -373,9 +415,14 @@ class CandidateGroup:
     @property
     def scaling_activities(self) -> str:
         """
-        :return: The group's five latest scaling activities, one per line, for a failure message.
+        The group's five latest scaling activities. Best effort, like ``evidence``.
+
+        :return: The activities, one per line, for a failure message.
         """
-        activities = self._client.describe_scaling_activities(AutoScalingGroupName=self._asg_name, MaxRecords=5)
+        try:
+            activities = self._client.describe_scaling_activities(AutoScalingGroupName=self._asg_name, MaxRecords=5)
+        except ClientError as err:
+            return f"===== latest scaling activities of {self._asg_name} =====\n<unavailable: {err}>"
         lines = [f"===== latest scaling activities of {self._asg_name} ====="]
         for activity in activities["Activities"]:
             lines.append(
@@ -413,8 +460,8 @@ class CandidateGroup:
         :param poll_interval: Seconds between two checks.
         :type poll_interval: int
         :return: The instance.
-        :raise AssertionError: If it doesn't happen within ``timeout``. The message has the group's instances, its
-            scaling activities and the evidence from each instance.
+        :raise GroupNotReady: If it doesn't happen within ``timeout``. The message has the group's instances and
+            the evidence from each of them.
         """
         deadline = monotonic() + timeout
         while True:
@@ -423,10 +470,9 @@ class CandidateGroup:
                 return self._node(instances[0]["InstanceId"])
             if monotonic() >= deadline:
                 states = ", ".join(f"{i['InstanceId']} {i['LifecycleState']}" for i in instances) or "no instances"
-                evidence = "\n".join(self._node(i["InstanceId"]).evidence for i in instances)
-                raise AssertionError(
+                raise GroupNotReady(
                     f"{self._asg_name} has no single InService instance after {timeout} seconds: {states}.\n"
-                    f"{self.scaling_activities}\n{evidence}"
+                    f"{self.evidence}"
                 )
             LOG.info(
                 "Waiting for one InService instance in %s. Now: %s",
